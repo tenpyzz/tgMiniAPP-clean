@@ -181,7 +181,9 @@ app.post('/bot/webhook', async (req, res) => {
                     inline_keyboard: [[
                         {
                             text: "🎮 Открыть игру",
-                            url: "https://web-production-877f.up.railway.app/"
+                            web_app: {
+                                url: "https://web-production-877f.up.railway.app/"
+                            }
                         }
                     ]]
                 };
@@ -218,7 +220,9 @@ app.post('/bot/webhook', async (req, res) => {
                     inline_keyboard: [[
                         {
                             text: "🎮 Играть",
-                            url: "https://web-production-877f.up.railway.app/"
+                            web_app: {
+                                url: "https://web-production-877f.up.railway.app/"
+                            }
                         }
                     ]]
                 };
@@ -245,7 +249,9 @@ app.post('/bot/webhook', async (req, res) => {
                     inline_keyboard: [[
                         {
                             text: "🎮 Начать игру",
-                            url: "https://web-production-877f.up.railway.app/"
+                            web_app: {
+                                url: "https://web-production-877f.up.railway.app/"
+                            }
                         }
                     ]]
                 };
@@ -335,6 +341,46 @@ app.post('/setup-webhook', async (req, res) => {
     } catch (error) {
         console.error('Error setting webhook:', error);
         res.status(500).json({ error: 'Failed to set webhook' });
+    }
+});
+
+// Настройка Mini App для бота
+app.post('/setup-miniapp', async (req, res) => {
+    try {
+        const miniAppUrl = 'https://web-production-877f.up.railway.app/';
+        console.log('Setting up Mini App for bot...');
+        
+        // Настраиваем Mini App через Telegram API
+        const telegramResponse = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setWebApp`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                url: miniAppUrl
+            })
+        });
+        
+        const result = await telegramResponse.json();
+        
+        if (result.ok) {
+            console.log('Mini App set successfully:', result);
+            res.json({ 
+                ok: true, 
+                description: 'Mini App configured successfully',
+                url: miniAppUrl,
+                telegram_response: result
+            });
+        } else {
+            console.error('Failed to set Mini App:', result);
+            res.status(500).json({ 
+                error: 'Failed to set Mini App',
+                telegram_response: result
+            });
+        }
+    } catch (error) {
+        console.error('Error setting Mini App:', error);
+        res.status(500).json({ error: 'Failed to set Mini App' });
     }
 });
 
