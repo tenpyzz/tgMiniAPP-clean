@@ -8,7 +8,7 @@ app.use(express.json());
 app.use(cors());
 
 // Получаем токен бота из переменных окружения
-const BOT_TOKEN = process.env.BOT_TOKEN || '8448668571:AAHKzTQp9Zd86sTgbPbKeWTS3Cc6fE0G91k';
+const BOT_TOKEN = process.env.BOT_TOKEN || '8482617305:AAHnQV93IUQ0dkz67fPaG-hTQCmMj-bkXpw';
 
 // Middleware для проверки данных Telegram
 function verifyTelegramData(req, res, next) {
