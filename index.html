@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кейс Мастер</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="stars-balance">
+                <span class="star-icon">⭐</span>
+                <span id="stars-count">0</span>
+            </div>
+            <h1 class="app-title">Кейс Мастер</h1>
+            <div class="settings-btn">⚙️</div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Case Selection -->
+            <section class="case-selection">
+                <h2>Выберите кейс</h2>
+                <div class="cases-grid">
+                    <div class="case-item" data-case="bronze" data-price="10">
+                        <div class="case-image bronze-case">
+                            <div class="case-glow"></div>
+                        </div>
+                        <h3>Бронзовый кейс</h3>
+                        <p class="case-price">10 ⭐</p>
+                        <div class="case-prizes">
+                            <span>Подарки Telegram</span>
+                        </div>
+                    </div>
+
+                    <div class="case-item" data-case="silver" data-price="25">
+                        <div class="case-image silver-case">
+                            <div class="case-glow"></div>
+                        </div>
+                        <h3>Серебряный кейс</h3>
+                        <p class="case-price">25 ⭐</p>
+                        <div class="case-prizes">
+                            <span>Подарки + Стикеры</span>
+                        </div>
+                    </div>
+
+                    <div class="case-item" data-case="gold" data-price="50">
+                        <div class="case-image gold-case">
+                            <div class="case-glow"></div>
+                        </div>
+                        <h3>Золотой кейс</h3>
+                        <p class="case-price">50 ⭐</p>
+                        <div class="case-prizes">
+                            <span>Премиум подписка</span>
+                        </div>
+                    </div>
+
+                    <div class="case-item" data-case="diamond" data-price="100">
+                        <div class="case-image diamond-case">
+                            <div class="case-glow"></div>
+                        </div>
+                        <h3>Алмазный кейс</h3>
+                        <p class="case-price">100 ⭐</p>
+                        <div class="case-prizes">
+                            <span>Эксклюзивные призы</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Opening Animation Area -->
+            <section class="opening-area" id="opening-area" style="display: none;">
+                <div class="case-opening-animation">
+                    <div class="case-container">
+                        <div class="case-box" id="case-box">
+                            <div class="case-lid"></div>
+                            <div class="case-body"></div>
+                        </div>
+                    </div>
+                    <div class="sparkles" id="sparkles"></div>
+                </div>
+                
+                <div class="prize-reveal" id="prize-reveal">
+                    <div class="prize-container">
+                        <div class="prize-icon" id="prize-icon"></div>
+                        <h3 class="prize-name" id="prize-name"></h3>
+                        <p class="prize-description" id="prize-description"></p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Inventory -->
+            <section class="inventory">
+                <h2>Мои призы</h2>
+                <div class="inventory-grid" id="inventory-grid">
+                    <!-- Призы будут добавляться динамически -->
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <button class="buy-stars-btn" id="buy-stars-btn">
+                Купить звезды
+            </button>
+        </footer>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner"></div>
+        <p>Открываем кейс...</p>
+    </div>
+
+    <!-- Prize Modal -->
+    <div class="prize-modal" id="prize-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Поздравляем!</h2>
+                <button class="close-modal" id="close-modal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="prize-display">
+                    <div class="prize-icon-large" id="modal-prize-icon"></div>
+                    <h3 id="modal-prize-name"></h3>
+                    <p id="modal-prize-description"></p>
+                </div>
+                <button class="claim-prize-btn" id="claim-prize-btn">Забрать приз</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
