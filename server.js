@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 app.use(express.json());
@@ -20,8 +22,37 @@ function verifyTelegramData(req, res, next) {
     next();
 }
 
-// Простое хранение данных в памяти (для демо)
-const userData = new Map();
+// Файловое хранилище данных пользователей
+const DATA_FILE = path.join(__dirname, 'user_data.json');
+
+// Загрузка данных пользователей из файла
+function loadUserData() {
+    try {
+        if (fs.existsSync(DATA_FILE)) {
+            const data = fs.readFileSync(DATA_FILE, 'utf8');
+            const parsedData = JSON.parse(data);
+            return new Map(Object.entries(parsedData));
+        }
+    } catch (error) {
+        console.error('Error loading user data:', error);
+    }
+    return new Map();
+}
+
+// Сохранение данных пользователей в файл
+function saveUserData(userDataMap) {
+    try {
+        const dataObject = Object.fromEntries(userDataMap);
+        fs.writeFileSync(DATA_FILE, JSON.stringify(dataObject, null, 2));
+        console.log('User data saved successfully');
+    } catch (error) {
+        console.error('Error saving user data:', error);
+    }
+}
+
+// Загружаем данные при запуске сервера
+const userData = loadUserData();
+console.log(`Loaded data for ${userData.size} users`);
 
 // Получение данных пользователя
 app.post('/api/user/data', verifyTelegramData, async (req, res) => {
@@ -55,8 +86,11 @@ app.post('/api/user/save', verifyTelegramData, async (req, res) => {
         userData.set(user_id, {
             stars_balance: stars_balance,
             inventory: inventory,
-            last_updated: new Date()
+            last_updated: new Date().toISOString()
         });
+        
+        // Автоматически сохраняем в файл
+        saveUserData(userData);
         
         res.json({ success: true });
     } catch (error) {
@@ -74,6 +108,12 @@ app.post('/api/prize/claim', verifyTelegramData, async (req, res) => {
         
         let result = { success: true };
         
+        // Обновляем данные пользователя при получении приза
+        const user = userData.get(user_id) || {
+            stars_balance: 100,
+            inventory: []
+        };
+        
         switch (prize.type) {
             case 'gift':
                 // Симулируем отправку подарка
@@ -89,9 +129,17 @@ app.post('/api/prize/claim', verifyTelegramData, async (req, res) => {
                 
             case 'stars':
                 // Добавляем звезды на баланс
-                console.log(`Added ${prize.stars_value} stars to user ${user_id}`);
+                user.stars_balance += prize.stars_value || 0;
+                console.log(`Added ${prize.stars_value} stars to user ${user_id}. New balance: ${user.stars_balance}`);
                 break;
         }
+        
+        // Обновляем данные пользователя
+        user.last_updated = new Date().toISOString();
+        userData.set(user_id, user);
+        
+        // Сохраняем в файл
+        saveUserData(userData);
         
         res.json(result);
     } catch (error) {
@@ -318,8 +366,43 @@ app.get('/api/info', (req, res) => {
         timestamp: new Date().toISOString(),
         webhook_url: process.env.WEBHOOK_URL || 'https://web-production-877f.up.railway.app/bot/webhook',
         webapp_url: process.env.WEBAPP_URL || 'https://web-production-877f.up.railway.app/',
-        bot_token: BOT_TOKEN ? 'configured' : 'missing'
+        bot_token: BOT_TOKEN ? 'configured' : 'missing',
+        total_users: userData.size,
+        data_file_exists: fs.existsSync(DATA_FILE)
     });
+});
+
+// Статистика пользователей (для администрирования)
+app.get('/api/admin/stats', (req, res) => {
+    try {
+        const stats = {
+            total_users: userData.size,
+            users_with_data: 0,
+            total_stars: 0,
+            total_inventory_items: 0,
+            users: []
+        };
+
+        userData.forEach((userData, userId) => {
+            if (userData.stars_balance || userData.inventory?.length > 0) {
+                stats.users_with_data++;
+                stats.total_stars += userData.stars_balance || 0;
+                stats.total_inventory_items += userData.inventory?.length || 0;
+                
+                stats.users.push({
+                    user_id: userId,
+                    stars_balance: userData.stars_balance,
+                    inventory_count: userData.inventory?.length || 0,
+                    last_updated: userData.last_updated
+                });
+            }
+        });
+
+        res.json(stats);
+    } catch (error) {
+        console.error('Error getting stats:', error);
+        res.status(500).json({ error: 'Failed to get stats' });
+    }
 });
 
 const PORT = process.env.PORT || 3000;
@@ -329,8 +412,11 @@ app.listen(PORT, () => {
     console.log(`📱 Откройте http://localhost:${PORT} для тестирования`);
     console.log(`🧪 Тестовая версия: http://localhost:${PORT}/test`);
     console.log(`📊 API информация: http://localhost:${PORT}/api/info`);
+    console.log(`📈 Статистика: http://localhost:${PORT}/api/admin/stats`);
+    console.log(`💾 Данные пользователей: ${userData.size} пользователей загружено`);
+    console.log(`📁 Файл данных: ${DATA_FILE}`);
     console.log('');
-    console.log('⚠️  Не забудьте заменить BOT_TOKEN на реальный токен!');
+    console.log('✅ Данные пользователей сохраняются автоматически!');
 });
 
 module.exports = app;
