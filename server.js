@@ -5,8 +5,8 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Замените на ваш токен бота
-const BOT_TOKEN = '8448668571:AAHKzTQp9Zd86sTgbPbKeWTS3Cc6fE0G91k';
+// Получаем токен бота из переменных окружения
+const BOT_TOKEN = process.env.BOT_TOKEN || '8448668571:AAHKzTQp9Zd86sTgbPbKeWTS3Cc6fE0G91k';
 
 // Middleware для проверки данных Telegram
 function verifyTelegramData(req, res, next) {
@@ -100,6 +100,34 @@ app.post('/api/prize/claim', verifyTelegramData, async (req, res) => {
     }
 });
 
+// Webhook для Telegram бота
+app.post('/bot/webhook', async (req, res) => {
+    try {
+        const update = req.body;
+        console.log('Bot webhook received:', update);
+        
+        // Обработка обновлений от Telegram
+        if (update.message) {
+            const message = update.message;
+            const chatId = message.chat.id;
+            const text = message.text;
+            
+            console.log(`Message from ${chatId}: ${text}`);
+            
+            // Простой ответ на команды
+            if (text === '/start') {
+                // Здесь можно отправить приветственное сообщение с кнопкой для открытия Mini App
+                console.log('Start command received');
+            }
+        }
+        
+        res.json({ ok: true });
+    } catch (error) {
+        console.error('Bot webhook error:', error);
+        res.status(500).json({ error: 'Webhook error' });
+    }
+});
+
 // Webhook для обработки платежей
 app.post('/webhook/payment', async (req, res) => {
     try {
@@ -125,19 +153,42 @@ app.post('/webhook/payment', async (req, res) => {
     }
 });
 
-// Установка webhook
+// Установка webhook для Telegram бота
 app.post('/setup-webhook', async (req, res) => {
     try {
-        const webhookUrl = req.body.webhook_url || 'https://your-domain.com/webhook/payment';
+        const webhookUrl = process.env.WEBHOOK_URL || req.body.webhook_url || 'https://web-production-877f.up.railway.app/bot/webhook';
         
-        console.log(`Setting webhook to: ${webhookUrl}`);
+        console.log(`Setting Telegram webhook to: ${webhookUrl}`);
         
-        // В реальном приложении здесь будет вызов Telegram API
-        res.json({ 
-            ok: true, 
-            description: 'Webhook set successfully',
-            url: webhookUrl
+        // Устанавливаем webhook через Telegram API
+        const telegramResponse = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setWebhook`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                url: webhookUrl,
+                allowed_updates: ['message', 'callback_query']
+            })
         });
+        
+        const result = await telegramResponse.json();
+        
+        if (result.ok) {
+            console.log('Webhook set successfully:', result);
+            res.json({ 
+                ok: true, 
+                description: 'Webhook set successfully',
+                url: webhookUrl,
+                telegram_response: result
+            });
+        } else {
+            console.error('Failed to set webhook:', result);
+            res.status(500).json({ 
+                error: 'Failed to set webhook',
+                telegram_response: result
+            });
+        }
     } catch (error) {
         console.error('Error setting webhook:', error);
         res.status(500).json({ error: 'Failed to set webhook' });
@@ -163,7 +214,10 @@ app.get('/api/info', (req, res) => {
         name: 'Кейс Мастер API',
         version: '1.0.0',
         status: 'running',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        webhook_url: process.env.WEBHOOK_URL || 'https://web-production-877f.up.railway.app/bot/webhook',
+        webapp_url: process.env.WEBAPP_URL || 'https://web-production-877f.up.railway.app/',
+        bot_token: BOT_TOKEN ? 'configured' : 'missing'
     });
 });
 
