@@ -1,5 +1,12 @@
 # Инструкция по деплою на Railway
 
+## ⚠️ Важно: Исправления для Railway
+
+Если у вас была ошибка "Cannot read property 'express' of undefined", то проблема решена:
+- Обновлен `package.json` с правильными версиями Node.js и npm
+- Пересоздан `package-lock.json`
+- Добавлены файлы `.dockerignore` и `railway.json`
+
 ## Шаги для деплоя:
 
 ### 1. Подключение GitHub к Railway
