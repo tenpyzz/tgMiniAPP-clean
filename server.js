@@ -181,9 +181,7 @@ app.post('/bot/webhook', async (req, res) => {
                     inline_keyboard: [[
                         {
                             text: "🎮 Открыть игру",
-                            web_app: {
-                                url: "https://web-production-877f.up.railway.app/"
-                            }
+                            url: "https://web-production-877f.up.railway.app/"
                         }
                     ]]
                 };
@@ -220,9 +218,7 @@ app.post('/bot/webhook', async (req, res) => {
                     inline_keyboard: [[
                         {
                             text: "🎮 Играть",
-                            web_app: {
-                                url: "https://web-production-877f.up.railway.app/"
-                            }
+                            url: "https://web-production-877f.up.railway.app/"
                         }
                     ]]
                 };
@@ -249,9 +245,7 @@ app.post('/bot/webhook', async (req, res) => {
                     inline_keyboard: [[
                         {
                             text: "🎮 Начать игру",
-                            web_app: {
-                                url: "https://web-production-877f.up.railway.app/"
-                            }
+                            url: "https://web-production-877f.up.railway.app/"
                         }
                     ]]
                 };
@@ -341,6 +335,41 @@ app.post('/setup-webhook', async (req, res) => {
     } catch (error) {
         console.error('Error setting webhook:', error);
         res.status(500).json({ error: 'Failed to set webhook' });
+    }
+});
+
+// Удаление Mini App из бота
+app.post('/remove-miniapp', async (req, res) => {
+    try {
+        console.log('Removing Mini App from bot...');
+        
+        // Удаляем Mini App через Telegram API
+        const telegramResponse = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/deleteWebApp`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const result = await telegramResponse.json();
+        
+        if (result.ok) {
+            console.log('Mini App removed successfully:', result);
+            res.json({ 
+                ok: true, 
+                description: 'Mini App removed successfully',
+                telegram_response: result
+            });
+        } else {
+            console.error('Failed to remove Mini App:', result);
+            res.status(500).json({ 
+                error: 'Failed to remove Mini App',
+                telegram_response: result
+            });
+        }
+    } catch (error) {
+        console.error('Error removing Mini App:', error);
+        res.status(500).json({ error: 'Failed to remove Mini App' });
     }
 });
 
