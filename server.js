@@ -114,10 +114,111 @@ app.post('/bot/webhook', async (req, res) => {
             
             console.log(`Message from ${chatId}: ${text}`);
             
-            // Простой ответ на команды
+            // Обработка команд
             if (text === '/start') {
-                // Здесь можно отправить приветственное сообщение с кнопкой для открытия Mini App
                 console.log('Start command received');
+                
+                // Отправляем приветственное сообщение
+                const welcomeMessage = `🎮 Добро пожаловать в Кейс Мастер!
+
+🎁 Открывайте кейсы и получайте призы:
+• Подарки для друзей
+• Стикеры
+• Telegram Premium
+• И многое другое!
+
+🚀 Нажмите кнопку ниже, чтобы начать играть!`;
+
+                const keyboard = {
+                    inline_keyboard: [[
+                        {
+                            text: "🎮 Открыть игру",
+                            web_app: {
+                                url: "https://web-production-877f.up.railway.app/"
+                            }
+                        }
+                    ]]
+                };
+
+                // Отправляем сообщение через Telegram API
+                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        text: welcomeMessage,
+                        reply_markup: keyboard
+                    })
+                });
+                
+            } else if (text === '/help') {
+                const helpMessage = `🎮 Кейс Мастер - Помощь
+
+📋 Доступные команды:
+/start - Начать игру
+/help - Показать эту справку
+
+🎁 Типы кейсов:
+• Бронзовый (10 ⭐)
+• Серебряный (25 ⭐)
+• Золотой (50 ⭐)
+• Алмазный (100 ⭐)
+
+🚀 Нажмите кнопку ниже для начала игры!`;
+
+                const keyboard = {
+                    inline_keyboard: [[
+                        {
+                            text: "🎮 Играть",
+                            web_app: {
+                                url: "https://web-production-877f.up.railway.app/"
+                            }
+                        }
+                    ]]
+                };
+
+                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        text: helpMessage,
+                        reply_markup: keyboard
+                    })
+                });
+                
+            } else {
+                // Ответ на неизвестные сообщения
+                const unknownMessage = `🤔 Не понимаю эту команду.
+
+Используйте /start для начала игры или /help для справки.`;
+
+                const keyboard = {
+                    inline_keyboard: [[
+                        {
+                            text: "🎮 Начать игру",
+                            web_app: {
+                                url: "https://web-production-877f.up.railway.app/"
+                            }
+                        }
+                    ]]
+                };
+
+                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        text: unknownMessage,
+                        reply_markup: keyboard
+                    })
+                });
             }
         }
         
