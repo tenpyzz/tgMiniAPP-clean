@@ -52,6 +52,12 @@ body {
     z-index: 100;
 }
 
+.header-buttons {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
 .stars-balance {
     display: flex;
     align-items: center;
@@ -80,16 +86,26 @@ body {
     background-clip: text;
 }
 
-.settings-btn {
+.settings-btn, .refresh-btn {
     font-size: 1.5rem;
     cursor: pointer;
     padding: 0.5rem;
     border-radius: 50%;
-    transition: background-color 0.3s;
+    transition: all 0.3s;
 }
 
-.settings-btn:hover {
+.settings-btn:hover, .refresh-btn:hover {
     background-color: rgba(0, 0, 0, 0.1);
+    transform: scale(1.1);
+}
+
+.refresh-btn:hover {
+    animation: spin 0.5s linear;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 /* Main Content */

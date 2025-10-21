@@ -46,8 +46,25 @@ const caseConfig = {
     }
 };
 
+// Функция для периодического обновления данных
+function startDataSync() {
+    // Обновляем данные каждые 30 секунд
+    setInterval(async () => {
+        console.log('Синхронизация данных...');
+        await loadUserData();
+    }, 30000);
+    
+    // Обновляем данные при возвращении на вкладку
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            console.log('Возвращение на вкладку - обновляем данные');
+            loadUserData();
+        }
+    });
+}
+
 // Инициализация приложения
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     console.log('Приложение загружено');
     
     // Инициализация Telegram WebApp
@@ -64,7 +81,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Загружаем сохраненные данные
-    loadUserData();
+    console.log('Загружаем данные пользователя...');
+    const dataLoaded = await loadUserData();
+    
+    if (dataLoaded) {
+        console.log('Данные успешно загружены с сервера');
+        showNotification('Данные загружены!', 'success');
+    } else {
+        console.log('Используем локальные данные по умолчанию');
+        showNotification('Добро пожаловать в Кейс Мастер!', 'success');
+    }
     
     // Обновляем отображение
     updateStarsDisplay();
@@ -73,8 +99,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Добавляем обработчики событий
     setupEventListeners();
     
-    // Показываем уведомление о загрузке
-    showNotification('Добро пожаловать в Кейс Мастер!', 'success');
+    // Запускаем синхронизацию данных
+    startDataSync();
 });
 
 // Настройка обработчиков событий
@@ -418,14 +444,33 @@ async function loadUserData() {
         
         if (response.ok) {
             const data = await response.json();
+            const oldStars = userStars;
+            const oldInventoryLength = userInventory.length;
+            
             userStars = data.stars_balance || 100;
             userInventory = data.inventory || [];
+            
+            console.log(`Данные загружены: ${userStars} звезд, ${userInventory.length} предметов в инвентаре`);
+            
+            // Обновляем отображение только если данные изменились
+            if (oldStars !== userStars || oldInventoryLength !== userInventory.length) {
+                updateStarsDisplay();
+                updateInventoryDisplay();
+                console.log('Отображение обновлено');
+            }
+            
+            return true;
+        } else {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
     } catch (error) {
         console.error('Ошибка при загрузке данных:', error);
-        // Используем значения по умолчанию
-        userStars = 100;
-        userInventory = [];
+        // Используем значения по умолчанию только если это первая загрузка
+        if (userStars === 100 && userInventory.length === 0) {
+            userStars = 100;
+            userInventory = [];
+        }
+        return false;
     }
 }
 
@@ -468,3 +513,12 @@ window.clearInventory = function() {
     showNotification('Инвентарь очищен!', 'info');
 };
 window.showNotification = showNotification;
+window.refreshData = async function() {
+    console.log('Ручное обновление данных...');
+    const success = await loadUserData();
+    if (success) {
+        showNotification('Данные обновлены!', 'success');
+    } else {
+        showNotification('Ошибка обновления данных', 'error');
+    }
+};
