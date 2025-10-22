@@ -80,18 +80,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
     
-    // Загружаем сохраненные данные
-    console.log('Загружаем данные пользователя...');
-    const dataLoaded = await loadUserData();
-    
-    if (dataLoaded) {
-        console.log('Данные успешно загружены с сервера');
-        showNotification('Данные загружены!', 'success');
-    } else {
-        console.log('Используем локальные данные по умолчанию');
-        showNotification('Добро пожаловать в Кейс Мастер!', 'success');
-    }
-    
     // Сбрасываем все флаги при загрузке приложения
     isOpening = false;
     isChoosingPrize = false;
@@ -100,10 +88,25 @@ document.addEventListener('DOMContentLoaded', async function() {
     currentCasePrice = 0;
     currentPrize = null;
     
-    // Проверяем, есть ли нерешенный приз
+    // Проверяем, есть ли нерешенный приз ПЕРЕД загрузкой данных с сервера
     const hasPendingPrize = await restorePrizeState();
     if (hasPendingPrize) {
         showNotification('Восстановлен нерешенный приз!', 'info');
+        // Если есть нерешенный приз, НЕ загружаем данные с сервера
+        // чтобы не перезаписать потраченные звезды
+        console.log('Приз восстановлен, пропускаем загрузку данных с сервера');
+    } else {
+        // Загружаем сохраненные данные только если нет нерешенного приза
+        console.log('Загружаем данные пользователя...');
+        const dataLoaded = await loadUserData();
+        
+        if (dataLoaded) {
+            console.log('Данные успешно загружены с сервера');
+            showNotification('Данные загружены!', 'success');
+        } else {
+            console.log('Используем локальные данные по умолчанию');
+            showNotification('Добро пожаловать в Кейс Мастер!', 'success');
+        }
     }
     
     // Проверяем, были ли потрачены звезды
@@ -114,7 +117,12 @@ document.addEventListener('DOMContentLoaded', async function() {
             // Если прошло не более 10 минут, считаем что звезды потрачены
             if (state.spent && Date.now() - state.timestamp < 600000) {
                 console.log('Восстановлено состояние: звезды потрачены');
+                console.log(`Оригинальное количество звезд: ${state.originalStars}, потрачено: ${state.amount}`);
+                
+                // Восстанавливаем правильное количество звезд (оригинальное - потраченное)
+                userStars = state.originalStars - state.amount;
                 starsSpent = true;
+                
                 // Очищаем состояние после использования
                 localStorage.removeItem('starsSpent');
             }
@@ -230,7 +238,8 @@ async function openCase(caseType, price) {
     localStorage.setItem('starsSpent', JSON.stringify({
         spent: true,
         amount: price,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        originalStars: userStars + price // Сохраняем оригинальное количество звезд
     }));
     
     // СРАЗУ сохраняем данные на сервер после списания звезд
@@ -977,6 +986,9 @@ async function restorePrizeState() {
                 // и приз должен быть добавлен в инвентарь автоматически
                 console.log('Приз найден в localStorage - звезды уже потрачены, добавляем в инвентарь');
                 
+                // Сначала загружаем ТОЛЬКО инвентарь с сервера, не трогая звезды
+                await loadInventoryOnly();
+                
                 // Проверяем, не добавлен ли уже приз в инвентарь
                 const prizeAlreadyAdded = userInventory.some(item => 
                     item.id === state.prize.id || 
@@ -997,6 +1009,9 @@ async function restorePrizeState() {
             } else {
                 // Время истекло, добавляем приз автоматически
                 console.log('Время выбора приза истекло, добавляем автоматически');
+                
+                // Сначала загружаем ТОЛЬКО инвентарь с сервера, не трогая звезды
+                await loadInventoryOnly();
                 
                 // Проверяем, не добавлен ли уже приз в инвентарь
                 const prizeAlreadyAdded = userInventory.some(item => 
@@ -1208,6 +1223,50 @@ function hideLoadingOverlay() {
     const overlay = document.getElementById('loading-overlay');
     if (overlay) {
         overlay.classList.remove('show');
+    }
+}
+
+// Загрузка только инвентаря (без изменения звезд)
+async function loadInventoryOnly() {
+    try {
+        const requestData = {
+            user_id: tg?.initDataUnsafe?.user?.id || 'test_user',
+            telegram_name: tg?.initDataUnsafe?.user?.first_name || 'Unknown User',
+            init_data: tg?.initData || 'test_data'
+        };
+        
+        console.log('🔄 Загружаем только инвентарь пользователя:', requestData);
+        
+        const response = await fetch('/api/user/data', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestData)
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const oldInventoryLength = userInventory.length;
+            
+            // Обновляем ТОЛЬКО инвентарь, НЕ трогаем звезды
+            userInventory = data.inventory || [];
+            
+            console.log(`Инвентарь загружен: ${userInventory.length} предметов в инвентаре`);
+            
+            // Обновляем отображение только если инвентарь изменился
+            if (oldInventoryLength !== userInventory.length) {
+                updateInventoryDisplay();
+                console.log('Отображение инвентаря обновлено');
+            }
+            
+            return true;
+        } else {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+    } catch (error) {
+        console.error('Ошибка при загрузке инвентаря:', error);
+        return false;
     }
 }
 
