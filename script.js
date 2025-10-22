@@ -6,7 +6,6 @@ let userStars = 100; // Начальный баланс звезд
 let userInventory = []; // Инвентарь пользователя
 let isOpening = false; // Флаг открытия кейса
 let currentUserId = null; // ID текущего пользователя
-let useCS2Animation = true; // Использовать CS2 анимацию
 
 // Админские функции
 const ADMIN_USER_ID = '1165123437'; // ID админа
@@ -218,7 +217,6 @@ function showAdminPanel() {
                         <button onclick="addStars(500)" class="admin-btn">⭐ +500 звезд</button>
                         <button onclick="addStars(1000)" class="admin-btn">⭐ +1000 звезд</button>
                         <button onclick="clearInventory()" class="admin-btn">🗑️ Очистить инвентарь</button>
-                        <button onclick="toggleAnimation()" class="admin-btn" id="animation-toggle-btn">🎬 CS2 Анимация: ВКЛ</button>
                     </div>
                 </div>
                 <div class="admin-section">
@@ -788,13 +786,7 @@ async function openCase(caseType, price) {
     console.log(`✅ Данные сохранены на сервер: ${userStars} звезд`);
     
     // Показываем анимацию открытия кейса и получаем приз
-    let prize;
-    if (useCS2Animation) {
-        prize = await showCaseOpeningAnimation(caseType);
-    } else {
-        await showCaseOpeningAnimation(caseType);
-        prize = getRandomPrize(caseType);
-    }
+    const prize = await showCaseOpeningAnimation(caseType);
     currentPrize = prize;
     
     // Показываем приз (НЕ добавляем в инвентарь сразу)
@@ -814,28 +806,10 @@ async function openCase(caseType, price) {
         const exitBtn = document.getElementById('exit-fullscreen-btn');
         exitBtn.style.display = 'none';
         
-        // Сбрасываем CS2 анимацию
-        const cs2Animation = document.getElementById('cs2-opening-animation');
-        const oldAnimation = document.getElementById('old-opening-animation');
-        cs2Animation.style.display = 'none';
-        oldAnimation.style.display = 'block';
-        
         // Сбрасываем полоску призов
         const prizeStrip = document.getElementById('prize-strip');
         prizeStrip.innerHTML = '';
         prizeStrip.className = 'prize-strip';
-        
-        // Сбрасываем анимацию кейса (для совместимости)
-        const caseBox = document.getElementById('case-box');
-        caseBox.className = 'case-box';
-        caseBox.style.animation = '';
-        
-        // Сбрасываем стили кейса
-        const caseLid = caseBox.querySelector('.case-lid');
-        const caseBody = caseBox.querySelector('.case-body');
-        if (caseLid) caseLid.style.transform = '';
-        if (caseLid) caseLid.style.background = '';
-        if (caseBody) caseBody.style.background = '';
         
         // Скрываем показ приза
         const prizeReveal = document.getElementById('prize-reveal');
@@ -867,8 +841,6 @@ async function openCase(caseType, price) {
 // Анимация открытия кейса в стиле CS2
 async function showCaseOpeningAnimation(caseType) {
     const openingArea = document.getElementById('opening-area');
-    const cs2Animation = document.getElementById('cs2-opening-animation');
-    const oldAnimation = document.getElementById('old-opening-animation');
     const lightRays = document.querySelector('.light-rays');
     const particlesContainer = document.getElementById('particles-container');
     const explosionEffect = document.getElementById('explosion-effect');
@@ -884,15 +856,6 @@ async function showCaseOpeningAnimation(caseType) {
     const exitBtn = document.getElementById('exit-fullscreen-btn');
     exitBtn.style.display = 'block';
     
-    // Показываем выбранную анимацию
-    if (useCS2Animation) {
-        cs2Animation.style.display = 'flex';
-        oldAnimation.style.display = 'none';
-    } else {
-        cs2Animation.style.display = 'none';
-        oldAnimation.style.display = 'block';
-    }
-    
     // Фаза 1: Подготовка (1 секунда)
     lightRays.classList.add('active');
     createParticles(particlesContainer, 30);
@@ -900,39 +863,8 @@ async function showCaseOpeningAnimation(caseType) {
     
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Фаза 2: Запуск анимации
-    if (useCS2Animation) {
-        await startCS2PrizeAnimation(caseType);
-    } else {
-        // Старая анимация кейса
-        const caseBox = document.getElementById('case-box');
-        setupCaseForType(caseType, caseBox);
-        
-        // Фаза 2: Тряска (1.5 секунды)
-        caseBox.classList.add('shaking');
-        createParticles(particlesContainer, 50);
-        showSoundEffect('💥 Кейс трясется!');
-        
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // Фаза 3: Вращение (1 секунда)
-        caseBox.classList.remove('shaking');
-        caseBox.classList.add('spinning');
-        lightRays.style.animationDuration = '0.5s';
-        showSoundEffect('🌪️ Вращение кейса!');
-        
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Фаза 4: Открытие кейса
-        caseBox.classList.remove('spinning');
-        caseBox.classList.add('opening');
-        
-        // Открываем крышку кейса
-        const caseLid = caseBox.querySelector('.case-lid');
-        caseLid.style.transform = 'rotateX(-90deg)';
-        
-        await new Promise(resolve => setTimeout(resolve, 1000));
-    }
+    // Фаза 2: Запуск CS2 анимации
+    const winningPrize = await startCS2PrizeAnimation(caseType);
     
     // Фаза 3: Эффекты при открытии
     explosionEffect.classList.add('active');
@@ -950,6 +882,9 @@ async function showCaseOpeningAnimation(caseType) {
     lightFlash.classList.remove('active');
     smokeEffect.classList.remove('active');
     lightRays.classList.remove('active');
+    
+    // Возвращаем выигрышный приз
+    return winningPrize;
 }
 
 // Новая функция для CS2 анимации прокрутки призов
@@ -1031,40 +966,6 @@ function createPrizeElement(prize, index) {
     return prizeElement;
 }
 
-// Настройка кейса в зависимости от типа
-function setupCaseForType(caseType, caseBox) {
-    const caseLid = caseBox.querySelector('.case-lid');
-    const caseBody = caseBox.querySelector('.case-body');
-    
-    // Убираем предыдущие классы
-    caseBox.className = 'case-box';
-    caseLid.className = 'case-lid';
-    caseBody.className = 'case-body';
-    
-    // Применяем стили в зависимости от типа кейса
-    switch(caseType) {
-        case 'bronze':
-            caseLid.style.background = 'linear-gradient(135deg, #cd7f32, #b8860b, #8b4513)';
-            caseBody.style.background = 'linear-gradient(135deg, #cd7f32, #b8860b, #8b4513)';
-            caseBox.setAttribute('data-case-icon', '📦');
-            break;
-        case 'silver':
-            caseLid.style.background = 'linear-gradient(135deg, #c0c0c0, #a8a8a8, #808080)';
-            caseBody.style.background = 'linear-gradient(135deg, #c0c0c0, #a8a8a8, #808080)';
-            caseBox.setAttribute('data-case-icon', '💼');
-            break;
-        case 'gold':
-            caseLid.style.background = 'linear-gradient(135deg, #ffd700, #ffb347, #ff8c00)';
-            caseBody.style.background = 'linear-gradient(135deg, #ffd700, #ffb347, #ff8c00)';
-            caseBox.setAttribute('data-case-icon', '🏆');
-            break;
-        case 'diamond':
-            caseLid.style.background = 'linear-gradient(135deg, #b9f2ff, #87ceeb, #4682b4)';
-            caseBody.style.background = 'linear-gradient(135deg, #b9f2ff, #87ceeb, #4682b4)';
-            caseBox.setAttribute('data-case-icon', '💎');
-            break;
-    }
-}
 
 // Создание частиц
 function createParticles(container, count) {
@@ -1613,14 +1514,6 @@ function savePrizeState() {
     }
 }
 
-// Определение редкости приза
-function determinePrizeRarity(prize) {
-    if (prize.rarity === 'legendary') return 'legendary';
-    if (prize.rarity === 'epic') return 'epic';
-    if (prize.rarity === 'rare') return 'rare';
-    if (prize.rarity === 'uncommon') return 'uncommon';
-    return 'common';
-}
 
 // Восстановление состояния выбора приза из localStorage
 async function restorePrizeState() {
@@ -2186,28 +2079,10 @@ window.exitFullscreenMode = function() {
     const exitBtn = document.getElementById('exit-fullscreen-btn');
     exitBtn.style.display = 'none';
     
-    // Сбрасываем CS2 анимацию
-    const cs2Animation = document.getElementById('cs2-opening-animation');
-    const oldAnimation = document.getElementById('old-opening-animation');
-    cs2Animation.style.display = 'none';
-    oldAnimation.style.display = 'block';
-    
     // Сбрасываем полоску призов
     const prizeStrip = document.getElementById('prize-strip');
     prizeStrip.innerHTML = '';
     prizeStrip.className = 'prize-strip';
-    
-    // Сбрасываем анимацию кейса (для совместимости)
-    const caseBox = document.getElementById('case-box');
-    caseBox.className = 'case-box';
-    caseBox.style.animation = '';
-    
-    // Сбрасываем стили кейса
-    const caseLid = caseBox.querySelector('.case-lid');
-    const caseBody = caseBox.querySelector('.case-body');
-    if (caseLid) caseLid.style.transform = '';
-    if (caseLid) caseLid.style.background = '';
-    if (caseBody) caseBody.style.background = '';
     
     // Скрываем показ приза
     const prizeReveal = document.getElementById('prize-reveal');
@@ -2514,26 +2389,6 @@ async function createBackup() {
     }
 }
 
-// Переключение анимации (только для админа)
-function toggleAnimation() {
-    if (!isAdmin) {
-        showNotification('❌ Доступ запрещен', 'error');
-        return;
-    }
-    
-    useCS2Animation = !useCS2Animation;
-    
-    const button = document.getElementById('animation-toggle-btn');
-    if (useCS2Animation) {
-        button.textContent = '🎬 CS2 Анимация: ВКЛ';
-        showNotification('✅ CS2 анимация включена', 'success');
-        logAdminAction('Включена CS2 анимация');
-    } else {
-        button.textContent = '🎬 CS2 Анимация: ВЫКЛ';
-        showNotification('✅ Классическая анимация включена', 'success');
-        logAdminAction('Включена классическая анимация');
-    }
-}
 
 // Очистка всех данных (только для админа)
 async function clearAllData() {
