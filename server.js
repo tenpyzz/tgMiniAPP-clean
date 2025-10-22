@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const Database = require('./database');
 
 const app = express();
 app.use(express.json());
@@ -22,52 +23,36 @@ function verifyTelegramData(req, res, next) {
     next();
 }
 
-// Файловое хранилище данных пользователей
-const DATA_FILE = path.join(__dirname, 'user_data.json');
+// Инициализация базы данных
+const db = new Database();
 
-// Загрузка данных пользователей из файла
-function loadUserData() {
+// Инициализация базы данных при запуске сервера
+async function initializeDatabase() {
     try {
-        if (fs.existsSync(DATA_FILE)) {
-            const data = fs.readFileSync(DATA_FILE, 'utf8');
-            const parsedData = JSON.parse(data);
-            return new Map(Object.entries(parsedData));
-        }
+        await db.init();
+        console.log('✅ База данных SQLite инициализирована');
     } catch (error) {
-        console.error('Error loading user data:', error);
-    }
-    return new Map();
-}
-
-// Сохранение данных пользователей в файл
-function saveUserData(userDataMap) {
-    try {
-        const dataObject = Object.fromEntries(userDataMap);
-        fs.writeFileSync(DATA_FILE, JSON.stringify(dataObject, null, 2));
-        console.log('User data saved successfully');
-    } catch (error) {
-        console.error('Error saving user data:', error);
+        console.error('❌ Ошибка инициализации базы данных:', error);
+        process.exit(1);
     }
 }
-
-// Загружаем данные при запуске сервера
-const userData = loadUserData();
-console.log(`Loaded data for ${userData.size} users`);
 
 // Получение данных пользователя
 app.post('/api/user/data', verifyTelegramData, async (req, res) => {
     try {
-        const { user_id } = req.body;
+        const { user_id, telegram_name } = req.body;
         
-        // Получаем данные пользователя
-        const user = userData.get(user_id) || {
-            stars_balance: 100,
-            inventory: []
-        };
+        // Получаем данные пользователя из базы данных
+        let user = await db.getUser(user_id);
+        
+        if (!user) {
+            // Создаем нового пользователя если его нет
+            user = await db.upsertUser(user_id, telegram_name || 'Unknown User', 100, []);
+        }
         
         res.json({
-            stars_balance: user.stars_balance,
-            inventory: user.inventory
+            stars_balance: user.balance,
+            inventory: user.inventory || []
         });
     } catch (error) {
         console.error('Error getting user data:', error);
@@ -78,19 +63,12 @@ app.post('/api/user/data', verifyTelegramData, async (req, res) => {
 // Сохранение данных пользователя
 app.post('/api/user/save', verifyTelegramData, async (req, res) => {
     try {
-        const { user_id, stars_balance, inventory } = req.body;
+        const { user_id, telegram_name, stars_balance, inventory } = req.body;
         
         console.log(`Saving user data for ${user_id}:`, { stars_balance, inventory });
         
-        // Сохраняем данные пользователя
-        userData.set(user_id, {
-            stars_balance: stars_balance,
-            inventory: inventory,
-            last_updated: new Date().toISOString()
-        });
-        
-        // Автоматически сохраняем в файл
-        saveUserData(userData);
+        // Сохраняем данные пользователя в базу данных
+        await db.upsertUser(user_id, telegram_name || 'Unknown User', stars_balance, inventory || []);
         
         res.json({ success: true });
     } catch (error) {
@@ -108,11 +86,11 @@ app.post('/api/prize/claim', verifyTelegramData, async (req, res) => {
         
         let result = { success: true };
         
-        // Обновляем данные пользователя при получении приза
-        const user = userData.get(user_id) || {
-            stars_balance: 100,
-            inventory: []
-        };
+        // Получаем данные пользователя из базы данных
+        let user = await db.getUser(user_id);
+        if (!user) {
+            user = await db.upsertUser(user_id, 'Unknown User', 100, []);
+        }
         
         switch (prize.type) {
             case 'gift':
@@ -129,22 +107,96 @@ app.post('/api/prize/claim', verifyTelegramData, async (req, res) => {
                 
             case 'stars':
                 // Добавляем звезды на баланс
-                user.stars_balance += prize.stars_value || 0;
-                console.log(`Added ${prize.stars_value} stars to user ${user_id}. New balance: ${user.stars_balance}`);
+                const newBalance = user.balance + (prize.stars_value || 0);
+                await db.updateBalance(user_id, newBalance);
+                console.log(`Added ${prize.stars_value} stars to user ${user_id}. New balance: ${newBalance}`);
                 break;
         }
-        
-        // Обновляем данные пользователя
-        user.last_updated = new Date().toISOString();
-        userData.set(user_id, user);
-        
-        // Сохраняем в файл
-        saveUserData(userData);
         
         res.json(result);
     } catch (error) {
         console.error('Error claiming prize:', error);
         res.status(500).json({ error: 'Failed to claim prize' });
+    }
+});
+
+// Получение всех пользователей (для администрирования)
+app.get('/api/admin/users', async (req, res) => {
+    try {
+        const users = await db.getAllUsers();
+        res.json({
+            success: true,
+            users: users,
+            total: users.length
+        });
+    } catch (error) {
+        console.error('Error getting all users:', error);
+        res.status(500).json({ error: 'Failed to get users' });
+    }
+});
+
+// Получение конкретного пользователя по ID
+app.get('/api/admin/users/:userId', async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        const user = await db.getUser(userId);
+        
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        res.json({
+            success: true,
+            user: user
+        });
+    } catch (error) {
+        console.error('Error getting user:', error);
+        res.status(500).json({ error: 'Failed to get user' });
+    }
+});
+
+// Обновление баланса пользователя
+app.post('/api/admin/users/:userId/balance', async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        const { balance } = req.body;
+        
+        if (typeof balance !== 'number' || balance < 0) {
+            return res.status(400).json({ error: 'Invalid balance value' });
+        }
+        
+        await db.updateBalance(userId, balance);
+        
+        res.json({
+            success: true,
+            message: `Balance updated to ${balance} for user ${userId}`
+        });
+    } catch (error) {
+        console.error('Error updating balance:', error);
+        res.status(500).json({ error: 'Failed to update balance' });
+    }
+});
+
+// Добавление к балансу пользователя
+app.post('/api/admin/users/:userId/add-balance', async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        const { amount } = req.body;
+        
+        if (typeof amount !== 'number') {
+            return res.status(400).json({ error: 'Invalid amount value' });
+        }
+        
+        const result = await db.addToBalance(userId, amount);
+        
+        res.json({
+            success: true,
+            message: `Added ${amount} to balance for user ${userId}`,
+            newBalance: result.newBalance
+        });
+    } catch (error) {
+        console.error('Error adding to balance:', error);
+        res.status(500).json({ error: 'Failed to add to balance' });
     }
 });
 
@@ -433,47 +485,56 @@ app.get('/test', (req, res) => {
 });
 
 // Информация о сервере
-app.get('/api/info', (req, res) => {
-    res.json({
-        name: 'Кейс Мастер API',
-        version: '1.0.0',
-        status: 'running',
-        timestamp: new Date().toISOString(),
-        webhook_url: process.env.WEBHOOK_URL || 'https://web-production-877f.up.railway.app/bot/webhook',
-        webapp_url: process.env.WEBAPP_URL || 'https://web-production-877f.up.railway.app/',
-        bot_token: BOT_TOKEN ? 'configured' : 'missing',
-        total_users: userData.size,
-        data_file_exists: fs.existsSync(DATA_FILE)
-    });
+app.get('/api/info', async (req, res) => {
+    try {
+        const stats = await db.getStats();
+        res.json({
+            name: 'Кейс Мастер API',
+            version: '1.0.0',
+            status: 'running',
+            timestamp: new Date().toISOString(),
+            webhook_url: process.env.WEBHOOK_URL || 'https://web-production-877f.up.railway.app/bot/webhook',
+            webapp_url: process.env.WEBAPP_URL || 'https://web-production-877f.up.railway.app/',
+            bot_token: BOT_TOKEN ? 'configured' : 'missing',
+            database: 'SQLite',
+            total_users: stats.total_users || 0,
+            total_balance: stats.total_balance || 0,
+            avg_balance: stats.avg_balance || 0
+        });
+    } catch (error) {
+        console.error('Error getting server info:', error);
+        res.status(500).json({ error: 'Failed to get server info' });
+    }
 });
 
 // Статистика пользователей (для администрирования)
-app.get('/api/admin/stats', (req, res) => {
+app.get('/api/admin/stats', async (req, res) => {
     try {
-        const stats = {
-            total_users: userData.size,
-            users_with_data: 0,
-            total_stars: 0,
+        const stats = await db.getStats();
+        const users = await db.getAllUsers();
+        
+        const detailedStats = {
+            total_users: stats.total_users || 0,
+            users_with_balance: stats.users_with_balance || 0,
+            total_stars: stats.total_balance || 0,
+            avg_balance: stats.avg_balance || 0,
             total_inventory_items: 0,
             users: []
         };
 
-        userData.forEach((userData, userId) => {
-            if (userData.stars_balance || userData.inventory?.length > 0) {
-                stats.users_with_data++;
-                stats.total_stars += userData.stars_balance || 0;
-                stats.total_inventory_items += userData.inventory?.length || 0;
-                
-                stats.users.push({
-                    user_id: userId,
-                    stars_balance: userData.stars_balance,
-                    inventory_count: userData.inventory?.length || 0,
-                    last_updated: userData.last_updated
-                });
-            }
+        users.forEach(user => {
+            detailedStats.total_inventory_items += user.inventory?.length || 0;
+            detailedStats.users.push({
+                user_id: user.user_id,
+                telegram_name: user.telegram_name,
+                stars_balance: user.balance,
+                inventory_count: user.inventory?.length || 0,
+                created_at: user.created_at,
+                updated_at: user.updated_at
+            });
         });
 
-        res.json(stats);
+        res.json(detailedStats);
     } catch (error) {
         console.error('Error getting stats:', error);
         res.status(500).json({ error: 'Failed to get stats' });
@@ -482,16 +543,30 @@ app.get('/api/admin/stats', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
-    console.log(`🚀 Сервер запущен на порту ${PORT}`);
-    console.log(`📱 Откройте http://localhost:${PORT} для тестирования`);
-    console.log(`🧪 Тестовая версия: http://localhost:${PORT}/test`);
-    console.log(`📊 API информация: http://localhost:${PORT}/api/info`);
-    console.log(`📈 Статистика: http://localhost:${PORT}/api/admin/stats`);
-    console.log(`💾 Данные пользователей: ${userData.size} пользователей загружено`);
-    console.log(`📁 Файл данных: ${DATA_FILE}`);
-    console.log('');
-    console.log('✅ Данные пользователей сохраняются автоматически!');
-});
+// Инициализация и запуск сервера
+async function startServer() {
+    try {
+        // Инициализируем базу данных
+        await initializeDatabase();
+        
+        // Запускаем сервер
+        app.listen(PORT, () => {
+            console.log(`🚀 Сервер запущен на порту ${PORT}`);
+            console.log(`📱 Откройте http://localhost:${PORT} для тестирования`);
+            console.log(`🧪 Тестовая версия: http://localhost:${PORT}/test`);
+            console.log(`📊 API информация: http://localhost:${PORT}/api/info`);
+            console.log(`📈 Статистика: http://localhost:${PORT}/api/admin/stats`);
+            console.log(`💾 База данных: SQLite (users.db)`);
+            console.log('');
+            console.log('✅ База данных SQLite готова к работе!');
+        });
+    } catch (error) {
+        console.error('❌ Ошибка запуска сервера:', error);
+        process.exit(1);
+    }
+}
+
+// Запускаем сервер
+startServer();
 
 module.exports = app;
