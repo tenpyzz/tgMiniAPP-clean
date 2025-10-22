@@ -199,6 +199,8 @@ function showAdminPanel() {
                         <input type="number" id="balance-amount" placeholder="Количество звезд" class="admin-input">
                         <button onclick="setUserBalance()" class="admin-btn">💎 Установить баланс</button>
                         <button onclick="addUserBalance()" class="admin-btn">➕ Добавить звезды</button>
+                        <button onclick="setMyBalance()" class="admin-btn">⭐ Установить МОЙ баланс</button>
+                        <button onclick="addMyBalance()" class="admin-btn">➕ Добавить МНЕ звезды</button>
                         <button onclick="getUserInfo()" class="admin-btn">ℹ️ Информация о пользователе</button>
                     </div>
                 </div>
@@ -1979,7 +1981,15 @@ async function loadUserData() {
         // ИСПРАВЛЕНИЕ: Не сбрасываем баланс на 100, если сервер вернул null/undefined
         // Сохраняем текущий баланс, если серверные данные некорректны
         if (data.stars_balance !== null && data.stars_balance !== undefined && data.stars_balance >= 0) {
-            userStars = data.stars_balance;
+            // ДОПОЛНИТЕЛЬНАЯ ЗАЩИТА: Если мы админ и у нас уже есть баланс больше 100,
+            // не сбрасываем его на серверное значение, если серверное значение меньше
+            if (isAdmin && userStars > 100 && data.stars_balance < userStars) {
+                console.log('🔧 АДМИН: Защита от сброса баланса - сохраняем текущий:', userStars);
+                console.log('🔧 АДМИН: Серверное значение:', data.stars_balance, 'Текущее:', userStars);
+                // Не меняем userStars, оставляем текущий
+            } else {
+                userStars = data.stars_balance;
+            }
         } else {
             console.log('⚠️ Сервер вернул некорректный баланс, сохраняем текущий:', userStars);
             // Если текущий баланс 0 и это первая загрузка, устанавливаем 100
@@ -2101,6 +2111,19 @@ window.forceSaveBalance = function() {
     console.log('💾 БАЛАНС ПРИНУДИТЕЛЬНО СОХРАНЕН:', userStars);
 };
 
+// Функция принудительного обновления баланса с сервера
+window.forceLoadBalance = async function() {
+    console.log('🔄 ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ БАЛАНСА с сервера');
+    const success = await loadUserData();
+    if (success) {
+        showNotification(`Баланс обновлен с сервера: ${userStars}`, 'success');
+        console.log('✅ БАЛАНС ОБНОВЛЕН С СЕРВЕРА:', userStars);
+    } else {
+        showNotification('Ошибка обновления баланса с сервера', 'error');
+        console.log('❌ ОШИБКА ОБНОВЛЕНИЯ БАЛАНСА');
+    }
+};
+
 // Экспорт функций для тестирования
 window.userStars = userStars;
 window.userInventory = userInventory;
@@ -2208,6 +2231,98 @@ window.exitFullscreenMode = function() {
 
 // ==================== АДМИНСКИЕ ФУНКЦИИ ====================
 
+// Установка баланса для текущего пользователя (админа)
+async function setMyBalance() {
+    if (!isAdmin) {
+        showNotification('❌ Доступ запрещен', 'error');
+        return;
+    }
+    
+    const amount = parseInt(document.getElementById('balance-amount').value);
+    
+    if (isNaN(amount) || amount < 0) {
+        showNotification('❌ Введите корректное количество звезд', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/admin/users/' + currentUserId + '/balance', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                balance: amount,
+                user_id: currentUserId
+            })
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            
+            // Обновляем локальный баланс
+            userStars = amount;
+            updateStarsDisplay();
+            
+            showNotification(`✅ Ваш баланс установлен: ${amount} звезд`, 'success');
+            logAdminAction(`Установлен собственный баланс ${amount}`);
+            console.log(`🔧 АДМИН: Собственный баланс установлен на ${amount}`);
+        } else {
+            throw new Error('Ошибка сервера');
+        }
+    } catch (error) {
+        console.error('Ошибка установки собственного баланса:', error);
+        showNotification('❌ Ошибка установки баланса', 'error');
+        logAdminAction(`ОШИБКА: Не удалось установить собственный баланс`);
+    }
+}
+
+// Добавление к балансу текущего пользователя (админа)
+async function addMyBalance() {
+    if (!isAdmin) {
+        showNotification('❌ Доступ запрещен', 'error');
+        return;
+    }
+    
+    const amount = parseInt(document.getElementById('balance-amount').value);
+    
+    if (isNaN(amount)) {
+        showNotification('❌ Введите корректное количество звезд', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/admin/users/' + currentUserId + '/add-balance', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                amount: amount,
+                user_id: currentUserId
+            })
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            
+            // Обновляем локальный баланс
+            userStars = result.newBalance;
+            updateStarsDisplay();
+            
+            showNotification(`✅ Добавлено ${amount} звезд. Новый баланс: ${result.newBalance}`, 'success');
+            logAdminAction(`Добавлено ${amount} звезд к собственному балансу. Новый баланс: ${result.newBalance}`);
+            console.log(`🔧 АДМИН: К собственному балансу добавлено ${amount}, новый баланс: ${result.newBalance}`);
+        } else {
+            throw new Error('Ошибка сервера');
+        }
+    } catch (error) {
+        console.error('Ошибка добавления к собственному балансу:', error);
+        showNotification('❌ Ошибка добавления к балансу', 'error');
+        logAdminAction(`ОШИБКА: Не удалось добавить к собственному балансу`);
+    }
+}
+
 // Установка баланса пользователя
 async function setUserBalance() {
     if (!isAdmin) {
@@ -2239,6 +2354,13 @@ async function setUserBalance() {
             const result = await response.json();
             showNotification(`✅ Баланс пользователя ${userId} установлен: ${amount} звезд`, 'success');
             logAdminAction(`Установлен баланс ${amount} для пользователя ${userId}`);
+            
+            // Если устанавливаем баланс для текущего пользователя, обновляем локальный баланс
+            if (userId === currentUserId) {
+                userStars = amount;
+                updateStarsDisplay();
+                console.log(`🔧 АДМИН: Локальный баланс обновлен на ${amount}`);
+            }
         } else {
             throw new Error('Ошибка сервера');
         }
@@ -2280,6 +2402,13 @@ async function addUserBalance() {
             const result = await response.json();
             showNotification(`✅ Добавлено ${amount} звезд пользователю ${userId}. Новый баланс: ${result.newBalance}`, 'success');
             logAdminAction(`Добавлено ${amount} звезд пользователю ${userId}. Новый баланс: ${result.newBalance}`);
+            
+            // Если добавляем баланс для текущего пользователя, обновляем локальный баланс
+            if (userId === currentUserId) {
+                userStars = result.newBalance;
+                updateStarsDisplay();
+                console.log(`🔧 АДМИН: Локальный баланс обновлен на ${result.newBalance}`);
+            }
         } else {
             throw new Error('Ошибка сервера');
         }
