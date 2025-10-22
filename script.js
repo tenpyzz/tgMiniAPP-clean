@@ -114,14 +114,22 @@ function setupEventListeners() {
         });
     });
     
-    // Обработчик для кнопки покупки звезд
-    document.getElementById('buy-stars-btn').addEventListener('click', function() {
-        buyStars();
+    // Обработчики для вкладок
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tabName = this.dataset.tab;
+            switchTab(tabName);
+        });
     });
     
     // Обработчик для закрытия модального окна
     document.getElementById('close-modal').addEventListener('click', function() {
         closePrizeModal();
+    });
+    
+    // Обработчик для кнопки "Добавить в инвентарь"
+    document.getElementById('add-to-inventory-btn').addEventListener('click', function() {
+        addToInventory();
     });
     
     // Обработчик для кнопки "Забрать приз"
@@ -132,6 +140,25 @@ function setupEventListeners() {
 
 // Глобальная переменная для хранения цены текущего кейса
 let currentCasePrice = 0;
+
+// Глобальная переменная для хранения текущего приза
+let currentPrize = null;
+
+// Переключение вкладок
+function switchTab(tabName) {
+    // Убираем активный класс со всех вкладок и панелей
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+    
+    // Активируем выбранную вкладку и панель
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    document.getElementById(`${tabName}-tab`).classList.add('active');
+    
+    // Если переключаемся на инвентарь, обновляем его отображение
+    if (tabName === 'inventory') {
+        updateInventoryDisplay();
+    }
+}
 
 // Открытие кейса
 async function openCase(caseType, price) {
@@ -155,17 +182,62 @@ async function openCase(caseType, price) {
     
     // Получаем приз
     const prize = getRandomPrize(caseType);
+    currentPrize = prize;
     
-    // Добавляем приз в инвентарь
-    userInventory.push(prize);
-    
-    // Сохраняем данные
-    saveUserData();
-    
-    // Показываем приз
+    // Показываем приз (НЕ добавляем в инвентарь сразу)
     showPrize(prize);
     
     isOpening = false;
+    
+    // Показываем модальное окно с призом сразу после анимации
+    setTimeout(() => {
+        // Восстанавливаем интерфейс
+        document.body.classList.remove('case-opening');
+        const openingArea = document.getElementById('opening-area');
+        openingArea.classList.remove('fullscreen');
+        openingArea.style.display = 'none';
+        
+        // Скрываем кнопку выхода
+        const exitBtn = document.getElementById('exit-fullscreen-btn');
+        exitBtn.style.display = 'none';
+        
+        // Сбрасываем анимацию кейса
+        const caseBox = document.getElementById('case-box');
+        caseBox.className = 'case-box';
+        caseBox.style.animation = '';
+        
+        // Сбрасываем стили кейса
+        const caseLid = caseBox.querySelector('.case-lid');
+        const caseBody = caseBox.querySelector('.case-body');
+        if (caseLid) caseLid.style.transform = '';
+        if (caseLid) caseLid.style.background = '';
+        if (caseBody) caseBody.style.background = '';
+        
+        // Скрываем показ приза
+        const prizeReveal = document.getElementById('prize-reveal');
+        prizeReveal.classList.remove('show');
+        
+        // Очищаем эффекты редкости
+        const rarityEffects = prizeReveal.querySelectorAll('.rarity-effect');
+        rarityEffects.forEach(effect => effect.remove());
+        
+        // Сбрасываем лучи света
+        const lightRays = document.querySelector('.light-rays');
+        if (lightRays) {
+            lightRays.classList.remove('active');
+            lightRays.style.animationDuration = '';
+        }
+        
+        // Очищаем частицы
+        const particlesContainer = document.getElementById('particles-container');
+        if (particlesContainer) {
+            particlesContainer.innerHTML = '';
+        }
+        
+        // Показываем модальное окно
+        const rarity = determinePrizeRarity(prize);
+        showPrizeModal(prize, rarity);
+    }, 1000);
 }
 
 // Анимация открытия кейса в стиле CS:GO
@@ -255,18 +327,22 @@ function setupCaseForType(caseType, caseBox) {
         case 'bronze':
             caseLid.style.background = 'linear-gradient(135deg, #cd7f32, #b8860b, #8b4513)';
             caseBody.style.background = 'linear-gradient(135deg, #cd7f32, #b8860b, #8b4513)';
+            caseBox.setAttribute('data-case-icon', '📦');
             break;
         case 'silver':
             caseLid.style.background = 'linear-gradient(135deg, #c0c0c0, #a8a8a8, #808080)';
             caseBody.style.background = 'linear-gradient(135deg, #c0c0c0, #a8a8a8, #808080)';
+            caseBox.setAttribute('data-case-icon', '💼');
             break;
         case 'gold':
             caseLid.style.background = 'linear-gradient(135deg, #ffd700, #ffb347, #ff8c00)';
             caseBody.style.background = 'linear-gradient(135deg, #ffd700, #ffb347, #ff8c00)';
+            caseBox.setAttribute('data-case-icon', '🏆');
             break;
         case 'diamond':
             caseLid.style.background = 'linear-gradient(135deg, #b9f2ff, #87ceeb, #4682b4)';
             caseBody.style.background = 'linear-gradient(135deg, #b9f2ff, #87ceeb, #4682b4)';
+            caseBox.setAttribute('data-case-icon', '💎');
             break;
     }
 }
@@ -461,10 +537,7 @@ function showPrize(prize) {
         }
     }, 500);
     
-    // Через 3 секунды показываем модальное окно
-    setTimeout(() => {
-        showPrizeModal(prize, rarity);
-    }, 3000);
+    // Модальное окно теперь показывается отдельно в функции openCase
 }
 
 // Определение редкости приза
@@ -711,12 +784,43 @@ function closePrizeModal() {
     if (particlesContainer) {
         particlesContainer.innerHTML = '';
     }
+    
+    // Сбрасываем текущий приз
+    currentPrize = null;
+}
+
+// Добавить в инвентарь
+function addToInventory() {
+    if (!currentPrize) {
+        showNotification('Нет приза для добавления', 'error');
+        return;
+    }
+    
+    // Добавляем приз в инвентарь
+    userInventory.push(currentPrize);
+    
+    // Сохраняем данные
+    saveUserData();
+    
+    // Обновляем отображение инвентаря
+    updateInventoryDisplay();
+    
+    // Показываем уведомление
+    showNotification('Приз добавлен в инвентарь!', 'success');
+    
+    // Закрываем модальное окно
+    closePrizeModal();
+    
+    // Переключаемся на вкладку инвентаря
+    switchTab('inventory');
 }
 
 // Забрать приз
 async function claimPrize() {
-    const modal = document.getElementById('prize-modal');
-    const prize = JSON.parse(modal.dataset.prize);
+    if (!currentPrize) {
+        showNotification('Нет приза для получения', 'error');
+        return;
+    }
     
     try {
         // Отправляем запрос на сервер для обработки приза
@@ -727,13 +831,19 @@ async function claimPrize() {
             },
             body: JSON.stringify({
                 user_id: tg?.initDataUnsafe?.user?.id || 'test_user',
-                prize: prize
+                prize: currentPrize
             })
         });
         
         if (response.ok) {
             // Отмечаем приз как полученный
-            prize.claimed = true;
+            currentPrize.claimed = true;
+            
+            // Добавляем в инвентарь
+            userInventory.push(currentPrize);
+            
+            // Сохраняем данные
+            saveUserData();
             
             // Обновляем инвентарь
             updateInventoryDisplay();
@@ -743,6 +853,9 @@ async function claimPrize() {
             
             // Закрываем модальное окно
             closePrizeModal();
+            
+            // Переключаемся на вкладку инвентаря
+            switchTab('inventory');
         } else {
             throw new Error('Ошибка при получении приза');
         }
@@ -753,21 +866,22 @@ async function claimPrize() {
 }
 
 // Покупка звезд
-function buyStars() {
+function buyStars(amount = 100) {
     if (tg && tg.showPopup) {
         // В реальном приложении здесь будет интеграция с Telegram Stars
         tg.showPopup({
             title: 'Покупка звезд',
-            message: 'Функция покупки звезд будет доступна в полной версии приложения',
+            message: `Функция покупки ${amount} звезд будет доступна в полной версии приложения`,
             buttons: [
                 { id: 'ok', text: 'OK', type: 'ok' }
             ]
         });
     } else {
         // Для тестирования добавляем звезды
-        userStars += 100;
+        userStars += amount;
         updateStarsDisplay();
-        showNotification('Добавлено 100 звезд (тестовый режим)', 'success');
+        saveUserData();
+        showNotification(`Добавлено ${amount} звезд (тестовый режим)`, 'success');
     }
 }
 

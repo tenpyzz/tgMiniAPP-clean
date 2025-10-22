@@ -24,59 +24,90 @@
 
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Case Selection -->
-            <section class="case-selection">
-                <h2>Выберите кейс</h2>
-                <div class="cases-grid">
-                    <div class="case-item" data-case="bronze" data-price="10">
-                        <div class="case-image bronze-case">
-                            <div class="case-icon bronze-icon"></div>
-                            <div class="case-glow"></div>
-                        </div>
-                        <h3>Бронзовый кейс</h3>
-                        <p class="case-price">10 ⭐</p>
-                        <div class="case-prizes">
-                            <span>Подарки Telegram</span>
-                        </div>
-                    </div>
+            <!-- Tab Navigation -->
+            <div class="tab-navigation">
+                <button class="tab-btn active" data-tab="cases">🎁 Кейсы</button>
+                <button class="tab-btn" data-tab="inventory">📦 Инвентарь</button>
+                <button class="tab-btn" data-tab="shop">🛒 Магазин</button>
+            </div>
 
-                    <div class="case-item" data-case="silver" data-price="25">
-                        <div class="case-image silver-case">
-                            <div class="case-icon silver-icon"></div>
-                            <div class="case-glow"></div>
+            <!-- Tab Content -->
+            <div class="tab-content">
+                <!-- Case Selection Tab -->
+                <div class="tab-panel active" id="cases-tab">
+                    <div class="cases-grid">
+                        <div class="case-item" data-case="bronze" data-price="10">
+                            <div class="case-image bronze-case">
+                                <div class="case-icon bronze-icon"></div>
+                                <div class="case-glow"></div>
+                            </div>
+                            <h3>Бронзовый</h3>
+                            <p class="case-price">10 ⭐</p>
                         </div>
-                        <h3>Серебряный кейс</h3>
-                        <p class="case-price">25 ⭐</p>
-                        <div class="case-prizes">
-                            <span>Подарки + Стикеры</span>
-                        </div>
-                    </div>
 
-                    <div class="case-item" data-case="gold" data-price="50">
-                        <div class="case-image gold-case">
-                            <div class="case-icon gold-icon"></div>
-                            <div class="case-glow"></div>
+                        <div class="case-item" data-case="silver" data-price="25">
+                            <div class="case-image silver-case">
+                                <div class="case-icon silver-icon"></div>
+                                <div class="case-glow"></div>
+                            </div>
+                            <h3>Серебряный</h3>
+                            <p class="case-price">25 ⭐</p>
                         </div>
-                        <h3>Золотой кейс</h3>
-                        <p class="case-price">50 ⭐</p>
-                        <div class="case-prizes">
-                            <span>Премиум подписка</span>
-                        </div>
-                    </div>
 
-                    <div class="case-item" data-case="diamond" data-price="100">
-                        <div class="case-image diamond-case">
-                            <div class="case-icon diamond-icon"></div>
-                            <div class="case-glow"></div>
+                        <div class="case-item" data-case="gold" data-price="50">
+                            <div class="case-image gold-case">
+                                <div class="case-icon gold-icon"></div>
+                                <div class="case-glow"></div>
+                            </div>
+                            <h3>Золотой</h3>
+                            <p class="case-price">50 ⭐</p>
                         </div>
-                        <h3>Алмазный кейс</h3>
-                        <p class="case-price">100 ⭐</p>
-                        <div class="case-prizes">
-                            <span>Эксклюзивные призы</span>
+
+                        <div class="case-item" data-case="diamond" data-price="100">
+                            <div class="case-image diamond-case">
+                                <div class="case-icon diamond-icon"></div>
+                                <div class="case-glow"></div>
+                            </div>
+                            <h3>Алмазный</h3>
+                            <p class="case-price">100 ⭐</p>
                         </div>
                     </div>
                 </div>
-            </section>
+
+                <!-- Inventory Tab -->
+                <div class="tab-panel" id="inventory-tab">
+                    <div class="inventory-grid" id="inventory-grid">
+                        <!-- Призы будут добавляться динамически -->
+                    </div>
+                </div>
+
+                <!-- Shop Tab -->
+                <div class="tab-panel" id="shop-tab">
+                    <div class="shop-content">
+                        <h3>🛒 Магазин звезд</h3>
+                        <div class="shop-items">
+                            <div class="shop-item">
+                                <div class="shop-icon">⭐</div>
+                                <h4>100 звезд</h4>
+                                <p>Базовый пакет</p>
+                                <button class="buy-btn" onclick="buyStars(100)">Купить</button>
+                            </div>
+                            <div class="shop-item">
+                                <div class="shop-icon">⭐⭐</div>
+                                <h4>500 звезд</h4>
+                                <p>Популярный пакет</p>
+                                <button class="buy-btn" onclick="buyStars(500)">Купить</button>
+                            </div>
+                            <div class="shop-item">
+                                <div class="shop-icon">⭐⭐⭐</div>
+                                <h4>1000 звезд</h4>
+                                <p>Премиум пакет</p>
+                                <button class="buy-btn" onclick="buyStars(1000)">Купить</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <!-- Opening Animation Area -->
             <section class="opening-area" id="opening-area" style="display: none;">
@@ -122,21 +153,7 @@
                 </div>
             </section>
 
-            <!-- Inventory -->
-            <section class="inventory">
-                <h2>Мои призы</h2>
-                <div class="inventory-grid" id="inventory-grid">
-                    <!-- Призы будут добавляться динамически -->
-                </div>
-            </section>
         </main>
-
-        <!-- Footer -->
-        <footer class="footer">
-            <button class="buy-stars-btn" id="buy-stars-btn">
-                Купить звезды
-            </button>
-        </footer>
     </div>
 
     <!-- Loading Overlay -->
@@ -157,7 +174,10 @@
                     <h3 id="modal-prize-name"></h3>
                     <p id="modal-prize-description"></p>
                 </div>
-                <button class="claim-prize-btn" id="claim-prize-btn">Забрать приз</button>
+                <div class="modal-buttons">
+                    <button class="add-to-inventory-btn" id="add-to-inventory-btn">📦 Добавить в инвентарь</button>
+                    <button class="claim-prize-btn" id="claim-prize-btn">✅ Забрать приз</button>
+                </div>
             </div>
         </div>
     </div>
