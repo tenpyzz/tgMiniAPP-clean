@@ -5,6 +5,63 @@ const tg = window.Telegram.WebApp;
 let userStars = 100; // Начальный баланс звезд
 let userInventory = []; // Инвентарь пользователя
 let isOpening = false; // Флаг открытия кейса
+let currentUserId = null; // ID текущего пользователя
+
+// Функция для получения userId
+function getUserId() {
+    // Сначала пытаемся получить из Telegram WebApp
+    if (tg?.initDataUnsafe?.user?.id) {
+        return tg.initDataUnsafe.user.id.toString();
+    }
+    
+    // Если не получилось, пытаемся получить из initData
+    if (tg?.initData) {
+        try {
+            const urlParams = new URLSearchParams(tg.initData);
+            const userParam = urlParams.get('user');
+            if (userParam) {
+                const userData = JSON.parse(decodeURIComponent(userParam));
+                if (userData.id) {
+                    return userData.id.toString();
+                }
+            }
+        } catch (e) {
+            console.log('Ошибка парсинга initData:', e);
+        }
+    }
+    
+    // Если ничего не получилось, генерируем уникальный ID на основе времени и случайного числа
+    const fallbackId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    console.log('⚠️ Не удалось получить userId от Telegram, используем fallback:', fallbackId);
+    return fallbackId;
+}
+
+// Функция для получения имени пользователя
+function getUserName() {
+    // Сначала пытаемся получить из Telegram WebApp
+    if (tg?.initDataUnsafe?.user?.first_name) {
+        return tg.initDataUnsafe.user.first_name;
+    }
+    
+    // Если не получилось, пытаемся получить из initData
+    if (tg?.initData) {
+        try {
+            const urlParams = new URLSearchParams(tg.initData);
+            const userParam = urlParams.get('user');
+            if (userParam) {
+                const userData = JSON.parse(decodeURIComponent(userParam));
+                if (userData.first_name) {
+                    return userData.first_name;
+                }
+            }
+        } catch (e) {
+            console.log('Ошибка парсинга initData для имени:', e);
+        }
+    }
+    
+    // Если ничего не получилось, используем fallback
+    return 'Unknown User';
+}
 
 // Конфигурация кейсов с улучшенной системой редкости
 const caseConfig = {
@@ -149,6 +206,16 @@ document.addEventListener('DOMContentLoaded', async function() {
             // Можно использовать user.id для идентификации
         }
     }
+    
+    // Инициализируем userId
+    currentUserId = getUserId();
+    console.log('🆔 Текущий userId:', currentUserId);
+    console.log('👤 Имя пользователя:', getUserName());
+    console.log('📱 Telegram WebApp данные:', {
+        initData: tg?.initData,
+        initDataUnsafe: tg?.initDataUnsafe,
+        user: tg?.initDataUnsafe?.user
+    });
     
     // Сбрасываем все флаги при загрузке приложения
     isOpening = false;
@@ -1262,7 +1329,7 @@ async function claimPrize() {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                user_id: tg?.initDataUnsafe?.user?.id || 'test_user',
+                user_id: currentUserId,
                 prize: currentPrize
             })
         });
@@ -1417,8 +1484,8 @@ function hideLoadingOverlay() {
 async function loadInventoryOnly() {
     try {
         const requestData = {
-            user_id: tg?.initDataUnsafe?.user?.id || 'test_user',
-            telegram_name: tg?.initDataUnsafe?.user?.first_name || 'Unknown User',
+            user_id: currentUserId,
+            telegram_name: getUserName(),
             init_data: tg?.initData || 'test_data'
         };
         
@@ -1494,10 +1561,12 @@ async function loadUserData() {
         }
         
         const requestData = {
-            user_id: tg?.initDataUnsafe?.user?.id || 'test_user',
-            telegram_name: tg?.initDataUnsafe?.user?.first_name || 'Unknown User',
+            user_id: currentUserId,
+            telegram_name: getUserName(),
             init_data: tg?.initData || 'test_data'
         };
+        
+        console.log('📥 Загружаем данные пользователя:', requestData);
         
         console.log('🔄 Загружаем данные пользователя:', requestData);
         console.log('📱 Telegram WebApp данные:', {
@@ -1578,18 +1647,22 @@ async function loadUserData() {
 // Сохранение данных пользователя
 async function saveUserData() {
     try {
+        const requestData = {
+            user_id: currentUserId,
+            telegram_name: getUserName(),
+            stars_balance: userStars,
+            inventory: userInventory,
+            init_data: tg?.initData || 'test_data'
+        };
+        
+        console.log('💾 Сохраняем данные пользователя:', requestData);
+        
         const response = await fetch('/api/user/save', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                user_id: tg?.initDataUnsafe?.user?.id || 'test_user',
-                telegram_name: tg?.initDataUnsafe?.user?.first_name || 'Unknown User',
-                stars_balance: userStars,
-                inventory: userInventory,
-                init_data: tg?.initData || 'test_data'
-            })
+            body: JSON.stringify(requestData)
         });
         
         if (!response.ok) {
