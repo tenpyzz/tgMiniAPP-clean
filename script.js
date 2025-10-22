@@ -202,6 +202,7 @@ function showAdminPanel() {
                         <button onclick="setMyBalance()" class="admin-btn">⭐ Установить МОЙ баланс</button>
                         <button onclick="addMyBalance()" class="admin-btn">➕ Добавить МНЕ звезды</button>
                         <button onclick="getUserInfo()" class="admin-btn">ℹ️ Информация о пользователе</button>
+                        <button onclick="deleteUser()" class="admin-btn" style="background: #dc3545;">🗑️ Удалить пользователя</button>
                     </div>
                 </div>
                 <div class="admin-section">
@@ -216,6 +217,7 @@ function showAdminPanel() {
                     <h4>🔧 Система</h4>
                     <div class="admin-controls">
                         <button onclick="refreshData()" class="admin-btn">🔄 Обновить данные</button>
+                        <button onclick="deleteTestUsers()" class="admin-btn" style="background: #dc3545;">🗑️ Удалить тестовых пользователей</button>
                         <button onclick="clearAllData()" class="admin-btn">⚠️ Очистить все данные</button>
                     </div>
                 </div>
@@ -2314,6 +2316,56 @@ async function addMyBalance() {
     }
 }
 
+// Удаление пользователя
+async function deleteUser() {
+    if (!isAdmin) {
+        showNotification('❌ Доступ запрещен', 'error');
+        return;
+    }
+    
+    const userId = document.getElementById('target-user-id').value;
+    
+    if (!userId) {
+        showNotification('❌ Введите ID пользователя для удаления', 'error');
+        return;
+    }
+    
+    // Дополнительная проверка для тестовых пользователей
+    if (userId === 'test_user' || userId === 'test_user_123') {
+        if (!confirm(`⚠️ ВНИМАНИЕ! Вы собираетесь удалить тестового пользователя "${userId}" навсегда!\n\nЭто действие необратимо. Продолжить?`)) {
+            return;
+        }
+    } else {
+        if (!confirm(`⚠️ ВНИМАНИЕ! Вы собираетесь удалить пользователя "${userId}" навсегда!\n\nЭто действие необратимо. Продолжить?`)) {
+            return;
+        }
+    }
+    
+    try {
+        const response = await fetch('/api/admin/users/' + userId, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                user_id: currentUserId // Добавляем ID админа для проверки прав
+            })
+        });
+        
+        if (response.ok) {
+            showNotification(`✅ Пользователь ${userId} удален навсегда`, 'success');
+            logAdminAction(`Удален пользователь ${userId}`);
+            console.log(`🔧 АДМИН: Пользователь ${userId} удален`);
+        } else {
+            throw new Error('Ошибка сервера');
+        }
+    } catch (error) {
+        console.error('Ошибка удаления пользователя:', error);
+        showNotification('❌ Ошибка удаления пользователя', 'error');
+        logAdminAction(`ОШИБКА: Не удалось удалить пользователя ${userId}`);
+    }
+}
+
 // Установка баланса пользователя
 async function setUserBalance() {
     if (!isAdmin) {
@@ -2570,6 +2622,58 @@ async function createBackup() {
     }
 }
 
+
+// Удаление тестовых пользователей
+async function deleteTestUsers() {
+    if (!isAdmin) {
+        showNotification('❌ Доступ запрещен', 'error');
+        return;
+    }
+    
+    const testUsers = ['test_user', 'test_user_123'];
+    
+    if (!confirm(`⚠️ ВНИМАНИЕ! Вы собираетесь удалить всех тестовых пользователей навсегда!\n\nУдаляемые пользователи:\n- test_user\n- test_user_123\n\nЭто действие необратимо. Продолжить?`)) {
+        return;
+    }
+    
+    let deletedCount = 0;
+    let errorCount = 0;
+    
+    for (const userId of testUsers) {
+        try {
+            const response = await fetch('/api/admin/users/' + userId, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    user_id: currentUserId
+                })
+            });
+            
+            if (response.ok) {
+                deletedCount++;
+                console.log(`✅ Удален тестовый пользователь: ${userId}`);
+                logAdminAction(`Удален тестовый пользователь: ${userId}`);
+            } else {
+                errorCount++;
+                console.log(`❌ Ошибка удаления пользователя: ${userId}`);
+            }
+        } catch (error) {
+            errorCount++;
+            console.error(`Ошибка удаления пользователя ${userId}:`, error);
+        }
+    }
+    
+    if (deletedCount > 0) {
+        showNotification(`✅ Удалено тестовых пользователей: ${deletedCount}`, 'success');
+    }
+    if (errorCount > 0) {
+        showNotification(`❌ Ошибок при удалении: ${errorCount}`, 'error');
+    }
+    
+    logAdminAction(`Массовое удаление тестовых пользователей: удалено ${deletedCount}, ошибок ${errorCount}`);
+}
 
 // Очистка всех данных (только для админа)
 async function clearAllData() {
