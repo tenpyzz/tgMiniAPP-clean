@@ -1,5 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const fs = require('fs');
 
 class Database {
     constructor() {
@@ -27,7 +28,7 @@ class Database {
         return new Promise((resolve, reject) => {
             const createUsersTable = `
                 CREATE TABLE IF NOT EXISTS users (
-                    user_id INTEGER PRIMARY KEY,
+                    user_id TEXT PRIMARY KEY,
                     telegram_name TEXT NOT NULL,
                     balance INTEGER DEFAULT 100,
                     inventory TEXT DEFAULT '[]',
@@ -221,6 +222,71 @@ class Database {
                 reject(error);
             }
         });
+    }
+
+    // Создание резервной копии данных
+    async createBackup() {
+        try {
+            const users = await this.getAllUsers();
+            const backupData = {
+                timestamp: new Date().toISOString(),
+                users: users
+            };
+            
+            const backupPath = path.join(__dirname, 'backup_users.json');
+            fs.writeFileSync(backupPath, JSON.stringify(backupData, null, 2));
+            console.log('✅ Резервная копия создана:', backupPath);
+            return backupPath;
+        } catch (error) {
+            console.error('❌ Ошибка создания резервной копии:', error);
+            throw error;
+        }
+    }
+
+    // Восстановление из резервной копии
+    async restoreFromBackup(backupPath = null) {
+        try {
+            const backupFile = backupPath || path.join(__dirname, 'backup_users.json');
+            
+            if (!fs.existsSync(backupFile)) {
+                console.log('📁 Резервная копия не найдена');
+                return false;
+            }
+            
+            const backupData = JSON.parse(fs.readFileSync(backupFile, 'utf8'));
+            console.log(`📥 Восстанавливаем данные из резервной копии от ${backupData.timestamp}`);
+            
+            for (const user of backupData.users) {
+                await this.upsertUser(user.user_id, user.telegram_name, user.balance, user.inventory);
+            }
+            
+            console.log(`✅ Восстановлено ${backupData.users.length} пользователей`);
+            return true;
+        } catch (error) {
+            console.error('❌ Ошибка восстановления из резервной копии:', error);
+            throw error;
+        }
+    }
+
+    // Автоматическое создание резервной копии при обновлении данных
+    async updateUserWithBackup(userId, data) {
+        try {
+            // Обновляем данные
+            await this.updateUser(userId, data);
+            
+            // Создаем резервную копию каждые 10 обновлений
+            const backupCount = global.backupCount || 0;
+            global.backupCount = backupCount + 1;
+            
+            if (global.backupCount % 10 === 0) {
+                await this.createBackup();
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('❌ Ошибка обновления с резервным копированием:', error);
+            throw error;
+        }
     }
 
     // Закрытие соединения с базой данных

@@ -31,6 +31,16 @@ async function initializeDatabase() {
     try {
         await db.init();
         console.log('✅ База данных SQLite инициализирована');
+        
+        // Пытаемся восстановить данные из резервной копии
+        try {
+            await db.restoreFromBackup();
+        } catch (backupError) {
+            console.log('📁 Резервная копия не найдена или повреждена, начинаем с чистой базы');
+        }
+        
+        // Создаем начальную резервную копию
+        await db.createBackup();
     } catch (error) {
         console.error('❌ Ошибка инициализации базы данных:', error);
         process.exit(1);
@@ -86,8 +96,12 @@ app.post('/api/user/save', verifyTelegramData, async (req, res) => {
             full_body: req.body
         });
         
-        // Сохраняем данные пользователя в базу данных
-        await db.upsertUser(user_id, telegram_name || 'Unknown User', stars_balance, inventory || []);
+        // Сохраняем данные пользователя в базу данных с резервным копированием
+        await db.updateUserWithBackup(user_id, {
+            telegram_name: telegram_name || 'Unknown User',
+            balance: stars_balance,
+            inventory: inventory || []
+        });
         
         console.log(`✅ Данные пользователя ${user_id} сохранены успешно`);
         
@@ -564,6 +578,44 @@ app.get('/api/admin/stats', async (req, res) => {
     } catch (error) {
         console.error('Error getting stats:', error);
         res.status(500).json({ error: 'Failed to get stats' });
+    }
+});
+
+// Создание резервной копии
+app.post('/api/admin/backup', async (req, res) => {
+    try {
+        const backupPath = await db.createBackup();
+        res.json({ 
+            success: true, 
+            message: 'Резервная копия создана успешно',
+            backup_path: backupPath
+        });
+    } catch (error) {
+        console.error('Error creating backup:', error);
+        res.status(500).json({ error: 'Failed to create backup' });
+    }
+});
+
+// Восстановление из резервной копии
+app.post('/api/admin/restore', async (req, res) => {
+    try {
+        const { backup_path } = req.body;
+        const restored = await db.restoreFromBackup(backup_path);
+        
+        if (restored) {
+            res.json({ 
+                success: true, 
+                message: 'Данные восстановлены из резервной копии'
+            });
+        } else {
+            res.status(404).json({ 
+                success: false, 
+                message: 'Резервная копия не найдена'
+            });
+        }
+    } catch (error) {
+        console.error('Error restoring from backup:', error);
+        res.status(500).json({ error: 'Failed to restore from backup' });
     }
 });
 
