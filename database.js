@@ -291,20 +291,25 @@ class Database {
     // Автоматическое создание резервной копии при обновлении данных
     async updateUserWithBackup(userId, data) {
         try {
+            console.log(`🔄 REDEPLOY TEST - Обновляем пользователя ${userId} с данными:`, data);
+            
             // Обновляем данные
             await this.updateUser(userId, data);
+            console.log(`✅ REDEPLOY TEST - Пользователь ${userId} обновлен в базе данных`);
             
             // Создаем резервную копию каждые 10 обновлений
             const backupCount = global.backupCount || 0;
             global.backupCount = backupCount + 1;
+            console.log(`📊 REDEPLOY TEST - Счетчик резервных копий: ${global.backupCount}`);
             
             if (global.backupCount % 10 === 0) {
+                console.log(`💾 REDEPLOY TEST - Создаем резервную копию (каждые 10 обновлений)`);
                 await this.createBackup();
             }
             
             return true;
         } catch (error) {
-            console.error('❌ Ошибка обновления с резервным копированием:', error);
+            console.error('❌ REDEPLOY TEST - Ошибка обновления с резервным копированием:', error);
             throw error;
         }
     }

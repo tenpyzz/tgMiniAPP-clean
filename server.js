@@ -67,7 +67,7 @@ app.post('/api/user/data', verifyTelegramData, async (req, res) => {
     try {
         const { user_id, telegram_name } = req.body;
         
-        console.log('📥 Получен запрос данных пользователя:', {
+        console.log('📥 REDEPLOY TEST - Получен запрос данных пользователя:', {
             user_id,
             telegram_name,
             full_body: req.body
@@ -77,11 +77,17 @@ app.post('/api/user/data', verifyTelegramData, async (req, res) => {
         let user = await db.getUser(user_id);
         
         if (!user) {
-            console.log(`👤 Пользователь ${user_id} не найден, создаем нового`);
+            console.log(`👤 REDEPLOY TEST - Пользователь ${user_id} не найден, создаем нового`);
             // Создаем нового пользователя если его нет
             user = await db.upsertUser(user_id, telegram_name || 'Unknown User', 100, []);
+            console.log(`✅ REDEPLOY TEST - Создан новый пользователь ${user_id}:`, user);
         } else {
-            console.log(`👤 Пользователь ${user_id} найден:`, user);
+            console.log(`👤 REDEPLOY TEST - Пользователь ${user_id} найден:`, {
+                user_id: user.user_id,
+                telegram_name: user.telegram_name,
+                balance: user.balance,
+                inventory_count: user.inventory?.length || 0
+            });
         }
         
         const response = {
@@ -89,11 +95,11 @@ app.post('/api/user/data', verifyTelegramData, async (req, res) => {
             inventory: user.inventory || []
         };
         
-        console.log('📤 Отправляем ответ:', response);
+        console.log('📤 REDEPLOY TEST - Отправляем ответ:', response);
         
         res.json(response);
     } catch (error) {
-        console.error('Error getting user data:', error);
+        console.error('❌ REDEPLOY TEST - Ошибка получения данных пользователя:', error);
         res.status(500).json({ error: 'Failed to get user data' });
     }
 });
@@ -103,13 +109,17 @@ app.post('/api/user/save', verifyTelegramData, async (req, res) => {
     try {
         const { user_id, telegram_name, stars_balance, inventory } = req.body;
         
-        console.log('💾 Получен запрос сохранения данных пользователя:', {
+        console.log('💾 REDEPLOY TEST - Получен запрос сохранения данных пользователя:', {
             user_id,
             telegram_name,
             stars_balance,
             inventory,
             full_body: req.body
         });
+        
+        // Проверяем, существует ли пользователь
+        const existingUser = await db.getUser(user_id);
+        console.log(`🔍 REDEPLOY TEST - Пользователь ${user_id} существует:`, !!existingUser);
         
         // Сохраняем данные пользователя в базу данных с резервным копированием
         await db.updateUserWithBackup(user_id, {
@@ -118,11 +128,19 @@ app.post('/api/user/save', verifyTelegramData, async (req, res) => {
             inventory: inventory || []
         });
         
-        console.log(`✅ Данные пользователя ${user_id} сохранены успешно`);
+        console.log(`✅ REDEPLOY TEST - Данные пользователя ${user_id} сохранены успешно`);
+        
+        // Проверяем, что пользователь действительно сохранился
+        const savedUser = await db.getUser(user_id);
+        console.log(`✅ REDEPLOY TEST - Пользователь ${user_id} в базе после сохранения:`, {
+            exists: !!savedUser,
+            balance: savedUser?.balance,
+            inventory_count: savedUser?.inventory?.length || 0
+        });
         
         res.json({ success: true });
     } catch (error) {
-        console.error('Error saving user data:', error);
+        console.error('❌ REDEPLOY TEST - Ошибка сохранения данных пользователя:', error);
         res.status(500).json({ error: 'Failed to save user data' });
     }
 });
