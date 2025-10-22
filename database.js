@@ -5,16 +5,34 @@ const fs = require('fs');
 class Database {
     constructor() {
         // Получаем параметры подключения из переменных окружения Railway
-        if (!process.env.DATABASE_URL) {
-            console.error('❌ DATABASE_URL не найден в переменных окружения!');
-            console.error('Убедитесь, что переменная DATABASE_URL настроена в Railway');
-            throw new Error('DATABASE_URL is required');
+        let databaseUrl = process.env.DATABASE_URL;
+        
+        // Если DATABASE_URL не найден, попробуем собрать из отдельных переменных
+        if (!databaseUrl) {
+            console.log('🔍 DATABASE_URL не найден, пытаемся собрать из отдельных переменных...');
+            
+            const pgHost = process.env.PGHOST || process.env.POSTGRES_HOST;
+            const pgPort = process.env.PGPORT || process.env.POSTGRES_PORT || '5432';
+            const pgDatabase = process.env.PGDATABASE || process.env.POSTGRES_DB;
+            const pgUser = process.env.PGUSER || process.env.POSTGRES_USER;
+            const pgPassword = process.env.PGPASSWORD || process.env.POSTGRES_PASSWORD;
+            
+            if (pgHost && pgDatabase && pgUser && pgPassword) {
+                databaseUrl = `postgresql://${pgUser}:${pgPassword}@${pgHost}:${pgPort}/${pgDatabase}`;
+                console.log('✅ Собрали DATABASE_URL из отдельных переменных');
+            } else {
+                console.error('❌ DATABASE_URL не найден в переменных окружения!');
+                console.error('Доступные переменные:', Object.keys(process.env).filter(key => 
+                    key.includes('POSTGRES') || key.includes('PG') || key.includes('DATABASE')
+                ));
+                throw new Error('DATABASE_URL is required');
+            }
         }
         
-        console.log('🔍 DATABASE_URL:', process.env.DATABASE_URL.replace(/:[^:@]+@/, ':***@')); // Скрываем пароль в логах
+        console.log('🔍 DATABASE_URL:', databaseUrl.replace(/:[^:@]+@/, ':***@')); // Скрываем пароль в логах
         
         this.pool = new Pool({
-            connectionString: process.env.DATABASE_URL,
+            connectionString: databaseUrl,
             ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
             // Добавляем таймауты для Railway
             connectionTimeoutMillis: 10000,
