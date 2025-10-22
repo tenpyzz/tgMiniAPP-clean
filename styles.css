@@ -1404,11 +1404,13 @@ body.case-opening {
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s ease;
+    pointer-events: none;
 }
 
 .prize-modal.show {
     opacity: 1;
     visibility: visible;
+    pointer-events: auto;
 }
 
 .modal-content {
@@ -1422,6 +1424,7 @@ body.case-opening {
     transition: transform 0.3s ease;
     position: relative;
     overflow: hidden;
+    pointer-events: auto;
 }
 
 .prize-modal.show .modal-content {
@@ -1536,6 +1539,7 @@ body.case-opening {
     display: flex;
     gap: 1rem;
     margin-top: 1.5rem;
+    justify-content: center;
 }
 
 .add-to-inventory-btn {
@@ -1550,6 +1554,9 @@ body.case-opening {
     box-shadow: var(--shadow);
     transition: all 0.3s ease;
     flex: 1;
+    min-width: 150px;
+    position: relative;
+    overflow: hidden;
 }
 
 .add-to-inventory-btn:hover {
@@ -1569,11 +1576,46 @@ body.case-opening {
     box-shadow: var(--shadow);
     transition: all 0.3s ease;
     flex: 1;
+    min-width: 150px;
+    position: relative;
+    overflow: hidden;
 }
 
 .claim-prize-btn:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
+}
+
+/* Анимация пульсации для кнопок приза */
+.add-to-inventory-btn,
+.claim-prize-btn {
+    animation: buttonPulse 2s ease-in-out infinite;
+}
+
+@keyframes buttonPulse {
+    0%, 100% {
+        box-shadow: var(--shadow);
+    }
+    50% {
+        box-shadow: 
+            var(--shadow),
+            0 0 20px rgba(33, 150, 243, 0.4);
+    }
+}
+
+.claim-prize-btn {
+    animation: buttonPulseGreen 2s ease-in-out infinite;
+}
+
+@keyframes buttonPulseGreen {
+    0%, 100% {
+        box-shadow: var(--shadow);
+    }
+    50% {
+        box-shadow: 
+            var(--shadow),
+            0 0 20px rgba(76, 175, 80, 0.4);
+    }
 }
 
 /* Notifications */

@@ -92,6 +92,20 @@ document.addEventListener('DOMContentLoaded', async function() {
         showNotification('Добро пожаловать в Кейс Мастер!', 'success');
     }
     
+    // Сбрасываем все флаги при загрузке приложения
+    isOpening = false;
+    isChoosingPrize = false;
+    prizeAutoAdded = false;
+    starsSpent = false;
+    currentCasePrice = 0;
+    currentPrize = null;
+    
+    // Проверяем, есть ли нерешенный приз
+    const hasPendingPrize = restorePrizeState();
+    if (hasPendingPrize) {
+        showNotification('Восстановлен нерешенный приз!', 'info');
+    }
+    
     // Обновляем отображение
     updateStarsDisplay();
     updateInventoryDisplay();
@@ -101,6 +115,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Запускаем синхронизацию данных
     startDataSync();
+    
+    // Добавляем обработчики для автоматического сохранения приза при закрытии
+    setupAppCloseHandlers();
+    
+    // Периодическое сохранение состояния выбора приза
+    setInterval(savePrizeState, 5000); // Каждые 5 секунд
 });
 
 // Настройка обработчиков событий
@@ -122,10 +142,7 @@ function setupEventListeners() {
         });
     });
     
-    // Обработчик для закрытия модального окна
-    document.getElementById('close-modal').addEventListener('click', function() {
-        closePrizeModal();
-    });
+    // Убрали обработчик закрытия модального окна - теперь можно только выбрать действие
     
     // Обработчик для кнопки "Добавить в инвентарь"
     document.getElementById('add-to-inventory-btn').addEventListener('click', function() {
@@ -143,6 +160,15 @@ let currentCasePrice = 0;
 
 // Глобальная переменная для хранения текущего приза
 let currentPrize = null;
+
+// Флаг, что пользователь находится в процессе выбора приза
+let isChoosingPrize = false;
+
+// Флаг, что приз уже был автоматически добавлен
+let prizeAutoAdded = false;
+
+// Флаг, что звезды уже потрачены и не должны возвращаться
+let starsSpent = false;
 
 // Переключение вкладок
 function switchTab(tabName) {
@@ -173,9 +199,17 @@ async function openCase(caseType, price) {
     isOpening = true;
     currentCasePrice = price;
     
+    // Сбрасываем флаги
+    prizeAutoAdded = false;
+    starsSpent = false;
+    
     // Списываем звезды
     userStars -= price;
+    starsSpent = true; // Устанавливаем флаг, что звезды потрачены
     updateStarsDisplay();
+    
+    // СРАЗУ сохраняем данные на сервер после списания звезд
+    await saveUserData();
     
     // Показываем анимацию открытия кейса
     await showCaseOpeningAnimation(caseType);
@@ -718,6 +752,20 @@ function showPrizeModal(prize, rarity) {
         modal.classList.add('epic-modal');
     }
     
+    // Предотвращаем закрытие модального окна при клике на фон
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    });
+    
+    // Устанавливаем флаг выбора приза
+    isChoosingPrize = true;
+    
+    // Сохраняем состояние в localStorage
+    savePrizeState();
+    
     // Показываем модальное окно с анимацией
     modal.classList.add('show');
     
@@ -789,6 +837,130 @@ function closePrizeModal() {
     currentPrize = null;
 }
 
+// Настройка обработчиков закрытия приложения
+function setupAppCloseHandlers() {
+    // Обработчик закрытия вкладки/окна
+    window.addEventListener('beforeunload', function(e) {
+        console.log('🚪 BEFOREUNLOAD событие');
+        autoAddPrizeToInventory();
+    });
+    
+    // Обработчик скрытия страницы (для мобильных устройств)
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            console.log('👁️ VISIBILITY CHANGE (скрыто)');
+            autoAddPrizeToInventory();
+        }
+    });
+    
+    // Обработчик потери фокуса
+    window.addEventListener('blur', function() {
+        console.log('🔍 BLUR событие');
+        autoAddPrizeToInventory();
+    });
+    
+    // Обработчик для Telegram WebApp
+    if (tg && tg.onEvent) {
+        tg.onEvent('viewportChanged', function() {
+            console.log('📱 TELEGRAM VIEWPORT CHANGED');
+            autoAddPrizeToInventory();
+        });
+    }
+}
+
+// Автоматическое добавление приза в инвентарь при закрытии приложения
+function autoAddPrizeToInventory() {
+    // Дополнительная защита: не срабатываем при загрузке приложения
+    if (isChoosingPrize && currentPrize && !prizeAutoAdded) {
+        console.log('🔴 АВТОМАТИЧЕСКОЕ ДОБАВЛЕНИЕ ПРИЗА:');
+        console.log('- Приз:', currentPrize);
+        console.log('- Текущие звезды ДО:', userStars);
+        console.log('- Цена кейса:', currentCasePrice);
+        
+        // Устанавливаем флаг, что приз уже добавлен
+        prizeAutoAdded = true;
+        
+        // Добавляем приз в инвентарь
+        userInventory.push(currentPrize);
+        
+        // НЕ возвращаем звезды - они уже потрачены на открытие кейса
+        // currentCasePrice остается потраченным
+        
+        // Сохраняем данные
+        saveUserData();
+        
+        // Сбрасываем флаги
+        isChoosingPrize = false;
+        currentPrize = null;
+        // НЕ сбрасываем currentCasePrice здесь - звезды уже потрачены!
+        
+        // Очищаем localStorage
+        localStorage.removeItem('pendingPrize');
+        
+        console.log('- Звезды ПОСЛЕ:', userStars);
+        console.log('✅ Приз автоматически добавлен в инвентарь (звезды НЕ возвращены)');
+        
+        // Дополнительная защита: принудительно обновляем отображение звезд
+        updateStarsDisplay();
+    }
+}
+
+// Сохранение состояния выбора приза в localStorage
+function savePrizeState() {
+    if (isChoosingPrize && currentPrize) {
+        localStorage.setItem('pendingPrize', JSON.stringify({
+            prize: currentPrize,
+            timestamp: Date.now()
+        }));
+    } else {
+        localStorage.removeItem('pendingPrize');
+    }
+}
+
+// Определение редкости приза
+function determinePrizeRarity(prize) {
+    if (prize.rarity === 'legendary') return 'legendary';
+    if (prize.rarity === 'epic') return 'epic';
+    if (prize.rarity === 'rare') return 'rare';
+    if (prize.rarity === 'uncommon') return 'uncommon';
+    return 'common';
+}
+
+// Восстановление состояния выбора приза из localStorage
+function restorePrizeState() {
+    try {
+        const savedState = localStorage.getItem('pendingPrize');
+        if (savedState) {
+            const state = JSON.parse(savedState);
+            // Проверяем, что прошло не более 5 минут
+            if (Date.now() - state.timestamp < 300000) {
+                console.log('Восстанавливаем состояние выбора приза:', state.prize);
+                
+                // ВАЖНО: Проверяем, были ли уже потрачены звезды
+                // Если приз есть в localStorage, значит звезды уже потрачены
+                // и приз должен быть добавлен в инвентарь автоматически
+                console.log('Приз найден в localStorage - звезды уже потрачены, добавляем в инвентарь');
+                userInventory.push(state.prize);
+                saveUserData();
+                localStorage.removeItem('pendingPrize');
+                
+                return true;
+            } else {
+                // Время истекло, добавляем приз автоматически
+                console.log('Время выбора приза истекло, добавляем автоматически');
+                userInventory.push(state.prize);
+                // НЕ возвращаем звезды - они уже потрачены
+                saveUserData();
+                localStorage.removeItem('pendingPrize');
+            }
+        }
+    } catch (error) {
+        console.error('Ошибка при восстановлении состояния приза:', error);
+        localStorage.removeItem('pendingPrize');
+    }
+    return false;
+}
+
 // Добавить в инвентарь
 function addToInventory() {
     if (!currentPrize) {
@@ -807,6 +979,11 @@ function addToInventory() {
     
     // Показываем уведомление
     showNotification('Приз добавлен в инвентарь!', 'success');
+    
+    // Сбрасываем флаги (НЕ сбрасываем starsSpent - звезды уже потрачены)
+    isChoosingPrize = false;
+    prizeAutoAdded = false;
+    // starsSpent остается true - звезды уже потрачены
     
     // Закрываем модальное окно
     closePrizeModal();
@@ -850,6 +1027,11 @@ async function claimPrize() {
             
             // Показываем уведомление
             showNotification('Приз получен!', 'success');
+            
+            // Сбрасываем флаги (НЕ сбрасываем starsSpent - звезды уже потрачены)
+            isChoosingPrize = false;
+            prizeAutoAdded = false;
+            // starsSpent остается true - звезды уже потрачены
             
             // Закрываем модальное окно
             closePrizeModal();
@@ -1114,12 +1296,27 @@ window.exitFullscreenMode = function() {
         particlesContainer.innerHTML = '';
     }
     
-    // Возвращаем звезды (так как кейс не был открыт)
-    if (currentCasePrice > 0) {
+    // Возвращаем звезды только если приз не был автоматически добавлен И звезды не были потрачены
+    console.log('🔵 EXIT FULLSCREEN MODE:');
+    console.log('- Цена кейса:', currentCasePrice);
+    console.log('- Приз автоматически добавлен:', prizeAutoAdded);
+    console.log('- Звезды потрачены:', starsSpent);
+    console.log('- Звезды ДО:', userStars);
+    console.log('- isOpening:', isOpening);
+    
+    // Дополнительная проверка: не возвращаем звезды, если приложение только загружается
+    if (currentCasePrice > 0 && !prizeAutoAdded && !starsSpent && isOpening) {
+        console.log('🟡 ВОЗВРАЩАЕМ ЗВЕЗДЫ (ручной выход)');
         userStars += currentCasePrice;
         currentCasePrice = 0;
         updateStarsDisplay();
+    } else if (currentCasePrice > 0) {
+        console.log('🔴 НЕ ВОЗВРАЩАЕМ ЗВЕЗДЫ (приз добавлен, звезды потрачены или приложение загружается)');
+        // Если приз был автоматически добавлен или звезды потрачены, просто сбрасываем цену
+        currentCasePrice = 0;
     }
+    
+    console.log('- Звезды ПОСЛЕ:', userStars);
     
     // Сбрасываем флаг открытия
     isOpening = false;
