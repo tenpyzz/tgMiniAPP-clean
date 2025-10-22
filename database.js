@@ -1,192 +1,190 @@
-const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
 const path = require('path');
 const fs = require('fs');
 
 class Database {
     constructor() {
-        this.db = null;
-        this.dbPath = path.join(__dirname, 'users.db');
+        // Получаем параметры подключения из переменных окружения Railway
+        this.pool = new Pool({
+            connectionString: process.env.DATABASE_URL,
+            ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+        });
+        
+        this.isConnected = false;
     }
 
     // Инициализация базы данных
     async init() {
-        return new Promise((resolve, reject) => {
-            console.log(`🔍 REDEPLOY TEST - Путь к базе данных: ${this.dbPath}`);
-            console.log(`🔍 REDEPLOY TEST - Файл базы данных существует: ${fs.existsSync(this.dbPath)}`);
+        try {
+            console.log('🔍 REDEPLOY TEST - Подключаемся к PostgreSQL базе данных');
             
-            this.db = new sqlite3.Database(this.dbPath, (err) => {
-                if (err) {
-                    console.error('❌ REDEPLOY TEST - Ошибка подключения к базе данных:', err);
-                    reject(err);
-                } else {
-                    console.log('✅ REDEPLOY TEST - Подключение к SQLite базе данных установлено');
-                    this.createTables().then(resolve).catch(reject);
-                }
-            });
-        });
+            // Тестируем подключение
+            const client = await this.pool.connect();
+            console.log('✅ REDEPLOY TEST - Подключение к PostgreSQL установлено');
+            
+            // Создаем таблицы
+            await this.createTables(client);
+            
+            client.release();
+            this.isConnected = true;
+            console.log('✅ REDEPLOY TEST - База данных PostgreSQL готова к работе');
+            
+        } catch (error) {
+            console.error('❌ REDEPLOY TEST - Ошибка подключения к PostgreSQL:', error);
+            throw error;
+        }
     }
 
     // Создание таблиц
-    async createTables() {
-        return new Promise((resolve, reject) => {
-            const createUsersTable = `
-                CREATE TABLE IF NOT EXISTS users (
-                    user_id TEXT PRIMARY KEY,
-                    telegram_name TEXT NOT NULL,
-                    balance INTEGER DEFAULT 100,
-                    inventory TEXT DEFAULT '[]',
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                )
-            `;
+    async createTables(client) {
+        const createUsersTable = `
+            CREATE TABLE IF NOT EXISTS users (
+                user_id TEXT PRIMARY KEY,
+                telegram_name TEXT NOT NULL,
+                balance INTEGER DEFAULT 100,
+                inventory TEXT DEFAULT '[]',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `;
 
-            this.db.run(createUsersTable, (err) => {
-                if (err) {
-                    console.error('Ошибка создания таблицы users:', err);
-                    reject(err);
-                } else {
-                    console.log('✅ Таблица users создана/проверена');
-                    resolve();
-                }
-            });
-        });
+        await client.query(createUsersTable);
+        console.log('✅ Таблица users создана/проверена');
     }
 
     // Получение пользователя по ID
     async getUser(userId) {
-        return new Promise((resolve, reject) => {
-            const query = 'SELECT * FROM users WHERE user_id = ?';
-            this.db.get(query, [userId], (err, row) => {
-                if (err) {
-                    console.error('Ошибка получения пользователя:', err);
-                    reject(err);
-                } else {
-                    if (row) {
-                        // Парсим JSON инвентарь
-                        try {
-                            row.inventory = JSON.parse(row.inventory);
-                        } catch (e) {
-                            row.inventory = [];
-                        }
-                    }
-                    resolve(row);
-                }
-            });
-        });
+        try {
+            const query = 'SELECT * FROM users WHERE user_id = $1';
+            const result = await this.pool.query(query, [userId]);
+            
+            if (result.rows.length === 0) {
+                return null;
+            }
+            
+            const user = result.rows[0];
+            // Парсим JSON инвентарь
+            try {
+                user.inventory = JSON.parse(user.inventory);
+            } catch (e) {
+                user.inventory = [];
+            }
+            
+            return user;
+        } catch (error) {
+            console.error('Ошибка получения пользователя:', error);
+            throw error;
+        }
     }
 
     // Создание нового пользователя
     async createUser(userId, telegramName, balance = 100) {
-        return new Promise((resolve, reject) => {
+        try {
             const query = `
                 INSERT INTO users (user_id, telegram_name, balance, inventory)
-                VALUES (?, ?, ?, ?)
+                VALUES ($1, $2, $3, $4)
+                RETURNING *
             `;
-            this.db.run(query, [userId, telegramName, balance, '[]'], function(err) {
-                if (err) {
-                    console.error('Ошибка создания пользователя:', err);
-                    reject(err);
-                } else {
-                    console.log(`✅ Пользователь ${telegramName} (ID: ${userId}) создан`);
-                    resolve({ id: this.lastID, userId, telegramName, balance });
-                }
-            });
-        });
+            const result = await this.pool.query(query, [userId, telegramName, balance, '[]']);
+            
+            console.log(`✅ Пользователь ${telegramName} (ID: ${userId}) создан`);
+            return result.rows[0];
+        } catch (error) {
+            console.error('Ошибка создания пользователя:', error);
+            throw error;
+        }
     }
 
     // Обновление данных пользователя
     async updateUser(userId, data) {
-        return new Promise((resolve, reject) => {
+        try {
             const { telegram_name, balance, inventory } = data;
             const inventoryJson = JSON.stringify(inventory || []);
             
             const query = `
                 UPDATE users 
-                SET telegram_name = COALESCE(?, telegram_name),
-                    balance = COALESCE(?, balance),
-                    inventory = COALESCE(?, inventory),
+                SET telegram_name = COALESCE($1, telegram_name),
+                    balance = COALESCE($2, balance),
+                    inventory = COALESCE($3, inventory),
                     updated_at = CURRENT_TIMESTAMP
-                WHERE user_id = ?
+                WHERE user_id = $4
+                RETURNING *
             `;
             
-            this.db.run(query, [telegram_name, balance, inventoryJson, userId], function(err) {
-                if (err) {
-                    console.error('Ошибка обновления пользователя:', err);
-                    reject(err);
-                } else {
-                    console.log(`✅ Пользователь ${userId} обновлен`);
-                    resolve({ changes: this.changes });
-                }
-            });
-        });
+            const result = await this.pool.query(query, [telegram_name, balance, inventoryJson, userId]);
+            console.log(`✅ Пользователь ${userId} обновлен`);
+            return result.rows[0];
+        } catch (error) {
+            console.error('Ошибка обновления пользователя:', error);
+            throw error;
+        }
     }
 
     // Создание или обновление пользователя (upsert)
     async upsertUser(userId, telegramName, balance = 100, inventory = []) {
-        return new Promise(async (resolve, reject) => {
-            try {
-                const existingUser = await this.getUser(userId);
-                
-                if (existingUser) {
-                    // Обновляем существующего пользователя
-                    await this.updateUser(userId, {
-                        telegram_name: telegramName,
-                        balance: balance,
-                        inventory: inventory
-                    });
-                    resolve({ ...existingUser, telegram_name: telegramName, balance, inventory });
-                } else {
-                    // Создаем нового пользователя
-                    const newUser = await this.createUser(userId, telegramName, balance);
-                    resolve({ user_id: userId, telegram_name: telegramName, balance, inventory });
+        try {
+            const existingUser = await this.getUser(userId);
+            
+            if (existingUser) {
+                // Обновляем существующего пользователя
+                const updatedUser = await this.updateUser(userId, {
+                    telegram_name: telegramName,
+                    balance: balance,
+                    inventory: inventory
+                });
+                return updatedUser;
+            } else {
+                // Создаем нового пользователя
+                const newUser = await this.createUser(userId, telegramName, balance);
+                // Обновляем инвентарь если нужно
+                if (inventory && inventory.length > 0) {
+                    await this.updateUser(userId, { inventory });
                 }
-            } catch (error) {
-                reject(error);
+                return { user_id: userId, telegram_name: telegramName, balance, inventory };
             }
-        });
+        } catch (error) {
+            console.error('Ошибка upsert пользователя:', error);
+            throw error;
+        }
     }
 
     // Получение всех пользователей
     async getAllUsers() {
-        return new Promise((resolve, reject) => {
+        try {
             const query = 'SELECT * FROM users ORDER BY created_at DESC';
-            this.db.all(query, [], (err, rows) => {
-                if (err) {
-                    console.error('Ошибка получения всех пользователей:', err);
-                    reject(err);
-                } else {
-                    // Парсим JSON инвентарь для каждого пользователя
-                    rows.forEach(row => {
-                        try {
-                            row.inventory = JSON.parse(row.inventory);
-                        } catch (e) {
-                            row.inventory = [];
-                        }
-                    });
-                    resolve(rows);
+            const result = await this.pool.query(query);
+            
+            // Парсим JSON инвентарь для каждого пользователя
+            result.rows.forEach(row => {
+                try {
+                    row.inventory = JSON.parse(row.inventory);
+                } catch (e) {
+                    row.inventory = [];
                 }
             });
-        });
+            
+            return result.rows;
+        } catch (error) {
+            console.error('Ошибка получения всех пользователей:', error);
+            throw error;
+        }
     }
 
     // Получение количества пользователей
     async getUserCount() {
-        return new Promise((resolve, reject) => {
+        try {
             const query = 'SELECT COUNT(*) as count FROM users';
-            this.db.get(query, [], (err, row) => {
-                if (err) {
-                    console.error('Ошибка получения количества пользователей:', err);
-                    reject(err);
-                } else {
-                    resolve(row.count);
-                }
-            });
-        });
+            const result = await this.pool.query(query);
+            return parseInt(result.rows[0].count);
+        } catch (error) {
+            console.error('Ошибка получения количества пользователей:', error);
+            throw error;
+        }
     }
 
     // Получение статистики
     async getStats() {
-        return new Promise((resolve, reject) => {
+        try {
             const query = `
                 SELECT 
                     COUNT(*) as total_users,
@@ -196,53 +194,46 @@ class Database {
                 FROM users
             `;
             
-            this.db.get(query, [], (err, row) => {
-                if (err) {
-                    console.error('Ошибка получения статистики:', err);
-                    reject(err);
-                } else {
-                    resolve(row);
-                }
-            });
-        });
+            const result = await this.pool.query(query);
+            return result.rows[0];
+        } catch (error) {
+            console.error('Ошибка получения статистики:', error);
+            throw error;
+        }
     }
 
     // Обновление баланса пользователя
     async updateBalance(userId, newBalance) {
-        return new Promise((resolve, reject) => {
-            const query = 'UPDATE users SET balance = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?';
-            this.db.run(query, [newBalance, userId], function(err) {
-                if (err) {
-                    console.error('Ошибка обновления баланса:', err);
-                    reject(err);
-                } else {
-                    console.log(`✅ Баланс пользователя ${userId} обновлен на ${newBalance}`);
-                    resolve({ changes: this.changes });
-                }
-            });
-        });
+        try {
+            const query = 'UPDATE users SET balance = $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2 RETURNING *';
+            const result = await this.pool.query(query, [newBalance, userId]);
+            
+            console.log(`✅ Баланс пользователя ${userId} обновлен на ${newBalance}`);
+            return result.rows[0];
+        } catch (error) {
+            console.error('Ошибка обновления баланса:', error);
+            throw error;
+        }
     }
 
     // Добавление к балансу
     async addToBalance(userId, amount) {
-        return new Promise(async (resolve, reject) => {
-            try {
-                const user = await this.getUser(userId);
-                if (!user) {
-                    reject(new Error('Пользователь не найден'));
-                    return;
-                }
-                
-                const newBalance = user.balance + amount;
-                await this.updateBalance(userId, newBalance);
-                resolve({ newBalance, added: amount });
-            } catch (error) {
-                reject(error);
+        try {
+            const user = await this.getUser(userId);
+            if (!user) {
+                throw new Error('Пользователь не найден');
             }
-        });
+            
+            const newBalance = user.balance + amount;
+            await this.updateBalance(userId, newBalance);
+            return { newBalance, added: amount };
+        } catch (error) {
+            console.error('Ошибка добавления к балансу:', error);
+            throw error;
+        }
     }
 
-    // Создание резервной копии данных
+    // Создание резервной копии данных (теперь в PostgreSQL, но оставляем для совместимости)
     async createBackup() {
         try {
             const users = await this.getAllUsers();
@@ -300,7 +291,7 @@ class Database {
             await this.updateUser(userId, data);
             console.log(`✅ REDEPLOY TEST - Пользователь ${userId} обновлен в базе данных`);
             
-            // Создаем резервную копию при каждом обновлении
+            // Создаем резервную копию при каждом обновлении (опционально)
             console.log(`💾 REDEPLOY TEST - Создаем резервную копию при каждом обновлении`);
             await this.createBackup();
             
@@ -371,15 +362,12 @@ class Database {
     }
 
     // Закрытие соединения с базой данных
-    close() {
-        if (this.db) {
-            this.db.close((err) => {
-                if (err) {
-                    console.error('Ошибка закрытия базы данных:', err);
-                } else {
-                    console.log('✅ Соединение с базой данных закрыто');
-                }
-            });
+    async close() {
+        try {
+            await this.pool.end();
+            console.log('✅ Соединение с базой данных закрыто');
+        } catch (error) {
+            console.error('Ошибка закрытия базы данных:', error);
         }
     }
 }

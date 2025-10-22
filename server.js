@@ -215,10 +215,8 @@ app.get('/api/admin/users', async (req, res) => {
         console.log(`📊 REDEPLOY TEST - Найдено пользователей: ${users.length}`);
         console.log('👥 REDEPLOY TEST - Пользователи:', users.map(u => ({ id: u.user_id, name: u.telegram_name, balance: u.balance })));
         
-        // Проверяем, есть ли файл базы данных
-        const fs = require('fs');
-        const dbPath = require('path').join(__dirname, 'users.db');
-        console.log(`🔍 REDEPLOY TEST - Файл базы данных существует: ${fs.existsSync(dbPath)}`);
+        // Проверяем подключение к PostgreSQL
+        console.log(`🔍 REDEPLOY TEST - Подключение к PostgreSQL: ${db.isConnected ? 'активно' : 'неактивно'}`);
         
         res.json({
             success: true,
@@ -597,7 +595,7 @@ app.get('/api/info', async (req, res) => {
             webhook_url: process.env.WEBHOOK_URL || 'https://web-production-877f.up.railway.app/bot/webhook',
             webapp_url: process.env.WEBAPP_URL || 'https://web-production-877f.up.railway.app/',
             bot_token: BOT_TOKEN ? 'configured' : 'missing',
-            database: 'SQLite',
+            database: 'PostgreSQL',
             total_users: stats.total_users || 0,
             total_balance: stats.total_balance || 0,
             avg_balance: stats.avg_balance || 0
@@ -695,9 +693,9 @@ async function startServer() {
             console.log(`🧪 Тестовая версия: http://localhost:${PORT}/test`);
             console.log(`📊 API информация: http://localhost:${PORT}/api/info`);
             console.log(`📈 Статистика: http://localhost:${PORT}/api/admin/stats`);
-            console.log(`💾 База данных: SQLite (users.db)`);
+            console.log(`💾 База данных: PostgreSQL (Railway)`);
             console.log('');
-            console.log('✅ База данных SQLite готова к работе!');
+            console.log('✅ База данных PostgreSQL готова к работе!');
         });
     } catch (error) {
         console.error('❌ Ошибка запуска сервера:', error);
