@@ -431,15 +431,26 @@ function hideLoadingOverlay() {
 // Загрузка данных пользователя
 async function loadUserData() {
     try {
+        const requestData = {
+            user_id: tg?.initDataUnsafe?.user?.id || 'test_user',
+            telegram_name: tg?.initDataUnsafe?.user?.first_name || 'Unknown User',
+            init_data: tg?.initData || 'test_data'
+        };
+        
+        console.log('🔄 Загружаем данные пользователя:', requestData);
+        console.log('📱 Telegram WebApp данные:', {
+            tg: !!tg,
+            initDataUnsafe: tg?.initDataUnsafe,
+            user: tg?.initDataUnsafe?.user,
+            initData: tg?.initData
+        });
+        
         const response = await fetch('/api/user/data', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                user_id: tg?.initDataUnsafe?.user?.id || 'test_user',
-                init_data: tg?.initData || 'test_data'
-            })
+            body: JSON.stringify(requestData)
         });
         
         if (response.ok) {
@@ -484,6 +495,7 @@ async function saveUserData() {
             },
             body: JSON.stringify({
                 user_id: tg?.initDataUnsafe?.user?.id || 'test_user',
+                telegram_name: tg?.initDataUnsafe?.user?.first_name || 'Unknown User',
                 stars_balance: userStars,
                 inventory: userInventory,
                 init_data: tg?.initData || 'test_data'

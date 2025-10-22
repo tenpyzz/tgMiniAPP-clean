@@ -42,18 +42,31 @@ app.post('/api/user/data', verifyTelegramData, async (req, res) => {
     try {
         const { user_id, telegram_name } = req.body;
         
+        console.log('📥 Получен запрос данных пользователя:', {
+            user_id,
+            telegram_name,
+            full_body: req.body
+        });
+        
         // Получаем данные пользователя из базы данных
         let user = await db.getUser(user_id);
         
         if (!user) {
+            console.log(`👤 Пользователь ${user_id} не найден, создаем нового`);
             // Создаем нового пользователя если его нет
             user = await db.upsertUser(user_id, telegram_name || 'Unknown User', 100, []);
+        } else {
+            console.log(`👤 Пользователь ${user_id} найден:`, user);
         }
         
-        res.json({
+        const response = {
             stars_balance: user.balance,
             inventory: user.inventory || []
-        });
+        };
+        
+        console.log('📤 Отправляем ответ:', response);
+        
+        res.json(response);
     } catch (error) {
         console.error('Error getting user data:', error);
         res.status(500).json({ error: 'Failed to get user data' });
@@ -65,10 +78,18 @@ app.post('/api/user/save', verifyTelegramData, async (req, res) => {
     try {
         const { user_id, telegram_name, stars_balance, inventory } = req.body;
         
-        console.log(`Saving user data for ${user_id}:`, { stars_balance, inventory });
+        console.log('💾 Получен запрос сохранения данных пользователя:', {
+            user_id,
+            telegram_name,
+            stars_balance,
+            inventory,
+            full_body: req.body
+        });
         
         // Сохраняем данные пользователя в базу данных
         await db.upsertUser(user_id, telegram_name || 'Unknown User', stars_balance, inventory || []);
+        
+        console.log(`✅ Данные пользователя ${user_id} сохранены успешно`);
         
         res.json({ success: true });
     } catch (error) {
