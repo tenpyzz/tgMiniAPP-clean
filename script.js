@@ -11,7 +11,11 @@ let currentUserId = null; // ID текущего пользователя
 function getUserId() {
     // Сначала пытаемся получить из Telegram WebApp
     if (tg?.initDataUnsafe?.user?.id) {
-        return tg.initDataUnsafe.user.id.toString();
+        const telegramUserId = tg.initDataUnsafe.user.id.toString();
+        // Сохраняем Telegram userId в localStorage для последующего использования
+        localStorage.setItem('telegram_user_id', telegramUserId);
+        console.log('✅ Получен userId от Telegram:', telegramUserId);
+        return telegramUserId;
     }
     
     // Если не получилось, пытаемся получить из initData
@@ -22,7 +26,11 @@ function getUserId() {
             if (userParam) {
                 const userData = JSON.parse(decodeURIComponent(userParam));
                 if (userData.id) {
-                    return userData.id.toString();
+                    const telegramUserId = userData.id.toString();
+                    // Сохраняем Telegram userId в localStorage для последующего использования
+                    localStorage.setItem('telegram_user_id', telegramUserId);
+                    console.log('✅ Получен userId из initData:', telegramUserId);
+                    return telegramUserId;
                 }
             }
         } catch (e) {
@@ -30,9 +38,18 @@ function getUserId() {
         }
     }
     
+    // Проверяем, есть ли сохраненный userId в localStorage
+    const savedUserId = localStorage.getItem('telegram_user_id');
+    if (savedUserId) {
+        console.log('🔄 Используем сохраненный userId из localStorage:', savedUserId);
+        return savedUserId;
+    }
+    
     // Если ничего не получилось, генерируем уникальный ID на основе времени и случайного числа
     const fallbackId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     console.log('⚠️ Не удалось получить userId от Telegram, используем fallback:', fallbackId);
+    // Сохраняем fallback ID для последующего использования
+    localStorage.setItem('telegram_user_id', fallbackId);
     return fallbackId;
 }
 
@@ -40,7 +57,11 @@ function getUserId() {
 function getUserName() {
     // Сначала пытаемся получить из Telegram WebApp
     if (tg?.initDataUnsafe?.user?.first_name) {
-        return tg.initDataUnsafe.user.first_name;
+        const telegramUserName = tg.initDataUnsafe.user.first_name;
+        // Сохраняем имя пользователя в localStorage
+        localStorage.setItem('telegram_user_name', telegramUserName);
+        console.log('✅ Получено имя пользователя от Telegram:', telegramUserName);
+        return telegramUserName;
     }
     
     // Если не получилось, пытаемся получить из initData
@@ -51,7 +72,11 @@ function getUserName() {
             if (userParam) {
                 const userData = JSON.parse(decodeURIComponent(userParam));
                 if (userData.first_name) {
-                    return userData.first_name;
+                    const telegramUserName = userData.first_name;
+                    // Сохраняем имя пользователя в localStorage
+                    localStorage.setItem('telegram_user_name', telegramUserName);
+                    console.log('✅ Получено имя пользователя из initData:', telegramUserName);
+                    return telegramUserName;
                 }
             }
         } catch (e) {
@@ -59,8 +84,22 @@ function getUserName() {
         }
     }
     
+    // Проверяем, есть ли сохраненное имя в localStorage
+    const savedUserName = localStorage.getItem('telegram_user_name');
+    if (savedUserName) {
+        console.log('🔄 Используем сохраненное имя из localStorage:', savedUserName);
+        return savedUserName;
+    }
+    
     // Если ничего не получилось, используем fallback
     return 'Unknown User';
+}
+
+// Функция для очистки сохраненных данных пользователя
+function clearUserData() {
+    localStorage.removeItem('telegram_user_id');
+    localStorage.removeItem('telegram_user_name');
+    console.log('🗑️ Очищены сохраненные данные пользователя');
 }
 
 // Конфигурация кейсов с улучшенной системой редкости
@@ -207,6 +246,17 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
     
+    // Проверяем, сменился ли пользователь
+    const currentTelegramUserId = tg?.initDataUnsafe?.user?.id?.toString();
+    const savedUserId = localStorage.getItem('telegram_user_id');
+    
+    if (currentTelegramUserId && savedUserId && currentTelegramUserId !== savedUserId) {
+        console.log('🔄 Обнаружена смена пользователя!');
+        console.log('🔄 Старый userId:', savedUserId);
+        console.log('🔄 Новый userId:', currentTelegramUserId);
+        clearUserData(); // Очищаем старые данные
+    }
+    
     // Инициализируем userId
     currentUserId = getUserId();
     console.log('🆔 Текущий userId:', currentUserId);
@@ -220,6 +270,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     // REDEPLOY TEST - Показываем уведомление о тестировании
     setTimeout(() => {
         showNotification('🚀 REDEPLOY TEST - Проверяем сохранение данных пользователя', 'info');
+        console.log('🔍 REDEPLOY TEST - Детальная информация:');
+        console.log('🔍 Telegram WebApp доступен:', !!tg);
+        console.log('🔍 initDataUnsafe:', tg?.initDataUnsafe);
+        console.log('🔍 initData:', tg?.initData);
+        console.log('🔍 Сохраненный userId в localStorage:', localStorage.getItem('telegram_user_id'));
+        console.log('🔍 Сохраненное имя в localStorage:', localStorage.getItem('telegram_user_name'));
     }, 2000);
     
     // Сбрасываем все флаги при загрузке приложения
