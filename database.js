@@ -5,6 +5,12 @@ const fs = require('fs');
 class Database {
     constructor() {
         // Получаем параметры подключения из переменных окружения Railway
+        if (!process.env.DATABASE_URL) {
+            console.error('❌ DATABASE_URL не найден в переменных окружения!');
+            console.error('Убедитесь, что переменная DATABASE_URL настроена в Railway');
+            throw new Error('DATABASE_URL is required');
+        }
+        
         this.pool = new Pool({
             connectionString: process.env.DATABASE_URL,
             ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
