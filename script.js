@@ -858,7 +858,7 @@ async function openCase(caseType, price) {
         // Показываем модальное окно
         const rarity = determinePrizeRarity(prize);
         showPrizeModal(prize, rarity);
-    }, 1000);
+    }, 0);
 }
 
 // Анимация открытия кейса в стиле CS2
@@ -1381,7 +1381,7 @@ function showPrizeModal(prize, rarity) {
     // Добавляем эффект появления
     setTimeout(() => {
         modal.classList.add('modal-appear');
-    }, 100);
+    }, 0);
 }
 
 // Закрытие модального окна
