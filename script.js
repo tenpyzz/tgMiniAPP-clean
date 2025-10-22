@@ -51,14 +51,84 @@ function startDataSync() {
     // Обновляем данные каждые 30 секунд
     setInterval(async () => {
         console.log('Синхронизация данных...');
-        await loadUserData();
+        
+        // Проверяем, есть ли нерешенный алмазный кейс
+        const starsSpentState = localStorage.getItem('starsSpent');
+        const pendingPrize = localStorage.getItem('pendingPrize');
+        
+        let skipSync = false;
+        
+        // Если есть нерешенный алмазный кейс (100 звезд), НЕ синхронизируем
+        if (starsSpentState) {
+            try {
+                const state = JSON.parse(starsSpentState);
+                if (state.spent && state.amount === 100 && Date.now() - state.timestamp < 600000) {
+                    console.log('💎 АЛМАЗНЫЙ КЕЙС - ПРОПУСКАЕМ СИНХРОНИЗАЦИЮ');
+                    skipSync = true;
+                }
+            } catch (e) {
+                // Игнорируем ошибки парсинга
+            }
+        }
+        
+        // Если есть нерешенный приз, НЕ синхронизируем
+        if (!skipSync && pendingPrize) {
+            try {
+                const state = JSON.parse(pendingPrize);
+                if (state.prize && (state.prize.type === 'premium' || state.prize.name.includes('Алмазный'))) {
+                    console.log('💎 АЛМАЗНЫЙ ПРИЗ - ПРОПУСКАЕМ СИНХРОНИЗАЦИЮ');
+                    skipSync = true;
+                }
+            } catch (e) {
+                // Игнорируем ошибки парсинга
+            }
+        }
+        
+        if (!skipSync) {
+            await loadUserData();
+        }
     }, 30000);
     
     // Обновляем данные при возвращении на вкладку
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden) {
             console.log('Возвращение на вкладку - обновляем данные');
-            loadUserData();
+            
+            // Проверяем, есть ли нерешенный алмазный кейс
+            const starsSpentState = localStorage.getItem('starsSpent');
+            const pendingPrize = localStorage.getItem('pendingPrize');
+            
+            let skipSync = false;
+            
+            // Если есть нерешенный алмазный кейс (100 звезд), НЕ синхронизируем
+            if (starsSpentState) {
+                try {
+                    const state = JSON.parse(starsSpentState);
+                    if (state.spent && state.amount === 100 && Date.now() - state.timestamp < 600000) {
+                        console.log('💎 АЛМАЗНЫЙ КЕЙС - ПРОПУСКАЕМ СИНХРОНИЗАЦИЮ ПРИ ВОЗВРАЩЕНИИ');
+                        skipSync = true;
+                    }
+                } catch (e) {
+                    // Игнорируем ошибки парсинга
+                }
+            }
+            
+            // Если есть нерешенный приз, НЕ синхронизируем
+            if (!skipSync && pendingPrize) {
+                try {
+                    const state = JSON.parse(pendingPrize);
+                    if (state.prize && (state.prize.type === 'premium' || state.prize.name.includes('Алмазный'))) {
+                        console.log('💎 АЛМАЗНЫЙ ПРИЗ - ПРОПУСКАЕМ СИНХРОНИЗАЦИЮ ПРИ ВОЗВРАЩЕНИИ');
+                        skipSync = true;
+                    }
+                } catch (e) {
+                    // Игнорируем ошибки парсинга
+                }
+            }
+            
+            if (!skipSync) {
+                loadUserData();
+            }
         }
     });
 }
@@ -1349,6 +1419,39 @@ async function loadInventoryOnly() {
 // Загрузка данных пользователя
 async function loadUserData() {
     try {
+        // Проверяем, есть ли нерешенный алмазный кейс
+        const starsSpentState = localStorage.getItem('starsSpent');
+        const pendingPrize = localStorage.getItem('pendingPrize');
+        
+        // Если есть нерешенный алмазный кейс (100 звезд), НЕ загружаем данные с сервера
+        if (starsSpentState) {
+            try {
+                const state = JSON.parse(starsSpentState);
+                if (state.spent && state.amount === 100 && Date.now() - state.timestamp < 600000) {
+                    console.log('💎 АЛМАЗНЫЙ КЕЙС - ПРОПУСКАЕМ ЗАГРУЗКУ ДАННЫХ С СЕРВЕРА');
+                    console.log('💎 Текущий баланс:', userStars);
+                    console.log('💎 Потрачено на алмазный кейс:', state.amount);
+                    return false; // Не загружаем данные, чтобы не сбросить баланс
+                }
+            } catch (e) {
+                // Игнорируем ошибки парсинга
+            }
+        }
+        
+        // Если есть нерешенный приз, НЕ загружаем данные с сервера
+        if (pendingPrize) {
+            try {
+                const state = JSON.parse(pendingPrize);
+                if (state.prize && (state.prize.type === 'premium' || state.prize.name.includes('Алмазный'))) {
+                    console.log('💎 АЛМАЗНЫЙ ПРИЗ - ПРОПУСКАЕМ ЗАГРУЗКУ ДАННЫХ С СЕРВЕРА');
+                    console.log('💎 Текущий баланс:', userStars);
+                    return false; // Не загружаем данные, чтобы не сбросить баланс
+                }
+            } catch (e) {
+                // Игнорируем ошибки парсинга
+            }
+        }
+        
         const requestData = {
             user_id: tg?.initDataUnsafe?.user?.id || 'test_user',
             telegram_name: tg?.initDataUnsafe?.user?.first_name || 'Unknown User',
