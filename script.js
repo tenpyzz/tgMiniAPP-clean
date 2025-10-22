@@ -101,9 +101,27 @@ document.addEventListener('DOMContentLoaded', async function() {
     currentPrize = null;
     
     // Проверяем, есть ли нерешенный приз
-    const hasPendingPrize = restorePrizeState();
+    const hasPendingPrize = await restorePrizeState();
     if (hasPendingPrize) {
         showNotification('Восстановлен нерешенный приз!', 'info');
+    }
+    
+    // Проверяем, были ли потрачены звезды
+    const starsSpentState = localStorage.getItem('starsSpent');
+    if (starsSpentState) {
+        try {
+            const state = JSON.parse(starsSpentState);
+            // Если прошло не более 10 минут, считаем что звезды потрачены
+            if (state.spent && Date.now() - state.timestamp < 600000) {
+                console.log('Восстановлено состояние: звезды потрачены');
+                starsSpent = true;
+                // Очищаем состояние после использования
+                localStorage.removeItem('starsSpent');
+            }
+        } catch (error) {
+            console.error('Ошибка при восстановлении состояния звезд:', error);
+            localStorage.removeItem('starsSpent');
+        }
     }
     
     // Обновляем отображение
@@ -207,6 +225,13 @@ async function openCase(caseType, price) {
     userStars -= price;
     starsSpent = true; // Устанавливаем флаг, что звезды потрачены
     updateStarsDisplay();
+    
+    // Сохраняем состояние "звезды потрачены" в localStorage
+    localStorage.setItem('starsSpent', JSON.stringify({
+        spent: true,
+        amount: price,
+        timestamp: Date.now()
+    }));
     
     // СРАЗУ сохраняем данные на сервер после списания звезд
     await saveUserData();
@@ -869,7 +894,7 @@ function setupAppCloseHandlers() {
 }
 
 // Автоматическое добавление приза в инвентарь при закрытии приложения
-function autoAddPrizeToInventory() {
+async function autoAddPrizeToInventory() {
     // Дополнительная защита: не срабатываем при загрузке приложения
     if (isChoosingPrize && currentPrize && !prizeAutoAdded) {
         console.log('🔴 АВТОМАТИЧЕСКОЕ ДОБАВЛЕНИЕ ПРИЗА:');
@@ -893,8 +918,8 @@ function autoAddPrizeToInventory() {
             // НЕ возвращаем звезды - они уже потрачены на открытие кейса
             // currentCasePrice остается потраченным
             
-            // Сохраняем данные
-            saveUserData();
+            // СРАЗУ сохраняем данные на сервер
+            await saveUserData();
             
             console.log('✅ Приз автоматически добавлен в инвентарь (звезды НЕ возвращены)');
         } else {
@@ -938,7 +963,7 @@ function determinePrizeRarity(prize) {
 }
 
 // Восстановление состояния выбора приза из localStorage
-function restorePrizeState() {
+async function restorePrizeState() {
     try {
         const savedState = localStorage.getItem('pendingPrize');
         if (savedState) {
@@ -960,7 +985,9 @@ function restorePrizeState() {
                 
                 if (!prizeAlreadyAdded) {
                     userInventory.push(state.prize);
-                    saveUserData();
+                    // СРАЗУ сохраняем на сервер, чтобы данные синхронизировались
+                    await saveUserData();
+                    console.log('✅ Приз добавлен в инвентарь и сохранен на сервер');
                 } else {
                     console.log('Приз уже добавлен в инвентарь, пропускаем');
                 }
@@ -979,7 +1006,9 @@ function restorePrizeState() {
                 
                 if (!prizeAlreadyAdded) {
                     userInventory.push(state.prize);
-                    saveUserData();
+                    // СРАЗУ сохраняем на сервер, чтобы данные синхронизировались
+                    await saveUserData();
+                    console.log('✅ Приз добавлен в инвентарь и сохранен на сервер (время истекло)');
                 } else {
                     console.log('Приз уже добавлен в инвентарь, пропускаем');
                 }
@@ -1018,6 +1047,9 @@ function addToInventory() {
     isChoosingPrize = false;
     prizeAutoAdded = false;
     // starsSpent остается true - звезды уже потрачены
+    
+    // Очищаем состояние "звезды потрачены" из localStorage
+    localStorage.removeItem('starsSpent');
     
     // Закрываем модальное окно
     closePrizeModal();
@@ -1066,6 +1098,9 @@ async function claimPrize() {
             isChoosingPrize = false;
             prizeAutoAdded = false;
             // starsSpent остается true - звезды уже потрачены
+            
+            // Очищаем состояние "звезды потрачены" из localStorage
+            localStorage.removeItem('starsSpent');
             
             // Закрываем модальное окно
             closePrizeModal();
