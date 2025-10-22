@@ -47,9 +47,13 @@ class Database {
             connectionString: databaseUrl,
             ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
             // Добавляем таймауты для Railway
-            connectionTimeoutMillis: 10000,
+            connectionTimeoutMillis: 30000,
             idleTimeoutMillis: 30000,
-            query_timeout: 10000
+            query_timeout: 30000,
+            // Дополнительные настройки для Railway
+            max: 20,
+            min: 0,
+            acquireTimeoutMillis: 30000
         });
         
         this.isConnected = false;
