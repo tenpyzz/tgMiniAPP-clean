@@ -130,6 +130,9 @@ function setupEventListeners() {
     });
 }
 
+// Глобальная переменная для хранения цены текущего кейса
+let currentCasePrice = 0;
+
 // Открытие кейса
 async function openCase(caseType, price) {
     if (isOpening) return;
@@ -141,6 +144,7 @@ async function openCase(caseType, price) {
     }
     
     isOpening = true;
+    currentCasePrice = price;
     
     // Списываем звезды
     userStars -= price;
@@ -174,8 +178,14 @@ async function showCaseOpeningAnimation(caseType) {
     const lightFlash = document.getElementById('light-flash');
     const smokeEffect = document.getElementById('smoke-effect');
     
-    // Показываем область анимации
+    // Активируем полноэкранный режим
+    document.body.classList.add('case-opening');
+    openingArea.classList.add('fullscreen');
     openingArea.style.display = 'block';
+    
+    // Показываем кнопку выхода
+    const exitBtn = document.getElementById('exit-fullscreen-btn');
+    exitBtn.style.display = 'block';
     
     // Настраиваем кейс в зависимости от типа
     setupCaseForType(caseType, caseBox);
@@ -657,9 +667,17 @@ function closePrizeModal() {
     
     modal.classList.remove('show');
     
+    // Восстанавливаем интерфейс
+    document.body.classList.remove('case-opening');
+    
     // Скрываем область анимации
     const openingArea = document.getElementById('opening-area');
+    openingArea.classList.remove('fullscreen');
     openingArea.style.display = 'none';
+    
+    // Скрываем кнопку выхода
+    const exitBtn = document.getElementById('exit-fullscreen-btn');
+    exitBtn.style.display = 'none';
     
     // Сбрасываем анимацию кейса
     const caseBox = document.getElementById('case-box');
@@ -933,4 +951,64 @@ window.refreshData = async function() {
     } else {
         showNotification('Ошибка обновления данных', 'error');
     }
+};
+
+// Функция выхода из полноэкранного режима
+window.exitFullscreenMode = function() {
+    // Восстанавливаем интерфейс
+    document.body.classList.remove('case-opening');
+    
+    // Скрываем область анимации
+    const openingArea = document.getElementById('opening-area');
+    openingArea.classList.remove('fullscreen');
+    openingArea.style.display = 'none';
+    
+    // Скрываем кнопку выхода
+    const exitBtn = document.getElementById('exit-fullscreen-btn');
+    exitBtn.style.display = 'none';
+    
+    // Сбрасываем анимацию кейса
+    const caseBox = document.getElementById('case-box');
+    caseBox.className = 'case-box';
+    caseBox.style.animation = '';
+    
+    // Сбрасываем стили кейса
+    const caseLid = caseBox.querySelector('.case-lid');
+    const caseBody = caseBox.querySelector('.case-body');
+    if (caseLid) caseLid.style.transform = '';
+    if (caseLid) caseLid.style.background = '';
+    if (caseBody) caseBody.style.background = '';
+    
+    // Скрываем показ приза
+    const prizeReveal = document.getElementById('prize-reveal');
+    prizeReveal.classList.remove('show');
+    
+    // Очищаем эффекты редкости
+    const rarityEffects = prizeReveal.querySelectorAll('.rarity-effect');
+    rarityEffects.forEach(effect => effect.remove());
+    
+    // Сбрасываем лучи света
+    const lightRays = document.querySelector('.light-rays');
+    if (lightRays) {
+        lightRays.classList.remove('active');
+        lightRays.style.animationDuration = '';
+    }
+    
+    // Очищаем частицы
+    const particlesContainer = document.getElementById('particles-container');
+    if (particlesContainer) {
+        particlesContainer.innerHTML = '';
+    }
+    
+    // Возвращаем звезды (так как кейс не был открыт)
+    if (currentCasePrice > 0) {
+        userStars += currentCasePrice;
+        currentCasePrice = 0;
+        updateStarsDisplay();
+    }
+    
+    // Сбрасываем флаг открытия
+    isOpening = false;
+    
+    showNotification('Открытие кейса отменено', 'info');
 };
