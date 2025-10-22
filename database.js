@@ -11,9 +11,15 @@ class Database {
             throw new Error('DATABASE_URL is required');
         }
         
+        console.log('🔍 DATABASE_URL:', process.env.DATABASE_URL.replace(/:[^:@]+@/, ':***@')); // Скрываем пароль в логах
+        
         this.pool = new Pool({
             connectionString: process.env.DATABASE_URL,
-            ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+            ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+            // Добавляем таймауты для Railway
+            connectionTimeoutMillis: 10000,
+            idleTimeoutMillis: 30000,
+            query_timeout: 10000
         });
         
         this.isConnected = false;
@@ -21,23 +27,36 @@ class Database {
 
     // Инициализация базы данных
     async init() {
-        try {
-            console.log('🔍 REDEPLOY TEST - Подключаемся к PostgreSQL базе данных');
-            
-            // Тестируем подключение
-            const client = await this.pool.connect();
-            console.log('✅ REDEPLOY TEST - Подключение к PostgreSQL установлено');
-            
-            // Создаем таблицы
-            await this.createTables(client);
-            
-            client.release();
-            this.isConnected = true;
-            console.log('✅ REDEPLOY TEST - База данных PostgreSQL готова к работе');
-            
-        } catch (error) {
-            console.error('❌ REDEPLOY TEST - Ошибка подключения к PostgreSQL:', error);
-            throw error;
+        const maxRetries = 5;
+        const retryDelay = 2000; // 2 секунды
+        
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                console.log(`🔍 REDEPLOY TEST - Попытка подключения к PostgreSQL (${attempt}/${maxRetries})`);
+                
+                // Тестируем подключение
+                const client = await this.pool.connect();
+                console.log('✅ REDEPLOY TEST - Подключение к PostgreSQL установлено');
+                
+                // Создаем таблицы
+                await this.createTables(client);
+                
+                client.release();
+                this.isConnected = true;
+                console.log('✅ REDEPLOY TEST - База данных PostgreSQL готова к работе');
+                return;
+                
+            } catch (error) {
+                console.error(`❌ REDEPLOY TEST - Ошибка подключения к PostgreSQL (попытка ${attempt}/${maxRetries}):`, error.message);
+                
+                if (attempt === maxRetries) {
+                    console.error('❌ REDEPLOY TEST - Все попытки подключения исчерпаны');
+                    throw error;
+                }
+                
+                console.log(`⏳ REDEPLOY TEST - Ожидание ${retryDelay}ms перед следующей попыткой...`);
+                await new Promise(resolve => setTimeout(resolve, retryDelay));
+            }
         }
     }
 
