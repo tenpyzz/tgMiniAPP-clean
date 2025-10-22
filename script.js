@@ -217,6 +217,27 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
     
+    // Дополнительная проверка: если баланс 100, но в инвентаре есть алмазные призы,
+    // значит был открыт алмазный кейс и нужно исправить баланс
+    if (userStars === 100 && userInventory.length > 0) {
+        const hasDiamondPrize = userInventory.some(item => 
+            item.type === 'premium' || 
+            item.name.includes('Алмазный') || 
+            item.name.includes('Premium') ||
+            item.rarity === 'legendary'
+        );
+        
+        if (hasDiamondPrize) {
+            console.log('💎 ОБНАРУЖЕН АЛМАЗНЫЙ ПРИЗ В ИНВЕНТАРЕ ПРИ БАЛАНСЕ 100');
+            console.log('💎 Исправляем баланс на 0 звезд');
+            userStars = 0;
+            starsSpent = true;
+            
+            // Сразу сохраняем исправленный баланс на сервер
+            saveUserData();
+        }
+    }
+    
     // Обновляем отображение
     updateStarsDisplay();
     updateInventoryDisplay();
@@ -1483,6 +1504,27 @@ async function loadUserData() {
             userInventory = data.inventory || [];
             
             console.log(`Данные загружены: ${userStars} звезд, ${userInventory.length} предметов в инвентаре`);
+            
+            // Дополнительная проверка: если баланс 100, но в инвентаре есть алмазные призы,
+            // значит был открыт алмазный кейс и нужно исправить баланс
+            if (userStars === 100 && userInventory.length > 0) {
+                const hasDiamondPrize = userInventory.some(item => 
+                    item.type === 'premium' || 
+                    item.name.includes('Алмазный') || 
+                    item.name.includes('Premium') ||
+                    item.rarity === 'legendary'
+                );
+                
+                if (hasDiamondPrize) {
+                    console.log('💎 ОБНАРУЖЕН АЛМАЗНЫЙ ПРИЗ В ИНВЕНТАРЕ ПРИ БАЛАНСЕ 100 (loadUserData)');
+                    console.log('💎 Исправляем баланс на 0 звезд');
+                    userStars = 0;
+                    starsSpent = true;
+                    
+                    // Сразу сохраняем исправленный баланс на сервер
+                    await saveUserData();
+                }
+            }
             
             // Обновляем отображение только если данные изменились
             if (oldStars !== userStars || oldInventoryLength !== userInventory.length) {
