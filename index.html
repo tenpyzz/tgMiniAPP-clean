@@ -77,20 +77,38 @@
             <!-- Opening Animation Area -->
             <section class="opening-area" id="opening-area" style="display: none;">
                 <div class="case-opening-animation">
+                    <!-- Фоновая анимация -->
+                    <div class="opening-background">
+                        <div class="light-rays"></div>
+                        <div class="particles-container" id="particles-container"></div>
+                    </div>
+                    
+                    <!-- Кейс -->
                     <div class="case-container">
                         <div class="case-box" id="case-box">
                             <div class="case-lid"></div>
                             <div class="case-body"></div>
+                            <div class="case-glow-effect"></div>
+                            <div class="case-shine"></div>
                         </div>
                     </div>
-                    <div class="sparkles" id="sparkles"></div>
+                    
+                    <!-- Эффекты при открытии -->
+                    <div class="opening-effects">
+                        <div class="explosion-effect" id="explosion-effect"></div>
+                        <div class="light-flash" id="light-flash"></div>
+                        <div class="smoke-effect" id="smoke-effect"></div>
+                    </div>
                 </div>
                 
+                <!-- Анимация появления приза -->
                 <div class="prize-reveal" id="prize-reveal">
                     <div class="prize-container">
+                        <div class="prize-glow"></div>
                         <div class="prize-icon" id="prize-icon"></div>
                         <h3 class="prize-name" id="prize-name"></h3>
                         <p class="prize-description" id="prize-description"></p>
+                        <div class="prize-rarity" id="prize-rarity"></div>
                     </div>
                 </div>
             </section>
@@ -115,7 +133,6 @@
     <!-- Loading Overlay -->
     <div class="loading-overlay" id="loading-overlay">
         <div class="loading-spinner"></div>
-        <p>Открываем кейс...</p>
     </div>
 
     <!-- Prize Modal -->
@@ -139,3 +156,4 @@
     <script src="script.js"></script>
 </body>
 </html>
+

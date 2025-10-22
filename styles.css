@@ -238,63 +238,302 @@ body {
     color: var(--text-secondary);
 }
 
-/* Opening Animation */
+/* Opening Animation - CS:GO Style */
 .opening-area {
     text-align: center;
     margin: 2rem 0;
+    position: relative;
+    min-height: 400px;
+    overflow: hidden;
 }
 
 .case-opening-animation {
     position: relative;
     margin-bottom: 2rem;
+    height: 300px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
+/* Фоновая анимация */
+.opening-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.light-rays {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 200%;
+    height: 200%;
+    transform: translate(-50%, -50%);
+    background: conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        rgba(255, 215, 0, 0.1) 45deg,
+        rgba(255, 215, 0, 0.3) 90deg,
+        rgba(255, 215, 0, 0.1) 135deg,
+        transparent 180deg,
+        transparent 360deg
+    );
+    animation: rotateRays 4s linear infinite;
+    opacity: 0;
+}
+
+@keyframes rotateRays {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.light-rays.active {
+    opacity: 1;
+    animation: rotateRays 2s linear infinite;
+}
+
+/* Контейнер кейса */
 .case-container {
+    position: relative;
+    z-index: 10;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 200px;
 }
 
+/* Кейс */
 .case-box {
-    width: 150px;
-    height: 150px;
+    width: 180px;
+    height: 180px;
     position: relative;
     transform-style: preserve-3d;
-    animation: caseShake 0.5s ease-in-out infinite;
+    transition: all 0.3s ease;
+}
+
+.case-box.shaking {
+    animation: caseShake 0.1s ease-in-out infinite;
+}
+
+.case-box.spinning {
+    animation: caseSpin 0.5s ease-in-out infinite;
+}
+
+.case-box.opening {
+    animation: caseOpen 1s ease-out forwards;
 }
 
 @keyframes caseShake {
-    0%, 100% { transform: rotateX(0deg) rotateY(0deg); }
-    25% { transform: rotateX(5deg) rotateY(5deg); }
-    75% { transform: rotateX(-5deg) rotateY(-5deg); }
+    0%, 100% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+    25% { transform: rotateX(2deg) rotateY(2deg) rotateZ(1deg); }
+    75% { transform: rotateX(-2deg) rotateY(-2deg) rotateZ(-1deg); }
 }
 
+@keyframes caseSpin {
+    0% { transform: rotateY(0deg) scale(1); }
+    50% { transform: rotateY(180deg) scale(1.1); }
+    100% { transform: rotateY(360deg) scale(1); }
+}
+
+@keyframes caseOpen {
+    0% { transform: rotateY(0deg) scale(1); }
+    50% { transform: rotateY(180deg) scale(1.2); }
+    100% { transform: rotateY(360deg) scale(1.3) translateY(-20px); }
+}
+
+/* Крышка кейса */
 .case-lid {
     width: 100%;
-    height: 30%;
-    background: linear-gradient(135deg, #ffd700, #ffb347);
-    border-radius: 10px 10px 0 0;
+    height: 35%;
+    background: linear-gradient(135deg, #ffd700, #ffb347, #ff8c00);
+    border-radius: 15px 15px 0 0;
     position: absolute;
     top: 0;
-    transform-origin: bottom;
-    transition: transform 0.5s ease;
+    transform-origin: bottom center;
+    transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    box-shadow: 
+        inset 0 2px 4px rgba(255, 255, 255, 0.3),
+        0 4px 8px rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
+/* Тело кейса */
 .case-body {
     width: 100%;
-    height: 70%;
-    background: linear-gradient(135deg, #ffd700, #ffb347);
-    border-radius: 0 0 10px 10px;
+    height: 65%;
+    background: linear-gradient(135deg, #ffd700, #ffb347, #ff8c00);
+    border-radius: 0 0 15px 15px;
     position: absolute;
     bottom: 0;
+    box-shadow: 
+        inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+        0 4px 8px rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-top: none;
 }
 
-.case-box.opening .case-lid {
-    transform: rotateX(-90deg);
+/* Эффект свечения кейса */
+.case-glow-effect {
+    position: absolute;
+    top: -20px;
+    left: -20px;
+    right: -20px;
+    bottom: -20px;
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.4) 0%, transparent 70%);
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: -1;
 }
 
-.sparkles {
+.case-box:hover .case-glow-effect {
+    opacity: 1;
+}
+
+.case-box.active .case-glow-effect {
+    opacity: 1;
+    animation: pulseGlow 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes pulseGlow {
+    from { 
+        transform: scale(1);
+        opacity: 0.4;
+    }
+    to { 
+        transform: scale(1.2);
+        opacity: 0.8;
+    }
+}
+
+/* Блеск на кейсе */
+.case-shine {
+    position: absolute;
+    top: 10%;
+    left: 10%;
+    width: 30%;
+    height: 60%;
+    background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.6) 50%, transparent 70%);
+    border-radius: 10px;
+    transform: skewX(-20deg);
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.case-box:hover .case-shine {
+    opacity: 1;
+    animation: shineMove 1.5s ease-in-out infinite;
+}
+
+@keyframes shineMove {
+    0% { transform: translateX(-100%) skewX(-20deg); }
+    100% { transform: translateX(300%) skewX(-20deg); }
+}
+
+/* Эффекты при открытии */
+.opening-effects {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 5;
+}
+
+/* Эффект взрыва */
+.explosion-effect {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.8) 0%, rgba(255, 165, 0, 0.4) 50%, transparent 100%);
+    transform: translate(-50%, -50%);
+    opacity: 0;
+}
+
+.explosion-effect.active {
+    animation: explosion 0.6s ease-out forwards;
+}
+
+@keyframes explosion {
+    0% {
+        width: 0;
+        height: 0;
+        opacity: 0;
+    }
+    50% {
+        width: 300px;
+        height: 300px;
+        opacity: 1;
+    }
+    100% {
+        width: 500px;
+        height: 500px;
+        opacity: 0;
+    }
+}
+
+/* Вспышка света */
+.light-flash {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, transparent 70%);
+    opacity: 0;
+}
+
+.light-flash.active {
+    animation: lightFlash 0.3s ease-out forwards;
+}
+
+@keyframes lightFlash {
+    0% { opacity: 0; }
+    50% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+/* Эффект дыма */
+.smoke-effect {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100px;
+    height: 100px;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+}
+
+.smoke-effect.active {
+    animation: smokeRise 2s ease-out forwards;
+}
+
+@keyframes smokeRise {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5);
+    }
+    20% {
+        opacity: 0.8;
+        transform: translate(-50%, -60%) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -120%) scale(1.5);
+    }
+}
+
+/* Контейнер частиц */
+.particles-container {
     position: absolute;
     top: 0;
     left: 0;
@@ -303,65 +542,129 @@ body {
     pointer-events: none;
 }
 
-.sparkle {
+.particle {
     position: absolute;
     width: 4px;
     height: 4px;
-    background: white;
+    background: #ffd700;
     border-radius: 50%;
-    animation: sparkleAnimation 1s ease-out forwards;
+    pointer-events: none;
 }
 
-@keyframes sparkleAnimation {
-    0% {
-        opacity: 1;
-        transform: scale(0) rotate(0deg);
-    }
-    50% {
-        opacity: 1;
-        transform: scale(1) rotate(180deg);
-    }
-    100% {
-        opacity: 0;
-        transform: scale(0) rotate(360deg);
-    }
-}
-
+/* Анимация появления приза */
 .prize-reveal {
     margin-top: 2rem;
     opacity: 0;
-    transform: translateY(20px);
-    transition: all 0.5s ease;
+    transform: translateY(50px) scale(0.8);
+    transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    position: relative;
+    z-index: 15;
 }
 
 .prize-reveal.show {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
 }
 
 .prize-container {
-    background: white;
-    border-radius: 20px;
-    padding: 2rem;
-    box-shadow: var(--shadow-lg);
-    max-width: 400px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.9));
+    backdrop-filter: blur(10px);
+    border-radius: 25px;
+    padding: 2.5rem;
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    max-width: 450px;
     margin: 0 auto;
+    position: relative;
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    overflow: hidden;
+}
+
+.prize-glow {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    right: -50%;
+    bottom: -50%;
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.2) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: prizeGlow 2s ease-in-out infinite alternate;
+    z-index: -1;
+}
+
+@keyframes prizeGlow {
+    from { 
+        transform: scale(0.8);
+        opacity: 0.3;
+    }
+    to { 
+        transform: scale(1.2);
+        opacity: 0.6;
+    }
 }
 
 .prize-icon {
-    font-size: 4rem;
+    font-size: 5rem;
     margin-bottom: 1rem;
+    animation: prizeBounce 0.6s ease-out;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+@keyframes prizeBounce {
+    0% { transform: scale(0) rotate(180deg); }
+    50% { transform: scale(1.2) rotate(90deg); }
+    100% { transform: scale(1) rotate(0deg); }
 }
 
 .prize-name {
-    font-size: 1.5rem;
+    font-size: 1.8rem;
     margin-bottom: 0.5rem;
     color: var(--text-primary);
+    font-weight: bold;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .prize-description {
     color: var(--text-secondary);
-    font-size: 1rem;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+}
+
+.prize-rarity {
+    display: inline-block;
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.prize-rarity.common {
+    background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+    color: white;
+}
+
+.prize-rarity.rare {
+    background: linear-gradient(45deg, #3498db, #2980b9);
+    color: white;
+}
+
+.prize-rarity.epic {
+    background: linear-gradient(45deg, #9b59b6, #8e44ad);
+    color: white;
+}
+
+.prize-rarity.legendary {
+    background: linear-gradient(45deg, #f39c12, #e67e22);
+    color: white;
+    animation: legendaryGlow 1s ease-in-out infinite alternate;
+}
+
+@keyframes legendaryGlow {
+    from { box-shadow: 0 0 10px rgba(243, 156, 18, 0.5); }
+    to { box-shadow: 0 0 20px rgba(243, 156, 18, 0.8); }
 }
 
 /* Inventory */
@@ -513,10 +816,82 @@ body {
     text-align: center;
     transform: scale(0.8);
     transition: transform 0.3s ease;
+    position: relative;
+    overflow: hidden;
 }
 
 .prize-modal.show .modal-content {
     transform: scale(1);
+}
+
+.modal-appear .modal-content {
+    animation: modalAppear 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+@keyframes modalAppear {
+    0% {
+        transform: scale(0.5) rotate(-10deg);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.1) rotate(5deg);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+/* Эффекты для легендарных предметов */
+.legendary-modal .modal-content {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 248, 220, 0.9));
+    border: 3px solid #f39c12;
+    box-shadow: 
+        0 0 30px rgba(243, 156, 18, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.legendary-modal .modal-content::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    right: -50%;
+    bottom: -50%;
+    background: conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        rgba(243, 156, 18, 0.1) 45deg,
+        rgba(243, 156, 18, 0.3) 90deg,
+        rgba(243, 156, 18, 0.1) 135deg,
+        transparent 180deg,
+        transparent 360deg
+    );
+    animation: rotateRays 3s linear infinite;
+    z-index: -1;
+}
+
+/* Эффекты для эпических предметов */
+.epic-modal .modal-content {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 240, 255, 0.9));
+    border: 2px solid #9b59b6;
+    box-shadow: 
+        0 0 20px rgba(155, 89, 182, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.epic-modal .modal-content::before {
+    content: '';
+    position: absolute;
+    top: -20px;
+    left: -20px;
+    right: -20px;
+    bottom: -20px;
+    background: radial-gradient(circle, rgba(155, 89, 182, 0.2) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: epicPulse 2s ease-in-out infinite;
+    z-index: -1;
 }
 
 .modal-header {
