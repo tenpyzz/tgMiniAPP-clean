@@ -181,7 +181,19 @@ function startDataSync() {
         }
         
         if (!skipSync) {
+            // ДОПОЛНИТЕЛЬНАЯ ЗАЩИТА: Проверяем текущий баланс перед синхронизацией
+            const currentBalance = userStars;
+            const hasInventory = userInventory.length > 0;
+            
             await loadUserData();
+            
+            // Если после синхронизации баланс стал 100, но у нас есть инвентарь, это подозрительно
+            if (userStars === 100 && hasInventory && currentBalance !== 100) {
+                console.log('⚠️ СИНХРОНИЗАЦИЯ: Подозрительное изменение баланса с', currentBalance, 'на 100');
+                console.log('⚠️ Восстанавливаем предыдущий баланс:', currentBalance);
+                userStars = currentBalance;
+                updateStarsDisplay();
+            }
         }
     }, 30000);
     
@@ -223,7 +235,19 @@ function startDataSync() {
             }
             
             if (!skipSync) {
+                // ДОПОЛНИТЕЛЬНАЯ ЗАЩИТА: Проверяем текущий баланс перед синхронизацией
+                const currentBalance = userStars;
+                const hasInventory = userInventory.length > 0;
+                
                 loadUserData();
+                
+                // Если после синхронизации баланс стал 100, но у нас есть инвентарь, это подозрительно
+                if (userStars === 100 && hasInventory && currentBalance !== 100) {
+                    console.log('⚠️ ВОЗВРАЩЕНИЕ НА ВКЛАДКУ: Подозрительное изменение баланса с', currentBalance, 'на 100');
+                    console.log('⚠️ Восстанавливаем предыдущий баланс:', currentBalance);
+                    userStars = currentBalance;
+                    updateStarsDisplay();
+                }
             }
         }
     });
@@ -342,6 +366,27 @@ document.addEventListener('DOMContentLoaded', async function() {
         } catch (error) {
             console.error('Ошибка при восстановлении состояния звезд:', error);
             localStorage.removeItem('starsSpent');
+        }
+    }
+    
+    // ДОПОЛНИТЕЛЬНАЯ ЗАЩИТА: Проверяем, не был ли баланс случайно сброшен на 100
+    // Если у пользователя есть предметы в инвентаре, но баланс 100, это подозрительно
+    if (userStars === 100 && userInventory.length > 0) {
+        const hasDiamondPrize = userInventory.some(item => 
+            item.type === 'premium' || 
+            item.name.includes('Алмазный') || 
+            item.name.includes('Premium') ||
+            item.rarity === 'legendary'
+        );
+        
+        if (hasDiamondPrize) {
+            console.log('💎 ОБНАРУЖЕН АЛМАЗНЫЙ ПРИЗ В ИНВЕНТАРЕ ПРИ БАЛАНСЕ 100 (инициализация)');
+            console.log('💎 Исправляем баланс на 0 звезд');
+            userStars = 0;
+            starsSpent = true;
+            
+            // Сразу сохраняем исправленный баланс на сервер
+            saveUserData();
         }
     }
     
@@ -1651,7 +1696,14 @@ async function loadUserData() {
             const oldStars = userStars;
             const oldInventoryLength = userInventory.length;
             
-            userStars = data.stars_balance || 100;
+            // ИСПРАВЛЕНИЕ: Не сбрасываем баланс на 100, если сервер вернул null/undefined
+            // Сохраняем текущий баланс, если серверные данные некорректны
+            if (data.stars_balance !== null && data.stars_balance !== undefined) {
+                userStars = data.stars_balance;
+            } else {
+                console.log('⚠️ Сервер вернул некорректный баланс, сохраняем текущий:', userStars);
+            }
+            
             userInventory = data.inventory || [];
             
             console.log(`Данные загружены: ${userStars} звезд, ${userInventory.length} предметов в инвентаре`);
@@ -1698,8 +1750,9 @@ async function loadUserData() {
         }
     } catch (error) {
         console.error('Ошибка при загрузке данных:', error);
-        // Используем значения по умолчанию только если это первая загрузка
+        // ИСПРАВЛЕНИЕ: Не сбрасываем баланс на 100 при ошибке, если у нас уже есть данные
         if (userStars === 100 && userInventory.length === 0) {
+            // Только если это первая загрузка и нет данных
             userStars = 100;
             userInventory = [];
         }

@@ -102,6 +102,27 @@ app.post('/api/user/data', verifyTelegramData, async (req, res) => {
                 balance: user.balance,
                 inventory_count: user.inventory?.length || 0
             });
+            
+            // ИСПРАВЛЕНИЕ: Проверяем, не был ли баланс случайно сброшен на 100
+            // Если у пользователя есть предметы в инвентаре, но баланс 100, это подозрительно
+            if (user.balance === 100 && user.inventory && user.inventory.length > 0) {
+                const hasDiamondPrize = user.inventory.some(item => 
+                    item.type === 'premium' || 
+                    item.name.includes('Алмазный') || 
+                    item.name.includes('Premium') ||
+                    item.rarity === 'legendary'
+                );
+                
+                if (hasDiamondPrize) {
+                    console.log('💎 ОБНАРУЖЕН АЛМАЗНЫЙ ПРИЗ В ИНВЕНТАРЕ ПРИ БАЛАНСЕ 100 (сервер)');
+                    console.log('💎 Исправляем баланс на 0 звезд');
+                    user.balance = 0;
+                    
+                    // Сразу сохраняем исправленный баланс
+                    await db.updateBalance(user_id, 0);
+                    console.log('💎 Баланс исправлен и сохранен на сервере');
+                }
+            }
         }
         
         const response = {
