@@ -7,6 +7,11 @@ let userInventory = []; // Инвентарь пользователя
 let isOpening = false; // Флаг открытия кейса
 let currentUserId = null; // ID текущего пользователя
 
+// Админские функции
+const ADMIN_USER_ID = '1165123437'; // ID админа
+let isAdmin = false; // Флаг админа
+let adminMode = false; // Режим админа
+
 // Функция для получения userId
 function getUserId() {
     // Сначала пытаемся получить из Telegram WebApp
@@ -100,6 +105,242 @@ function clearUserData() {
     localStorage.removeItem('telegram_user_id');
     localStorage.removeItem('telegram_user_name');
     console.log('🗑️ Очищены сохраненные данные пользователя');
+}
+
+// Функция проверки админа
+function checkAdmin() {
+    const userId = getUserId();
+    isAdmin = userId === ADMIN_USER_ID;
+    
+    if (isAdmin) {
+        console.log('🔑 АДМИН РЕЖИМ: Пользователь является администратором');
+        setupAdminInterface();
+    } else {
+        console.log('👤 Обычный пользователь');
+    }
+    
+    return isAdmin;
+}
+
+// Настройка админского интерфейса
+function setupAdminInterface() {
+    // Добавляем скрытую кнопку админа в заголовок
+    const header = document.querySelector('.header');
+    if (header && !document.getElementById('admin-toggle')) {
+        const adminToggle = document.createElement('div');
+        adminToggle.id = 'admin-toggle';
+        adminToggle.className = 'admin-toggle';
+        adminToggle.innerHTML = '🔧';
+        adminToggle.title = 'Админ панель (двойной клик)';
+        adminToggle.style.cssText = `
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 30px;
+            height: 30px;
+            background: rgba(255, 0, 0, 0.1);
+            border: 2px solid #ff0000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        `;
+        
+        adminToggle.addEventListener('click', function(e) {
+            if (e.detail === 2) { // Двойной клик
+                toggleAdminMode();
+            }
+        });
+        
+        header.appendChild(adminToggle);
+    }
+}
+
+// Переключение админского режима
+function toggleAdminMode() {
+    if (!isAdmin) {
+        showNotification('❌ Доступ запрещен', 'error');
+        return;
+    }
+    
+    adminMode = !adminMode;
+    
+    if (adminMode) {
+        showAdminPanel();
+        showNotification('🔑 Админ режим активирован', 'success');
+    } else {
+        hideAdminPanel();
+        showNotification('👤 Обычный режим', 'info');
+    }
+}
+
+// Показ админской панели
+function showAdminPanel() {
+    // Создаем админскую панель
+    let adminPanel = document.getElementById('admin-panel');
+    if (!adminPanel) {
+        adminPanel = document.createElement('div');
+        adminPanel.id = 'admin-panel';
+        adminPanel.className = 'admin-panel';
+        adminPanel.innerHTML = `
+            <div class="admin-header">
+                <h3>🔧 Админ Панель</h3>
+                <button onclick="toggleAdminMode()" class="admin-close">✕</button>
+            </div>
+            <div class="admin-content">
+                <div class="admin-section">
+                    <h4>👥 Управление пользователями</h4>
+                    <div class="admin-controls">
+                        <input type="text" id="target-user-id" placeholder="ID пользователя" class="admin-input">
+                        <input type="number" id="balance-amount" placeholder="Количество звезд" class="admin-input">
+                        <button onclick="setUserBalance()" class="admin-btn">💎 Установить баланс</button>
+                        <button onclick="addUserBalance()" class="admin-btn">➕ Добавить звезды</button>
+                        <button onclick="getUserInfo()" class="admin-btn">ℹ️ Информация о пользователе</button>
+                    </div>
+                </div>
+                <div class="admin-section">
+                    <h4>📊 Статистика</h4>
+                    <div class="admin-controls">
+                        <button onclick="getAllUsers()" class="admin-btn">👥 Все пользователи</button>
+                        <button onclick="getServerStats()" class="admin-btn">📈 Статистика сервера</button>
+                        <button onclick="createBackup()" class="admin-btn">💾 Создать резервную копию</button>
+                    </div>
+                </div>
+                <div class="admin-section">
+                    <h4>🎮 Игровые функции</h4>
+                    <div class="admin-controls">
+                        <button onclick="addStars(100)" class="admin-btn">⭐ +100 звезд</button>
+                        <button onclick="addStars(500)" class="admin-btn">⭐ +500 звезд</button>
+                        <button onclick="addStars(1000)" class="admin-btn">⭐ +1000 звезд</button>
+                        <button onclick="clearInventory()" class="admin-btn">🗑️ Очистить инвентарь</button>
+                    </div>
+                </div>
+                <div class="admin-section">
+                    <h4>🔧 Система</h4>
+                    <div class="admin-controls">
+                        <button onclick="refreshData()" class="admin-btn">🔄 Обновить данные</button>
+                        <button onclick="clearAllData()" class="admin-btn">⚠️ Очистить все данные</button>
+                    </div>
+                </div>
+            </div>
+            <div class="admin-log" id="admin-log">
+                <h4>📝 Лог действий</h4>
+                <div id="admin-log-content"></div>
+            </div>
+        `;
+        
+        // Добавляем стили для админской панели
+        const adminStyles = document.createElement('style');
+        adminStyles.textContent = `
+            .admin-panel {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.9);
+                z-index: 10000;
+                color: white;
+                overflow-y: auto;
+                padding: 20px;
+                box-sizing: border-box;
+            }
+            .admin-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 20px;
+                padding-bottom: 10px;
+                border-bottom: 2px solid #ff0000;
+            }
+            .admin-close {
+                background: #ff0000;
+                color: white;
+                border: none;
+                padding: 10px 15px;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 16px;
+            }
+            .admin-section {
+                margin-bottom: 30px;
+                padding: 15px;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 10px;
+                border: 1px solid #333;
+            }
+            .admin-controls {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                margin-top: 10px;
+            }
+            .admin-input {
+                padding: 8px 12px;
+                border: 1px solid #555;
+                border-radius: 5px;
+                background: #333;
+                color: white;
+                min-width: 150px;
+            }
+            .admin-btn {
+                padding: 8px 15px;
+                background: #007bff;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                transition: background 0.3s;
+            }
+            .admin-btn:hover {
+                background: #0056b3;
+            }
+            .admin-log {
+                margin-top: 20px;
+                padding: 15px;
+                background: rgba(0, 0, 0, 0.5);
+                border-radius: 10px;
+                max-height: 200px;
+                overflow-y: auto;
+            }
+            #admin-log-content {
+                font-family: monospace;
+                font-size: 12px;
+                line-height: 1.4;
+            }
+        `;
+        document.head.appendChild(adminStyles);
+        
+        document.body.appendChild(adminPanel);
+    }
+    
+    adminPanel.style.display = 'block';
+}
+
+// Скрытие админской панели
+function hideAdminPanel() {
+    const adminPanel = document.getElementById('admin-panel');
+    if (adminPanel) {
+        adminPanel.style.display = 'none';
+    }
+}
+
+// Логирование админских действий
+function logAdminAction(action) {
+    const logContent = document.getElementById('admin-log-content');
+    if (logContent) {
+        const timestamp = new Date().toLocaleTimeString();
+        const logEntry = document.createElement('div');
+        logEntry.textContent = `[${timestamp}] ${action}`;
+        logEntry.style.marginBottom = '5px';
+        logContent.appendChild(logEntry);
+        logContent.scrollTop = logContent.scrollHeight;
+    }
+    console.log(`🔧 АДМИН: ${action}`);
 }
 
 // Конфигурация кейсов с улучшенной системой редкости
@@ -290,6 +531,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         initDataUnsafe: tg?.initDataUnsafe,
         user: tg?.initDataUnsafe?.user
     });
+    
+    // Проверяем админские права
+    checkAdmin();
     
     // REDEPLOY TEST - Показываем уведомление о тестировании
     setTimeout(() => {
@@ -1903,3 +2147,281 @@ window.exitFullscreenMode = function() {
     
     showNotification('Открытие кейса отменено', 'info');
 };
+
+// ==================== АДМИНСКИЕ ФУНКЦИИ ====================
+
+// Установка баланса пользователя
+async function setUserBalance() {
+    if (!isAdmin) {
+        showNotification('❌ Доступ запрещен', 'error');
+        return;
+    }
+    
+    const userId = document.getElementById('target-user-id').value;
+    const amount = parseInt(document.getElementById('balance-amount').value);
+    
+    if (!userId || isNaN(amount)) {
+        showNotification('❌ Введите корректные данные', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/admin/users/' + userId + '/balance', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                balance: amount,
+                user_id: currentUserId // Добавляем ID админа для проверки прав
+            })
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showNotification(`✅ Баланс пользователя ${userId} установлен: ${amount} звезд`, 'success');
+            logAdminAction(`Установлен баланс ${amount} для пользователя ${userId}`);
+        } else {
+            throw new Error('Ошибка сервера');
+        }
+    } catch (error) {
+        console.error('Ошибка установки баланса:', error);
+        showNotification('❌ Ошибка установки баланса', 'error');
+        logAdminAction(`ОШИБКА: Не удалось установить баланс для ${userId}`);
+    }
+}
+
+// Добавление к балансу пользователя
+async function addUserBalance() {
+    if (!isAdmin) {
+        showNotification('❌ Доступ запрещен', 'error');
+        return;
+    }
+    
+    const userId = document.getElementById('target-user-id').value;
+    const amount = parseInt(document.getElementById('balance-amount').value);
+    
+    if (!userId || isNaN(amount)) {
+        showNotification('❌ Введите корректные данные', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/admin/users/' + userId + '/add-balance', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                amount: amount,
+                user_id: currentUserId // Добавляем ID админа для проверки прав
+            })
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showNotification(`✅ Добавлено ${amount} звезд пользователю ${userId}. Новый баланс: ${result.newBalance}`, 'success');
+            logAdminAction(`Добавлено ${amount} звезд пользователю ${userId}. Новый баланс: ${result.newBalance}`);
+        } else {
+            throw new Error('Ошибка сервера');
+        }
+    } catch (error) {
+        console.error('Ошибка добавления к балансу:', error);
+        showNotification('❌ Ошибка добавления к балансу', 'error');
+        logAdminAction(`ОШИБКА: Не удалось добавить ${amount} звезд пользователю ${userId}`);
+    }
+}
+
+// Получение информации о пользователе
+async function getUserInfo() {
+    if (!isAdmin) {
+        showNotification('❌ Доступ запрещен', 'error');
+        return;
+    }
+    
+    const userId = document.getElementById('target-user-id').value;
+    
+    if (!userId) {
+        showNotification('❌ Введите ID пользователя', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/admin/users/' + userId);
+        
+        if (response.ok) {
+            const result = await response.json();
+            const user = result.user;
+            
+            const info = `
+Пользователь: ${user.telegram_name}
+ID: ${user.user_id}
+Баланс: ${user.balance} звезд
+Инвентарь: ${user.inventory?.length || 0} предметов
+Создан: ${new Date(user.created_at).toLocaleString()}
+Обновлен: ${new Date(user.updated_at).toLocaleString()}
+            `;
+            
+            alert(info);
+            logAdminAction(`Получена информация о пользователе ${userId}`);
+        } else if (response.status === 404) {
+            showNotification('❌ Пользователь не найден', 'error');
+            logAdminAction(`Пользователь ${userId} не найден`);
+        } else {
+            throw new Error('Ошибка сервера');
+        }
+    } catch (error) {
+        console.error('Ошибка получения информации о пользователе:', error);
+        showNotification('❌ Ошибка получения информации', 'error');
+        logAdminAction(`ОШИБКА: Не удалось получить информацию о пользователе ${userId}`);
+    }
+}
+
+// Получение всех пользователей
+async function getAllUsers() {
+    if (!isAdmin) {
+        showNotification('❌ Доступ запрещен', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/admin/users', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                user_id: currentUserId // Добавляем ID админа для проверки прав
+            })
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            const users = result.users;
+            
+            let info = `Всего пользователей: ${users.length}\n\n`;
+            users.forEach((user, index) => {
+                info += `${index + 1}. ${user.telegram_name} (${user.user_id})\n`;
+                info += `   Баланс: ${user.balance} звезд\n`;
+                info += `   Инвентарь: ${user.inventory?.length || 0} предметов\n\n`;
+            });
+            
+            alert(info);
+            logAdminAction(`Получен список всех пользователей (${users.length})`);
+        } else {
+            throw new Error('Ошибка сервера');
+        }
+    } catch (error) {
+        console.error('Ошибка получения списка пользователей:', error);
+        showNotification('❌ Ошибка получения списка пользователей', 'error');
+        logAdminAction('ОШИБКА: Не удалось получить список пользователей');
+    }
+}
+
+// Получение статистики сервера
+async function getServerStats() {
+    if (!isAdmin) {
+        showNotification('❌ Доступ запрещен', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/admin/stats', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                user_id: currentUserId // Добавляем ID админа для проверки прав
+            })
+        });
+        
+        if (response.ok) {
+            const stats = await response.json();
+            
+            const info = `
+Статистика сервера:
+Всего пользователей: ${stats.total_users}
+Пользователей с балансом: ${stats.users_with_balance}
+Общее количество звезд: ${stats.total_stars}
+Средний баланс: ${stats.avg_balance?.toFixed(2) || 0}
+Всего предметов в инвентарях: ${stats.total_inventory_items}
+            `;
+            
+            alert(info);
+            logAdminAction('Получена статистика сервера');
+        } else {
+            throw new Error('Ошибка сервера');
+        }
+    } catch (error) {
+        console.error('Ошибка получения статистики:', error);
+        showNotification('❌ Ошибка получения статистики', 'error');
+        logAdminAction('ОШИБКА: Не удалось получить статистику сервера');
+    }
+}
+
+// Создание резервной копии
+async function createBackup() {
+    if (!isAdmin) {
+        showNotification('❌ Доступ запрещен', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/admin/backup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                user_id: currentUserId // Добавляем ID админа для проверки прав
+            })
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showNotification('✅ Резервная копия создана успешно', 'success');
+            logAdminAction('Создана резервная копия');
+        } else {
+            throw new Error('Ошибка сервера');
+        }
+    } catch (error) {
+        console.error('Ошибка создания резервной копии:', error);
+        showNotification('❌ Ошибка создания резервной копии', 'error');
+        logAdminAction('ОШИБКА: Не удалось создать резервную копию');
+    }
+}
+
+// Очистка всех данных (только для админа)
+async function clearAllData() {
+    if (!isAdmin) {
+        showNotification('❌ Доступ запрещен', 'error');
+        return;
+    }
+    
+    if (!confirm('⚠️ ВНИМАНИЕ! Это действие удалит ВСЕ данные приложения. Продолжить?')) {
+        return;
+    }
+    
+    if (!confirm('⚠️ ВЫ УВЕРЕНЫ? Это действие НЕОБРАТИМО!')) {
+        return;
+    }
+    
+    try {
+        // Очищаем локальные данные
+        userStars = 100;
+        userInventory = [];
+        localStorage.clear();
+        
+        // Обновляем отображение
+        updateStarsDisplay();
+        updateInventoryDisplay();
+        
+        showNotification('✅ Все данные очищены', 'success');
+        logAdminAction('ОЧИЩЕНЫ ВСЕ ДАННЫЕ ПРИЛОЖЕНИЯ');
+    } catch (error) {
+        console.error('Ошибка очистки данных:', error);
+        showNotification('❌ Ошибка очистки данных', 'error');
+        logAdminAction('ОШИБКА: Не удалось очистить данные');
+    }
+}

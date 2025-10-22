@@ -23,6 +23,20 @@ function verifyTelegramData(req, res, next) {
     next();
 }
 
+// Middleware для проверки админских прав
+function verifyAdmin(req, res, next) {
+    const { user_id } = req.body;
+    const ADMIN_USER_ID = '1165123437';
+    
+    if (user_id !== ADMIN_USER_ID) {
+        console.log(`❌ АДМИН: Попытка доступа от пользователя ${user_id} (не админ)`);
+        return res.status(403).json({ error: 'Access denied. Admin privileges required.' });
+    }
+    
+    console.log(`✅ АДМИН: Доступ разрешен для пользователя ${user_id}`);
+    next();
+}
+
 // Инициализация базы данных
 const db = new Database();
 
@@ -270,8 +284,8 @@ app.get('/api/admin/users/:userId', async (req, res) => {
     }
 });
 
-// Обновление баланса пользователя
-app.post('/api/admin/users/:userId/balance', async (req, res) => {
+// Обновление баланса пользователя (только для админа)
+app.post('/api/admin/users/:userId/balance', verifyAdmin, async (req, res) => {
     try {
         const userId = req.params.userId;
         const { balance } = req.body;
@@ -281,6 +295,8 @@ app.post('/api/admin/users/:userId/balance', async (req, res) => {
         }
         
         await db.updateBalance(userId, balance);
+        
+        console.log(`🔧 АДМИН: Баланс пользователя ${userId} установлен на ${balance}`);
         
         res.json({
             success: true,
@@ -292,8 +308,8 @@ app.post('/api/admin/users/:userId/balance', async (req, res) => {
     }
 });
 
-// Добавление к балансу пользователя
-app.post('/api/admin/users/:userId/add-balance', async (req, res) => {
+// Добавление к балансу пользователя (только для админа)
+app.post('/api/admin/users/:userId/add-balance', verifyAdmin, async (req, res) => {
     try {
         const userId = req.params.userId;
         const { amount } = req.body;
@@ -303,6 +319,8 @@ app.post('/api/admin/users/:userId/add-balance', async (req, res) => {
         }
         
         const result = await db.addToBalance(userId, amount);
+        
+        console.log(`🔧 АДМИН: Добавлено ${amount} звезд пользователю ${userId}. Новый баланс: ${result.newBalance}`);
         
         res.json({
             success: true,
@@ -676,13 +694,14 @@ app.post('/api/admin/backup', async (req, res) => {
     }
 });
 
-// Восстановление из резервной копии
-app.post('/api/admin/restore', async (req, res) => {
+// Восстановление из резервной копии (только для админа)
+app.post('/api/admin/restore', verifyAdmin, async (req, res) => {
     try {
         const { backup_path } = req.body;
         const restored = await db.restoreFromBackup(backup_path);
         
         if (restored) {
+            console.log(`🔧 АДМИН: Данные восстановлены из резервной копии ${backup_path}`);
             res.json({ 
                 success: true, 
                 message: 'Данные восстановлены из резервной копии'
@@ -696,6 +715,133 @@ app.post('/api/admin/restore', async (req, res) => {
     } catch (error) {
         console.error('Error restoring from backup:', error);
         res.status(500).json({ error: 'Failed to restore from backup' });
+    }
+});
+
+// Дополнительные админские эндпоинты
+
+// Получение информации о конкретном пользователе (только для админа)
+app.get('/api/admin/users/:userId', verifyAdmin, async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        const user = await db.getUser(userId);
+        
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        console.log(`🔧 АДМИН: Получена информация о пользователе ${userId}`);
+        
+        res.json({
+            success: true,
+            user: user
+        });
+    } catch (error) {
+        console.error('Error getting user:', error);
+        res.status(500).json({ error: 'Failed to get user' });
+    }
+});
+
+// Получение всех пользователей (только для админа)
+app.post('/api/admin/users', verifyAdmin, async (req, res) => {
+    try {
+        console.log('🔧 АДМИН: Запрос всех пользователей');
+        
+        const users = await db.getAllUsers();
+        console.log(`🔧 АДМИН: Найдено ${users.length} пользователей`);
+        
+        res.json({
+            success: true,
+            users: users,
+            total: users.length
+        });
+    } catch (error) {
+        console.error('Error getting users:', error);
+        res.status(500).json({ error: 'Failed to get users' });
+    }
+});
+
+// Получение статистики сервера (только для админа)
+app.post('/api/admin/stats', verifyAdmin, async (req, res) => {
+    try {
+        console.log('🔧 АДМИН: Запрос статистики сервера');
+        
+        const stats = await db.getStats();
+        const users = await db.getAllUsers();
+        
+        const detailedStats = {
+            total_users: stats.total_users || 0,
+            users_with_balance: stats.users_with_balance || 0,
+            total_stars: stats.total_balance || 0,
+            avg_balance: stats.avg_balance || 0,
+            total_inventory_items: 0,
+            users: []
+        };
+
+        users.forEach(user => {
+            detailedStats.total_inventory_items += user.inventory?.length || 0;
+            detailedStats.users.push({
+                user_id: user.user_id,
+                telegram_name: user.telegram_name,
+                stars_balance: user.balance,
+                inventory_count: user.inventory?.length || 0,
+                created_at: user.created_at,
+                updated_at: user.updated_at
+            });
+        });
+
+        console.log(`🔧 АДМИН: Статистика отправлена - ${detailedStats.total_users} пользователей`);
+        
+        res.json(detailedStats);
+    } catch (error) {
+        console.error('Error getting stats:', error);
+        res.status(500).json({ error: 'Failed to get stats' });
+    }
+});
+
+// Создание резервной копии (только для админа)
+app.post('/api/admin/backup', verifyAdmin, async (req, res) => {
+    try {
+        console.log('🔧 АДМИН: Создание резервной копии');
+        
+        const backupPath = await db.createBackup();
+        
+        console.log(`🔧 АДМИН: Резервная копия создана: ${backupPath}`);
+        
+        res.json({ 
+            success: true, 
+            message: 'Резервная копия создана успешно',
+            backup_path: backupPath
+        });
+    } catch (error) {
+        console.error('Error creating backup:', error);
+        res.status(500).json({ error: 'Failed to create backup' });
+    }
+});
+
+// Удаление пользователя (только для админа)
+app.delete('/api/admin/users/:userId', verifyAdmin, async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        
+        // Проверяем, существует ли пользователь
+        const user = await db.getUser(userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        // Удаляем пользователя из базы данных
+        await db.deleteUser(userId);
+        
+        console.log(`🔧 АДМИН: Пользователь ${userId} удален`);
+        
+        res.json({
+            success: true,
+            message: `User ${userId} deleted successfully`
+        });
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        res.status(500).json({ error: 'Failed to delete user' });
     }
 });
 

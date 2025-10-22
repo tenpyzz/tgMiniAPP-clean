@@ -420,6 +420,24 @@ class Database {
         }
     }
 
+    // Удаление пользователя
+    async deleteUser(userId) {
+        try {
+            const query = 'DELETE FROM users WHERE user_id = $1 RETURNING *';
+            const result = await this.pool.query(query, [userId]);
+            
+            if (result.rows.length === 0) {
+                throw new Error('Пользователь не найден');
+            }
+            
+            console.log(`✅ Пользователь ${userId} удален из базы данных`);
+            return result.rows[0];
+        } catch (error) {
+            console.error('Ошибка удаления пользователя:', error);
+            throw error;
+        }
+    }
+
     // Закрытие соединения с базой данных
     async close() {
         try {
