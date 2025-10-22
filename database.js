@@ -300,9 +300,12 @@ class Database {
             await this.updateUser(userId, data);
             console.log(`✅ REDEPLOY TEST - Пользователь ${userId} обновлен в базе данных`);
             
-            // Создаем резервную копию при каждом обновлении (для отладки)
+            // Создаем резервную копию при каждом обновлении
             console.log(`💾 REDEPLOY TEST - Создаем резервную копию при каждом обновлении`);
             await this.createBackup();
+            
+            // Дополнительно сохраняем данные в JSON файл для надежности
+            await this.createEmergencyBackup();
             
             // Проверяем количество пользователей после обновления
             const userCount = await this.getUserCount();
@@ -317,6 +320,53 @@ class Database {
         } catch (error) {
             console.error('❌ REDEPLOY TEST - Ошибка обновления с резервным копированием:', error);
             throw error;
+        }
+    }
+
+    // Экстренное резервное копирование в отдельный файл
+    async createEmergencyBackup() {
+        try {
+            const users = await this.getAllUsers();
+            const emergencyData = {
+                timestamp: new Date().toISOString(),
+                users: users,
+                total: users.length
+            };
+            
+            const emergencyPath = path.join(__dirname, 'emergency_backup.json');
+            fs.writeFileSync(emergencyPath, JSON.stringify(emergencyData, null, 2));
+            console.log(`🚨 REDEPLOY TEST - Экстренная резервная копия создана: ${emergencyPath}`);
+            return emergencyPath;
+        } catch (error) {
+            console.error('❌ REDEPLOY TEST - Ошибка создания экстренной резервной копии:', error);
+            throw error;
+        }
+    }
+
+    // Восстановление из экстренной резервной копии
+    async restoreFromEmergencyBackup() {
+        try {
+            const emergencyPath = path.join(__dirname, 'emergency_backup.json');
+            
+            if (!fs.existsSync(emergencyPath)) {
+                console.log('🚨 REDEPLOY TEST - Экстренная резервная копия не найдена');
+                return false;
+            }
+            
+            const emergencyData = JSON.parse(fs.readFileSync(emergencyPath, 'utf8'));
+            console.log(`🚨 REDEPLOY TEST - Восстанавливаем из экстренной резервной копии от ${emergencyData.timestamp}`);
+            console.log(`🚨 REDEPLOY TEST - Пользователей в экстренной копии: ${emergencyData.users.length}`);
+            
+            for (const user of emergencyData.users) {
+                console.log(`🔄 REDEPLOY TEST - Восстанавливаем пользователя: ${user.user_id} (${user.telegram_name})`);
+                await this.upsertUser(user.user_id, user.telegram_name, user.balance, user.inventory);
+            }
+            
+            console.log(`✅ REDEPLOY TEST - Восстановлено ${emergencyData.users.length} пользователей из экстренной копии`);
+            return true;
+        } catch (error) {
+            console.error('❌ REDEPLOY TEST - Ошибка восстановления из экстренной резервной копии:', error);
+            return false;
         }
     }
 

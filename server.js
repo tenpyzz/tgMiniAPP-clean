@@ -41,6 +41,15 @@ async function initializeDatabase() {
                 console.log('✅ REDEPLOY TEST - Данные успешно восстановлены из резервной копии');
             } else {
                 console.log('⚠️ REDEPLOY TEST - Резервная копия не найдена или пуста');
+                
+                // Пытаемся восстановить из экстренной резервной копии
+                console.log('🚨 REDEPLOY TEST - Пытаемся восстановить из экстренной резервной копии');
+                const emergencyRestored = await db.restoreFromEmergencyBackup();
+                if (emergencyRestored) {
+                    console.log('✅ REDEPLOY TEST - Данные восстановлены из экстренной резервной копии');
+                } else {
+                    console.log('⚠️ REDEPLOY TEST - Экстренная резервная копия не найдена');
+                }
             }
         } catch (backupError) {
             console.log('❌ REDEPLOY TEST - Ошибка восстановления из резервной копии:', backupError.message);
@@ -51,6 +60,11 @@ async function initializeDatabase() {
         console.log('💾 REDEPLOY TEST - Создаем резервную копию');
         await db.createBackup();
         console.log('✅ REDEPLOY TEST - Резервная копия создана');
+        
+        // Создаем экстренную резервную копию
+        console.log('🚨 REDEPLOY TEST - Создаем экстренную резервную копию');
+        await db.createEmergencyBackup();
+        console.log('✅ REDEPLOY TEST - Экстренная резервная копия создана');
         
         // Проверяем количество пользователей в базе
         const userCount = await db.getUserCount();
