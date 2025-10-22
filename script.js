@@ -119,11 +119,24 @@ document.addEventListener('DOMContentLoaded', async function() {
                 console.log('⭐ ВОССТАНОВЛЕНИЕ ЗВЕЗД: звезды потрачены');
                 console.log(`💰 Оригинальное количество звезд: ${state.originalStars}, потрачено: ${state.amount}`);
                 
+                // Специальное логирование для алмазного кейса
+                if (state.amount === 100) {
+                    console.log('💎 АЛМАЗНЫЙ КЕЙС - ВОССТАНОВЛЕНИЕ ЗВЕЗД');
+                    console.log('💎 Баланс ДО восстановления:', userStars);
+                    console.log('💎 Оригинальные звезды:', state.originalStars);
+                    console.log('💎 Потрачено на алмазный кейс:', state.amount);
+                }
+                
                 // Восстанавливаем правильное количество звезд (оригинальное - потраченное)
                 userStars = state.originalStars - state.amount;
                 starsSpent = true;
                 
                 console.log(`💰 Восстановленный баланс: ${userStars} звезд`);
+                
+                // Специальное логирование для алмазного кейса
+                if (state.amount === 100) {
+                    console.log('💎 АЛМАЗНЫЙ КЕЙС - БАЛАНС ПОСЛЕ ВОССТАНОВЛЕНИЯ:', userStars);
+                }
                 
                 // Очищаем состояние после использования
                 localStorage.removeItem('starsSpent');
@@ -226,6 +239,15 @@ async function openCase(caseType, price) {
     
     console.log(`🎰 ОТКРЫТИЕ КЕЙСА: ${caseType}, цена: ${price} звезд`);
     console.log(`💰 Баланс ДО: ${userStars} звезд`);
+    
+    // Специальное логирование для алмазного кейса
+    if (caseType === 'diamond') {
+        console.log('💎 АЛМАЗНЫЙ КЕЙС - ОСОБОЕ ЛОГИРОВАНИЕ');
+        console.log('💎 Проверяем состояние localStorage перед открытием:');
+        console.log('💎 pendingPrize:', localStorage.getItem('pendingPrize'));
+        console.log('💎 starsSpent:', localStorage.getItem('starsSpent'));
+        console.log('💎 prizeProcessed:', localStorage.getItem('prizeProcessed'));
+    }
     
     isOpening = true;
     currentCasePrice = price;
@@ -1007,6 +1029,14 @@ async function restorePrizeState() {
             if (Date.now() - state.timestamp < 300000) {
                 console.log('🔄 ВОССТАНОВЛЕНИЕ ПРИЗА:', state.prize);
                 console.log(`🎁 Тип приза: ${state.prize.type}, название: ${state.prize.name}`);
+                
+                // Специальное логирование для алмазного кейса
+                if (state.prize.type === 'premium' || state.prize.name.includes('Алмазный') || state.prize.name.includes('Premium')) {
+                    console.log('💎 АЛМАЗНЫЙ ПРИЗ - ОСОБОЕ ЛОГИРОВАНИЕ');
+                    console.log('💎 Текущий баланс перед восстановлением:', userStars);
+                    console.log('💎 Состояние starsSpent:', starsSpent);
+                    console.log('💎 Текущий инвентарь:', userInventory.length, 'предметов');
+                }
                 
                 // ВАЖНО: Проверяем, были ли уже потрачены звезды
                 // Если приз есть в localStorage, значит звезды уже потрачены
