@@ -105,6 +105,15 @@ app.post('/api/user/data', verifyTelegramData, async (req, res) => {
         let user = await db.getUser(user_id);
         
         if (!user) {
+            // Проверяем, не является ли это тестовым пользователем
+            if (user_id === 'test_user' || user_id === 'test_user_123') {
+                console.log(`🚫 REDEPLOY TEST - Блокируем создание тестового пользователя ${user_id}`);
+                return res.status(404).json({ 
+                    error: 'User not found',
+                    message: 'Тестовые пользователи не создаются автоматически'
+                });
+            }
+            
             console.log(`👤 REDEPLOY TEST - Пользователь ${user_id} не найден, создаем нового`);
             // Создаем нового пользователя если его нет с балансом 100
             user = await db.upsertUser(user_id, telegram_name || 'Unknown User', 100, []);
@@ -166,6 +175,15 @@ app.post('/api/user/save', verifyTelegramData, async (req, res) => {
             full_body: req.body
         });
         
+        // Проверяем, не является ли это тестовым пользователем
+        if (user_id === 'test_user' || user_id === 'test_user_123') {
+            console.log(`🚫 REDEPLOY TEST - Блокируем сохранение данных для тестового пользователя ${user_id}`);
+            return res.status(403).json({ 
+                error: 'Access denied',
+                message: 'Сохранение данных для тестовых пользователей запрещено'
+            });
+        }
+        
         // Проверяем, существует ли пользователь
         const existingUser = await db.getUser(user_id);
         console.log(`🔍 REDEPLOY TEST - Пользователь ${user_id} существует:`, !!existingUser);
@@ -202,6 +220,15 @@ app.post('/api/prize/claim', verifyTelegramData, async (req, res) => {
         console.log(`User ${user_id} claimed prize:`, prize);
         
         let result = { success: true };
+        
+        // Проверяем, не является ли это тестовым пользователем
+        if (user_id === 'test_user' || user_id === 'test_user_123') {
+            console.log(`🚫 REDEPLOY TEST - Блокируем обработку приза для тестового пользователя ${user_id}`);
+            return res.status(403).json({ 
+                error: 'Access denied',
+                message: 'Обработка призов для тестовых пользователей запрещена'
+            });
+        }
         
         // Получаем данные пользователя из базы данных
         let user = await db.getUser(user_id);

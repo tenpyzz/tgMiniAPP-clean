@@ -17,6 +17,17 @@ function getUserId() {
     // Сначала пытаемся получить из Telegram WebApp
     if (tg?.initDataUnsafe?.user?.id) {
         const telegramUserId = tg.initDataUnsafe.user.id.toString();
+        
+        // Блокируем тестовых пользователей
+        if (telegramUserId === 'test_user' || telegramUserId === 'test_user_123') {
+            console.log('🚫 Блокируем использование тестового пользователя:', telegramUserId);
+            // Генерируем новый ID вместо тестового
+            const fallbackId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('telegram_user_id', fallbackId);
+            console.log('✅ Сгенерирован новый ID вместо тестового:', fallbackId);
+            return fallbackId;
+        }
+        
         // Сохраняем Telegram userId в localStorage для последующего использования
         localStorage.setItem('telegram_user_id', telegramUserId);
         console.log('✅ Получен userId от Telegram:', telegramUserId);
@@ -53,6 +64,15 @@ function getUserId() {
     // Если ничего не получилось, генерируем уникальный ID на основе времени и случайного числа
     const fallbackId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     console.log('⚠️ Не удалось получить userId от Telegram, используем fallback:', fallbackId);
+    
+    // Дополнительная проверка: если fallback ID случайно совпал с тестовым
+    if (fallbackId === 'test_user' || fallbackId === 'test_user_123') {
+        const newFallbackId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        console.log('🚫 Fallback ID совпал с тестовым, генерируем новый:', newFallbackId);
+        localStorage.setItem('telegram_user_id', newFallbackId);
+        return newFallbackId;
+    }
+    
     // Сохраняем fallback ID для последующего использования
     localStorage.setItem('telegram_user_id', fallbackId);
     return fallbackId;
@@ -1908,6 +1928,12 @@ async function loadInventoryOnly() {
 // Загрузка данных пользователя
 async function loadUserData() {
     try {
+        // Блокируем загрузку данных для тестовых пользователей
+        if (currentUserId === 'test_user' || currentUserId === 'test_user_123') {
+            console.log('🚫 Блокируем загрузку данных для тестового пользователя:', currentUserId);
+            return false;
+        }
+        
         // Проверяем, есть ли нерешенный алмазный кейс
         const starsSpentState = localStorage.getItem('starsSpent');
         const pendingPrize = localStorage.getItem('pendingPrize');
@@ -2052,6 +2078,12 @@ async function loadUserData() {
 // Сохранение данных пользователя
 async function saveUserData() {
     try {
+        // Блокируем сохранение данных для тестовых пользователей
+        if (currentUserId === 'test_user' || currentUserId === 'test_user_123') {
+            console.log('🚫 Блокируем сохранение данных для тестового пользователя:', currentUserId);
+            return;
+        }
+        
         const requestData = {
             user_id: currentUserId,
             telegram_name: getUserName(),
