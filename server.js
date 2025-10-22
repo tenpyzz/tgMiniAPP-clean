@@ -484,6 +484,11 @@ app.get('/test', (req, res) => {
     res.sendFile(__dirname + '/test.html');
 });
 
+// Админ панель
+app.get('/admin', (req, res) => {
+    res.sendFile(__dirname + '/admin.html');
+});
+
 // Информация о сервере
 app.get('/api/info', async (req, res) => {
     try {
