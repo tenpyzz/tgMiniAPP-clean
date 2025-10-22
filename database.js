@@ -7,15 +7,27 @@ class Database {
         // Получаем параметры подключения из переменных окружения Railway
         let databaseUrl = process.env.DATABASE_URL;
         
-        // Если DATABASE_URL не найден, попробуем собрать из отдельных переменных
-        if (!databaseUrl) {
-            console.log('🔍 DATABASE_URL не найден, пытаемся собрать из отдельных переменных...');
+        console.log('🔍 DATABASE_URL значение:', databaseUrl ? 'установлено' : 'не установлено');
+        console.log('🔍 DATABASE_URL длина:', databaseUrl ? databaseUrl.length : 0);
+        console.log('🔍 DATABASE_URL содержимое:', databaseUrl);
+        
+        // Если DATABASE_URL не найден или пустой, попробуем собрать из отдельных переменных
+        if (!databaseUrl || databaseUrl.trim() === '' || databaseUrl.includes('${{')) {
+            console.log('🔍 DATABASE_URL не найден или содержит шаблон, пытаемся собрать из отдельных переменных...');
             
             const pgHost = process.env.PGHOST || process.env.POSTGRES_HOST;
             const pgPort = process.env.PGPORT || process.env.POSTGRES_PORT || '5432';
             const pgDatabase = process.env.PGDATABASE || process.env.POSTGRES_DB;
             const pgUser = process.env.PGUSER || process.env.POSTGRES_USER;
             const pgPassword = process.env.PGPASSWORD || process.env.POSTGRES_PASSWORD;
+            
+            console.log('🔍 Отдельные переменные:', {
+                pgHost: pgHost ? 'установлено' : 'не установлено',
+                pgPort: pgPort ? 'установлено' : 'не установлено',
+                pgDatabase: pgDatabase ? 'установлено' : 'не установлено',
+                pgUser: pgUser ? 'установлено' : 'не установлено',
+                pgPassword: pgPassword ? 'установлено' : 'не установлено'
+            });
             
             if (pgHost && pgDatabase && pgUser && pgPassword) {
                 databaseUrl = `postgresql://${pgUser}:${pgPassword}@${pgHost}:${pgPort}/${pgDatabase}`;
