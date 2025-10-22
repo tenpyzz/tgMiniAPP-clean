@@ -106,7 +106,7 @@ app.post('/api/user/data', verifyTelegramData, async (req, res) => {
         
         if (!user) {
             console.log(`👤 REDEPLOY TEST - Пользователь ${user_id} не найден, создаем нового`);
-            // Создаем нового пользователя если его нет
+            // Создаем нового пользователя если его нет с балансом 100
             user = await db.upsertUser(user_id, telegram_name || 'Unknown User', 100, []);
             console.log(`✅ REDEPLOY TEST - Создан новый пользователь ${user_id}:`, user);
         } else {

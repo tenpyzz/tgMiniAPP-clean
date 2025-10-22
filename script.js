@@ -2,7 +2,7 @@
 const tg = window.Telegram.WebApp;
 
 // Глобальные переменные
-let userStars = 100; // Начальный баланс звезд
+let userStars = 0; // Начальный баланс звезд (будет загружен с сервера)
 let userInventory = []; // Инвентарь пользователя
 let isOpening = false; // Флаг открытия кейса
 let currentUserId = null; // ID текущего пользователя
@@ -425,6 +425,7 @@ function startDataSync() {
             // ДОПОЛНИТЕЛЬНАЯ ЗАЩИТА: Проверяем текущий баланс перед синхронизацией
             const currentBalance = userStars;
             const hasInventory = userInventory.length > 0;
+            const savedBalance = localStorage.getItem('user_balance');
             
             await loadUserData();
             
@@ -434,6 +435,14 @@ function startDataSync() {
                 console.log('⚠️ Восстанавливаем предыдущий баланс:', currentBalance);
                 userStars = currentBalance;
                 updateStarsDisplay();
+            }
+            
+            // Дополнительная защита: проверяем localStorage
+            if (savedBalance && parseInt(savedBalance) > 0 && userStars === 100 && hasInventory) {
+                console.log('🔄 СИНХРОНИЗАЦИЯ: Восстанавливаем баланс из localStorage:', savedBalance);
+                userStars = parseInt(savedBalance);
+                updateStarsDisplay();
+                await saveUserData();
             }
         }
     }, 30000);
@@ -479,6 +488,7 @@ function startDataSync() {
                 // ДОПОЛНИТЕЛЬНАЯ ЗАЩИТА: Проверяем текущий баланс перед синхронизацией
                 const currentBalance = userStars;
                 const hasInventory = userInventory.length > 0;
+                const savedBalance = localStorage.getItem('user_balance');
                 
                 loadUserData();
                 
@@ -488,6 +498,14 @@ function startDataSync() {
                     console.log('⚠️ Восстанавливаем предыдущий баланс:', currentBalance);
                     userStars = currentBalance;
                     updateStarsDisplay();
+                }
+                
+                // Дополнительная защита: проверяем localStorage
+                if (savedBalance && parseInt(savedBalance) > 0 && userStars === 100 && hasInventory) {
+                    console.log('🔄 ВОЗВРАЩЕНИЕ НА ВКЛАДКУ: Восстанавливаем баланс из localStorage:', savedBalance);
+                    userStars = parseInt(savedBalance);
+                    updateStarsDisplay();
+                    saveUserData();
                 }
             }
         }
@@ -632,6 +650,16 @@ document.addEventListener('DOMContentLoaded', async function() {
             // Сразу сохраняем исправленный баланс на сервер
             saveUserData();
         }
+    }
+    
+    // ДОПОЛНИТЕЛЬНАЯ ЗАЩИТА: Проверяем localStorage на предмет сохраненного баланса
+    const savedBalance = localStorage.getItem('user_balance');
+    if (savedBalance && parseInt(savedBalance) > 0 && userStars === 100 && userInventory.length > 0) {
+        console.log('🔄 ВОССТАНОВЛЕНИЕ БАЛАНСА из localStorage:', savedBalance);
+        userStars = parseInt(savedBalance);
+        updateStarsDisplay();
+        // Сохраняем восстановленный баланс на сервер
+        saveUserData();
     }
     
     // Дополнительная проверка: если баланс 100, но в инвентаре есть алмазные призы,
@@ -1765,6 +1793,10 @@ function updateStarsDisplay() {
     if (starsCount) {
         starsCount.textContent = userStars;
     }
+    
+    // Сохраняем баланс в localStorage для защиты от сброса
+    localStorage.setItem('user_balance', userStars.toString());
+    console.log('💾 Баланс сохранен в localStorage:', userStars);
 }
 
 // Обновление отображения инвентаря
@@ -1944,13 +1976,18 @@ async function loadUserData() {
             const oldStars = userStars;
             const oldInventoryLength = userInventory.length;
             
-            // ИСПРАВЛЕНИЕ: Не сбрасываем баланс на 100, если сервер вернул null/undefined
-            // Сохраняем текущий баланс, если серверные данные некорректны
-            if (data.stars_balance !== null && data.stars_balance !== undefined) {
-                userStars = data.stars_balance;
-            } else {
-                console.log('⚠️ Сервер вернул некорректный баланс, сохраняем текущий:', userStars);
+        // ИСПРАВЛЕНИЕ: Не сбрасываем баланс на 100, если сервер вернул null/undefined
+        // Сохраняем текущий баланс, если серверные данные некорректны
+        if (data.stars_balance !== null && data.stars_balance !== undefined && data.stars_balance >= 0) {
+            userStars = data.stars_balance;
+        } else {
+            console.log('⚠️ Сервер вернул некорректный баланс, сохраняем текущий:', userStars);
+            // Если текущий баланс 0 и это первая загрузка, устанавливаем 100
+            if (userStars === 0 && userInventory.length === 0) {
+                userStars = 100;
+                console.log('🆕 Первая загрузка - устанавливаем начальный баланс 100');
             }
+        }
             
             userInventory = data.inventory || [];
             
@@ -1999,10 +2036,11 @@ async function loadUserData() {
     } catch (error) {
         console.error('Ошибка при загрузке данных:', error);
         // ИСПРАВЛЕНИЕ: Не сбрасываем баланс на 100 при ошибке, если у нас уже есть данные
-        if (userStars === 100 && userInventory.length === 0) {
+        if (userStars === 0 && userInventory.length === 0) {
             // Только если это первая загрузка и нет данных
             userStars = 100;
             userInventory = [];
+            console.log('🆕 Первая загрузка при ошибке - устанавливаем начальный баланс 100');
         }
         return false;
     }
@@ -2039,6 +2077,29 @@ async function saveUserData() {
         console.error('Ошибка при сохранении данных:', error);
     }
 }
+
+// Функция восстановления баланса из localStorage
+window.restoreBalance = function() {
+    const savedBalance = localStorage.getItem('user_balance');
+    if (savedBalance && parseInt(savedBalance) > 0) {
+        const oldBalance = userStars;
+        userStars = parseInt(savedBalance);
+        updateStarsDisplay();
+        saveUserData();
+        showNotification(`Баланс восстановлен: ${oldBalance} → ${userStars}`, 'success');
+        console.log('🔄 БАЛАНС ВОССТАНОВЛЕН:', oldBalance, '→', userStars);
+    } else {
+        showNotification('Сохраненный баланс не найден', 'error');
+    }
+};
+
+// Функция принудительного сохранения баланса
+window.forceSaveBalance = function() {
+    localStorage.setItem('user_balance', userStars.toString());
+    saveUserData();
+    showNotification(`Баланс ${userStars} принудительно сохранен`, 'success');
+    console.log('💾 БАЛАНС ПРИНУДИТЕЛЬНО СОХРАНЕН:', userStars);
+};
 
 // Экспорт функций для тестирования
 window.userStars = userStars;
