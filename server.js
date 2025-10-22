@@ -192,9 +192,19 @@ app.post('/api/prize/claim', verifyTelegramData, async (req, res) => {
 app.get('/api/admin/users', async (req, res) => {
     try {
         console.log('🔍 REDEPLOY TEST - Запрос всех пользователей для админ панели');
+        
+        // Проверяем количество пользователей в базе
+        const userCount = await db.getUserCount();
+        console.log(`📊 REDEPLOY TEST - Количество пользователей в базе: ${userCount}`);
+        
         const users = await db.getAllUsers();
         console.log(`📊 REDEPLOY TEST - Найдено пользователей: ${users.length}`);
         console.log('👥 REDEPLOY TEST - Пользователи:', users.map(u => ({ id: u.user_id, name: u.telegram_name, balance: u.balance })));
+        
+        // Проверяем, есть ли файл базы данных
+        const fs = require('fs');
+        const dbPath = require('path').join(__dirname, 'users.db');
+        console.log(`🔍 REDEPLOY TEST - Файл базы данных существует: ${fs.existsSync(dbPath)}`);
         
         res.json({
             success: true,

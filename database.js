@@ -11,12 +11,15 @@ class Database {
     // Инициализация базы данных
     async init() {
         return new Promise((resolve, reject) => {
+            console.log(`🔍 REDEPLOY TEST - Путь к базе данных: ${this.dbPath}`);
+            console.log(`🔍 REDEPLOY TEST - Файл базы данных существует: ${fs.existsSync(this.dbPath)}`);
+            
             this.db = new sqlite3.Database(this.dbPath, (err) => {
                 if (err) {
-                    console.error('Ошибка подключения к базе данных:', err);
+                    console.error('❌ REDEPLOY TEST - Ошибка подключения к базе данных:', err);
                     reject(err);
                 } else {
-                    console.log('✅ Подключение к SQLite базе данных установлено');
+                    console.log('✅ REDEPLOY TEST - Подключение к SQLite базе данных установлено');
                     this.createTables().then(resolve).catch(reject);
                 }
             });
@@ -297,15 +300,18 @@ class Database {
             await this.updateUser(userId, data);
             console.log(`✅ REDEPLOY TEST - Пользователь ${userId} обновлен в базе данных`);
             
-            // Создаем резервную копию каждые 10 обновлений
+            // Создаем резервную копию при каждом обновлении (для отладки)
+            console.log(`💾 REDEPLOY TEST - Создаем резервную копию при каждом обновлении`);
+            await this.createBackup();
+            
+            // Проверяем количество пользователей после обновления
+            const userCount = await this.getUserCount();
+            console.log(`📊 REDEPLOY TEST - Количество пользователей в базе после обновления: ${userCount}`);
+            
+            // Счетчик для статистики
             const backupCount = global.backupCount || 0;
             global.backupCount = backupCount + 1;
-            console.log(`📊 REDEPLOY TEST - Счетчик резервных копий: ${global.backupCount}`);
-            
-            if (global.backupCount % 10 === 0) {
-                console.log(`💾 REDEPLOY TEST - Создаем резервную копию (каждые 10 обновлений)`);
-                await this.createBackup();
-            }
+            console.log(`📊 REDEPLOY TEST - Счетчик обновлений: ${global.backupCount}`);
             
             return true;
         } catch (error) {
