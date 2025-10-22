@@ -977,6 +977,22 @@ async function restorePrizeState() {
         const savedState = localStorage.getItem('pendingPrize');
         if (savedState) {
             const state = JSON.parse(savedState);
+            
+            // Проверяем, не был ли уже обработан этот приз
+            const processedPrize = localStorage.getItem('prizeProcessed');
+            if (processedPrize) {
+                try {
+                    const processed = JSON.parse(processedPrize);
+                    if (processed.prizeId === state.prize.id) {
+                        console.log('Приз уже был обработан ранее, пропускаем восстановление');
+                        localStorage.removeItem('pendingPrize');
+                        return false;
+                    }
+                } catch (e) {
+                    // Игнорируем ошибки парсинга
+                }
+            }
+            
             // Проверяем, что прошло не более 5 минут
             if (Date.now() - state.timestamp < 300000) {
                 console.log('Восстанавливаем состояние выбора приза:', state.prize);
@@ -986,8 +1002,9 @@ async function restorePrizeState() {
                 // и приз должен быть добавлен в инвентарь автоматически
                 console.log('Приз найден в localStorage - звезды уже потрачены, добавляем в инвентарь');
                 
-                // Сначала загружаем ТОЛЬКО инвентарь с сервера, не трогая звезды
-                await loadInventoryOnly();
+                // НЕ загружаем данные с сервера - используем локальные данные
+                // чтобы не перезаписать потраченные звезды
+                console.log('Используем локальные данные, НЕ загружаем с сервера');
                 
                 // Проверяем, не добавлен ли уже приз в инвентарь
                 const prizeAlreadyAdded = userInventory.some(item => 
@@ -1000,6 +1017,12 @@ async function restorePrizeState() {
                     // СРАЗУ сохраняем на сервер, чтобы данные синхронизировались
                     await saveUserData();
                     console.log('✅ Приз добавлен в инвентарь и сохранен на сервер');
+                    
+                    // Помечаем приз как обработанный в localStorage
+                    localStorage.setItem('prizeProcessed', JSON.stringify({
+                        prizeId: state.prize.id,
+                        timestamp: Date.now()
+                    }));
                 } else {
                     console.log('Приз уже добавлен в инвентарь, пропускаем');
                 }
@@ -1010,8 +1033,8 @@ async function restorePrizeState() {
                 // Время истекло, добавляем приз автоматически
                 console.log('Время выбора приза истекло, добавляем автоматически');
                 
-                // Сначала загружаем ТОЛЬКО инвентарь с сервера, не трогая звезды
-                await loadInventoryOnly();
+                // НЕ загружаем данные с сервера - используем локальные данные
+                console.log('Используем локальные данные, НЕ загружаем с сервера (время истекло)');
                 
                 // Проверяем, не добавлен ли уже приз в инвентарь
                 const prizeAlreadyAdded = userInventory.some(item => 
@@ -1024,6 +1047,12 @@ async function restorePrizeState() {
                     // СРАЗУ сохраняем на сервер, чтобы данные синхронизировались
                     await saveUserData();
                     console.log('✅ Приз добавлен в инвентарь и сохранен на сервер (время истекло)');
+                    
+                    // Помечаем приз как обработанный в localStorage
+                    localStorage.setItem('prizeProcessed', JSON.stringify({
+                        prizeId: state.prize.id,
+                        timestamp: Date.now()
+                    }));
                 } else {
                     console.log('Приз уже добавлен в инвентарь, пропускаем');
                 }
@@ -1065,6 +1094,9 @@ function addToInventory() {
     
     // Очищаем состояние "звезды потрачены" из localStorage
     localStorage.removeItem('starsSpent');
+    
+    // Очищаем флаг "обработанный приз"
+    localStorage.removeItem('prizeProcessed');
     
     // Закрываем модальное окно
     closePrizeModal();
@@ -1116,6 +1148,9 @@ async function claimPrize() {
             
             // Очищаем состояние "звезды потрачены" из localStorage
             localStorage.removeItem('starsSpent');
+            
+            // Очищаем флаг "обработанный приз"
+            localStorage.removeItem('prizeProcessed');
             
             // Закрываем модальное окно
             closePrizeModal();
