@@ -217,6 +217,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         user: tg?.initDataUnsafe?.user
     });
     
+    // REDEPLOY TEST - Показываем уведомление о тестировании
+    setTimeout(() => {
+        showNotification('🚀 REDEPLOY TEST - Проверяем сохранение данных пользователя', 'info');
+    }, 2000);
+    
     // Сбрасываем все флаги при загрузке приложения
     isOpening = false;
     isChoosingPrize = false;
@@ -1567,6 +1572,7 @@ async function loadUserData() {
         };
         
         console.log('📥 Загружаем данные пользователя:', requestData);
+        console.log('🔄 REDEPLOY TEST - Загружаем данные для userId:', currentUserId);
         
         console.log('🔄 Загружаем данные пользователя:', requestData);
         console.log('📱 Telegram WebApp данные:', {
@@ -1593,6 +1599,7 @@ async function loadUserData() {
             userInventory = data.inventory || [];
             
             console.log(`Данные загружены: ${userStars} звезд, ${userInventory.length} предметов в инвентаре`);
+            console.log('✅ REDEPLOY TEST - Данные успешно загружены для userId:', currentUserId);
             
             // Дополнительная проверка: если баланс 100, но в инвентаре есть алмазные призы,
             // значит был открыт алмазный кейс и нужно исправить баланс
@@ -1656,6 +1663,7 @@ async function saveUserData() {
         };
         
         console.log('💾 Сохраняем данные пользователя:', requestData);
+        console.log('🚀 REDEPLOY TEST - Данные сохраняются для userId:', currentUserId);
         
         const response = await fetch('/api/user/save', {
             method: 'POST',
@@ -1668,6 +1676,8 @@ async function saveUserData() {
         if (!response.ok) {
             throw new Error('Ошибка при сохранении данных');
         }
+        
+        console.log('✅ REDEPLOY TEST - Данные успешно сохранены для userId:', currentUserId);
     } catch (error) {
         console.error('Ошибка при сохранении данных:', error);
     }
