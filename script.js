@@ -213,15 +213,6 @@ function showAdminPanel() {
                     </div>
                 </div>
                 <div class="admin-section">
-                    <h4>🎮 Игровые функции</h4>
-                    <div class="admin-controls">
-                        <button onclick="addStars(100)" class="admin-btn">⭐ +100 звезд</button>
-                        <button onclick="addStars(500)" class="admin-btn">⭐ +500 звезд</button>
-                        <button onclick="addStars(1000)" class="admin-btn">⭐ +1000 звезд</button>
-                        <button onclick="clearInventory()" class="admin-btn">🗑️ Очистить инвентарь</button>
-                    </div>
-                </div>
-                <div class="admin-section">
                     <h4>🔧 Система</h4>
                     <div class="admin-controls">
                         <button onclick="refreshData()" class="admin-btn">🔄 Обновить данные</button>
