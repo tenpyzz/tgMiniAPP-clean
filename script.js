@@ -877,17 +877,29 @@ function autoAddPrizeToInventory() {
         console.log('- Текущие звезды ДО:', userStars);
         console.log('- Цена кейса:', currentCasePrice);
         
-        // Устанавливаем флаг, что приз уже добавлен
-        prizeAutoAdded = true;
+        // Проверяем, не добавлен ли уже приз в инвентарь
+        const prizeAlreadyAdded = userInventory.some(item => 
+            item.id === currentPrize.id || 
+            (item.name === currentPrize.name && item.type === currentPrize.type)
+        );
         
-        // Добавляем приз в инвентарь
-        userInventory.push(currentPrize);
-        
-        // НЕ возвращаем звезды - они уже потрачены на открытие кейса
-        // currentCasePrice остается потраченным
-        
-        // Сохраняем данные
-        saveUserData();
+        if (!prizeAlreadyAdded) {
+            // Устанавливаем флаг, что приз уже добавлен
+            prizeAutoAdded = true;
+            
+            // Добавляем приз в инвентарь
+            userInventory.push(currentPrize);
+            
+            // НЕ возвращаем звезды - они уже потрачены на открытие кейса
+            // currentCasePrice остается потраченным
+            
+            // Сохраняем данные
+            saveUserData();
+            
+            console.log('✅ Приз автоматически добавлен в инвентарь (звезды НЕ возвращены)');
+        } else {
+            console.log('⚠️ Приз уже добавлен в инвентарь, пропускаем');
+        }
         
         // Сбрасываем флаги
         isChoosingPrize = false;
@@ -898,7 +910,6 @@ function autoAddPrizeToInventory() {
         localStorage.removeItem('pendingPrize');
         
         console.log('- Звезды ПОСЛЕ:', userStars);
-        console.log('✅ Приз автоматически добавлен в инвентарь (звезды НЕ возвращены)');
         
         // Дополнительная защита: принудительно обновляем отображение звезд
         updateStarsDisplay();
@@ -940,17 +951,40 @@ function restorePrizeState() {
                 // Если приз есть в localStorage, значит звезды уже потрачены
                 // и приз должен быть добавлен в инвентарь автоматически
                 console.log('Приз найден в localStorage - звезды уже потрачены, добавляем в инвентарь');
-                userInventory.push(state.prize);
-                saveUserData();
-                localStorage.removeItem('pendingPrize');
                 
+                // Проверяем, не добавлен ли уже приз в инвентарь
+                const prizeAlreadyAdded = userInventory.some(item => 
+                    item.id === state.prize.id || 
+                    (item.name === state.prize.name && item.type === state.prize.type)
+                );
+                
+                if (!prizeAlreadyAdded) {
+                    userInventory.push(state.prize);
+                    saveUserData();
+                } else {
+                    console.log('Приз уже добавлен в инвентарь, пропускаем');
+                }
+                
+                localStorage.removeItem('pendingPrize');
                 return true;
             } else {
                 // Время истекло, добавляем приз автоматически
                 console.log('Время выбора приза истекло, добавляем автоматически');
-                userInventory.push(state.prize);
+                
+                // Проверяем, не добавлен ли уже приз в инвентарь
+                const prizeAlreadyAdded = userInventory.some(item => 
+                    item.id === state.prize.id || 
+                    (item.name === state.prize.name && item.type === state.prize.type)
+                );
+                
+                if (!prizeAlreadyAdded) {
+                    userInventory.push(state.prize);
+                    saveUserData();
+                } else {
+                    console.log('Приз уже добавлен в инвентарь, пропускаем');
+                }
+                
                 // НЕ возвращаем звезды - они уже потрачены
-                saveUserData();
                 localStorage.removeItem('pendingPrize');
             }
         }
@@ -1305,11 +1339,23 @@ window.exitFullscreenMode = function() {
     console.log('- isOpening:', isOpening);
     
     // Дополнительная проверка: не возвращаем звезды, если приложение только загружается
+    // ИЛИ если приз уже был добавлен в инвентарь
     if (currentCasePrice > 0 && !prizeAutoAdded && !starsSpent && isOpening) {
-        console.log('🟡 ВОЗВРАЩАЕМ ЗВЕЗДЫ (ручной выход)');
-        userStars += currentCasePrice;
-        currentCasePrice = 0;
-        updateStarsDisplay();
+        // Проверяем, не добавлен ли уже приз в инвентарь
+        const prizeInInventory = currentPrize && userInventory.some(item => 
+            item.id === currentPrize.id || 
+            (item.name === currentPrize.name && item.type === currentPrize.type)
+        );
+        
+        if (!prizeInInventory) {
+            console.log('🟡 ВОЗВРАЩАЕМ ЗВЕЗДЫ (ручной выход, приз не добавлен)');
+            userStars += currentCasePrice;
+            currentCasePrice = 0;
+            updateStarsDisplay();
+        } else {
+            console.log('🔴 НЕ ВОЗВРАЩАЕМ ЗВЕЗДЫ (приз уже в инвентаре)');
+            currentCasePrice = 0;
+        }
     } else if (currentCasePrice > 0) {
         console.log('🔴 НЕ ВОЗВРАЩАЕМ ЗВЕЗДЫ (приз добавлен, звезды потрачены или приложение загружается)');
         // Если приз был автоматически добавлен или звезды потрачены, просто сбрасываем цену
