@@ -29,18 +29,33 @@ const db = new Database();
 // Инициализация базы данных при запуске сервера
 async function initializeDatabase() {
     try {
+        console.log('🚀 REDEPLOY TEST - Начинаем инициализацию базы данных');
         await db.init();
         console.log('✅ База данных SQLite инициализирована');
         
         // Пытаемся восстановить данные из резервной копии
         try {
-            await db.restoreFromBackup();
+            console.log('🔄 REDEPLOY TEST - Пытаемся восстановить данные из резервной копии');
+            const restored = await db.restoreFromBackup();
+            if (restored) {
+                console.log('✅ REDEPLOY TEST - Данные успешно восстановлены из резервной копии');
+            } else {
+                console.log('⚠️ REDEPLOY TEST - Резервная копия не найдена или пуста');
+            }
         } catch (backupError) {
+            console.log('❌ REDEPLOY TEST - Ошибка восстановления из резервной копии:', backupError.message);
             console.log('📁 Резервная копия не найдена или повреждена, начинаем с чистой базы');
         }
         
         // Создаем начальную резервную копию
+        console.log('💾 REDEPLOY TEST - Создаем резервную копию');
         await db.createBackup();
+        console.log('✅ REDEPLOY TEST - Резервная копия создана');
+        
+        // Проверяем количество пользователей в базе
+        const userCount = await db.getUserCount();
+        console.log(`📊 REDEPLOY TEST - Количество пользователей в базе: ${userCount}`);
+        
     } catch (error) {
         console.error('❌ Ошибка инициализации базы данных:', error);
         process.exit(1);
@@ -158,14 +173,18 @@ app.post('/api/prize/claim', verifyTelegramData, async (req, res) => {
 // Получение всех пользователей (для администрирования)
 app.get('/api/admin/users', async (req, res) => {
     try {
+        console.log('🔍 REDEPLOY TEST - Запрос всех пользователей для админ панели');
         const users = await db.getAllUsers();
+        console.log(`📊 REDEPLOY TEST - Найдено пользователей: ${users.length}`);
+        console.log('👥 REDEPLOY TEST - Пользователи:', users.map(u => ({ id: u.user_id, name: u.telegram_name, balance: u.balance })));
+        
         res.json({
             success: true,
             users: users,
             total: users.length
         });
     } catch (error) {
-        console.error('Error getting all users:', error);
+        console.error('❌ REDEPLOY TEST - Ошибка получения пользователей:', error);
         res.status(500).json({ error: 'Failed to get users' });
     }
 });

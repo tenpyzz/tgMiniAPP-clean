@@ -166,6 +166,21 @@ class Database {
         });
     }
 
+    // Получение количества пользователей
+    async getUserCount() {
+        return new Promise((resolve, reject) => {
+            const query = 'SELECT COUNT(*) as count FROM users';
+            this.db.get(query, [], (err, row) => {
+                if (err) {
+                    console.error('Ошибка получения количества пользователей:', err);
+                    reject(err);
+                } else {
+                    resolve(row.count);
+                }
+            });
+        });
+    }
+
     // Получение статистики
     async getStats() {
         return new Promise((resolve, reject) => {
@@ -248,22 +263,27 @@ class Database {
         try {
             const backupFile = backupPath || path.join(__dirname, 'backup_users.json');
             
+            console.log(`🔍 REDEPLOY TEST - Проверяем файл резервной копии: ${backupFile}`);
+            console.log(`🔍 REDEPLOY TEST - Файл существует: ${fs.existsSync(backupFile)}`);
+            
             if (!fs.existsSync(backupFile)) {
                 console.log('📁 Резервная копия не найдена');
                 return false;
             }
             
             const backupData = JSON.parse(fs.readFileSync(backupFile, 'utf8'));
-            console.log(`📥 Восстанавливаем данные из резервной копии от ${backupData.timestamp}`);
+            console.log(`📥 REDEPLOY TEST - Восстанавливаем данные из резервной копии от ${backupData.timestamp}`);
+            console.log(`📥 REDEPLOY TEST - Пользователей в резервной копии: ${backupData.users.length}`);
             
             for (const user of backupData.users) {
+                console.log(`🔄 REDEPLOY TEST - Восстанавливаем пользователя: ${user.user_id} (${user.telegram_name})`);
                 await this.upsertUser(user.user_id, user.telegram_name, user.balance, user.inventory);
             }
             
-            console.log(`✅ Восстановлено ${backupData.users.length} пользователей`);
+            console.log(`✅ REDEPLOY TEST - Восстановлено ${backupData.users.length} пользователей`);
             return true;
         } catch (error) {
-            console.error('❌ Ошибка восстановления из резервной копии:', error);
+            console.error('❌ REDEPLOY TEST - Ошибка восстановления из резервной копии:', error);
             throw error;
         }
     }
