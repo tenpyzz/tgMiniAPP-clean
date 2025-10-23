@@ -200,6 +200,73 @@ app.post('/api/user/save', verifyTelegramData, async (req, res) => {
     }
 });
 
+// Безопасное открытие кейса с атомарными транзакциями
+app.post('/api/case/open', verifyTelegramData, async (req, res) => {
+    try {
+        const { user_id, case_type, price, prize } = req.body;
+        
+        console.log(`🎰 SAFE_CASE_OPEN: Пользователь ${user_id} открывает кейс ${case_type} за ${price} звезд`);
+        
+        // Проверяем, не является ли это тестовым пользователем
+        if (user_id === 'test_user' || user_id === 'test_user_123') {
+            console.log(`🚫 SAFE_CASE_OPEN: Блокируем открытие кейса для тестового пользователя ${user_id}`);
+            return res.status(403).json({ 
+                error: 'Access denied',
+                message: 'Открытие кейсов для тестовых пользователей запрещено'
+            });
+        }
+        
+        // Получаем данные пользователя
+        let user = await db.getUser(user_id);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        // Проверяем баланс
+        if (user.balance < price) {
+            return res.status(400).json({ 
+                error: 'Insufficient balance',
+                message: 'Недостаточно звезд для открытия кейса'
+            });
+        }
+        
+        // Проверяем, что приз валидный
+        if (!prize || !prize.name || !prize.type) {
+            return res.status(400).json({ 
+                error: 'Invalid prize',
+                message: 'Некорректные данные приза'
+            });
+        }
+        
+        // Атомарная транзакция: списываем деньги И добавляем приз
+        const newBalance = user.balance - price;
+        const newInventory = [...(user.inventory || []), prize];
+        
+        // Обновляем пользователя с новыми данными
+        await db.updateUser(user_id, {
+            telegram_name: user.telegram_name,
+            balance: newBalance,
+            inventory: newInventory
+        });
+        
+        console.log(`✅ SAFE_CASE_OPEN: Кейс успешно открыт. Новый баланс: ${newBalance}, приз добавлен: ${prize.name}`);
+        
+        res.json({
+            success: true,
+            new_balance: newBalance,
+            prize: prize,
+            message: 'Кейс успешно открыт'
+        });
+        
+    } catch (error) {
+        console.error('❌ SAFE_CASE_OPEN: Ошибка открытия кейса:', error);
+        res.status(500).json({ 
+            error: 'Failed to open case',
+            message: 'Ошибка открытия кейса'
+        });
+    }
+});
+
 // Обработка получения приза
 app.post('/api/prize/claim', verifyTelegramData, async (req, res) => {
     try {

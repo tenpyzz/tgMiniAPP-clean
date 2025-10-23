@@ -694,10 +694,13 @@ document.addEventListener('DOMContentLoaded', async function() {
     recoverLostItems();
     
     // Проверяем, есть ли незавершенное открытие кейса
-    checkPendingCaseOpening();
+    await checkPendingCaseOpening();
     
     // Добавляем обработчики событий
     setupEventListeners();
+    
+    // Добавляем защиту от потери данных при выходе
+    setupExitProtection();
     
     // Запускаем синхронизацию данных
     startDataSync();
@@ -772,7 +775,7 @@ function switchTab(tabName) {
     }
 }
 
-// Открытие кейса
+// Открытие кейса с атомарными транзакциями
 async function openCase(caseType, price) {
     if (isOpening) return;
     
@@ -801,78 +804,142 @@ async function openCase(caseType, price) {
     prizeAutoAdded = false;
     starsSpent = false;
     
-    // Списываем звезды сразу (как было раньше)
-    userStars -= price;
-    starsSpent = true; // Устанавливаем флаг, что звезды потрачены
-    updateStarsDisplay();
+    // Сохраняем оригинальное состояние для возможного отката
+    const originalStars = userStars;
+    const originalInventory = [...userInventory];
     
-    console.log(`💰 Баланс ПОСЛЕ списания: ${userStars} звезд`);
-    
-    // Сохраняем состояние "звезды потрачены" в localStorage
-    localStorage.setItem('starsSpent', JSON.stringify({
-        spent: true,
-        amount: price,
-        timestamp: Date.now(),
-        originalStars: userStars + price // Сохраняем оригинальное количество звезд
-    }));
-    
-    console.log(`💾 Сохраняем состояние в localStorage: потрачено ${price} звезд`);
-    
-    // СРАЗУ сохраняем данные на сервер после списания звезд
-    await saveUserData();
-    console.log(`✅ Данные сохранены на сервер: ${userStars} звезд`);
-    
-    // Показываем анимацию открытия кейса и получаем приз
-    const prize = await showCaseOpeningAnimation(caseType);
-    currentPrize = prize;
-    
-    // Показываем приз (НЕ добавляем в инвентарь сразу)
-    showPrize(prize);
-    
-    isOpening = false;
-    
-    // Показываем модальное окно с призом сразу после анимации
-    setTimeout(() => {
+    try {
+        // 1. Генерируем приз СНАЧАЛА (до списания денег)
+        console.log('🎁 Генерируем приз перед списанием денег...');
+        const prize = generatePrize(caseType);
+        currentPrize = prize;
+        
+        // 2. Списываем звезды
+        userStars -= price;
+        starsSpent = true;
+        updateStarsDisplay();
+        
+        console.log(`💰 Баланс ПОСЛЕ списания: ${userStars} звезд`);
+        
+        // 3. Добавляем приз в инвентарь СРАЗУ
+        userInventory.push(prize);
+        prizeAutoAdded = true;
+        updateInventoryDisplay();
+        
+        console.log('🎁 Приз добавлен в инвентарь:', prize);
+        
+        // 4. Сохраняем состояние в localStorage для отслеживания
+        localStorage.setItem('starsSpent', JSON.stringify({
+            spent: true,
+            amount: price,
+            timestamp: Date.now(),
+            originalStars: originalStars,
+            prize: prize
+        }));
+        
+        localStorage.setItem('pendingPrize', JSON.stringify({
+            prize: prize,
+            caseType: caseType,
+            price: price,
+            timestamp: Date.now()
+        }));
+        
+        // 5. Сохраняем ВСЕ данные на сервер атомарно через безопасный эндпоинт
+        console.log('💾 Сохраняем данные на сервер через безопасный эндпоинт...');
+        await saveCaseOpening(user_id, caseType, price, prize);
+        console.log(`✅ Данные сохранены на сервер: ${userStars} звезд, приз добавлен`);
+        
+        // 6. Показываем анимацию открытия кейса
+        await showCaseOpeningAnimation(caseType);
+        
+        // 7. Показываем приз
+        showPrize(prize);
+        
+        // 8. Очищаем флаги после успешного завершения
+        localStorage.removeItem('starsSpent');
+        localStorage.removeItem('pendingPrize');
+        localStorage.removeItem('prizeProcessed');
+        
+        isOpening = false;
+        
+        // 9. Показываем модальное окно с призом
+        setTimeout(() => {
+            // Восстанавливаем интерфейс
+            document.body.classList.remove('case-opening');
+            const openingArea = document.getElementById('opening-area');
+            openingArea.classList.remove('fullscreen');
+            openingArea.style.display = 'none';
+            
+            // Скрываем кнопку выхода
+            const exitBtn = document.getElementById('exit-fullscreen-btn');
+            exitBtn.style.display = 'none';
+            
+            // Сбрасываем полоску призов
+            const prizeStrip = document.getElementById('prize-strip');
+            prizeStrip.innerHTML = '';
+            prizeStrip.className = 'prize-strip';
+            
+            // Скрываем показ приза
+            const prizeReveal = document.getElementById('prize-reveal');
+            prizeReveal.classList.remove('show');
+            
+            // Очищаем эффекты редкости
+            const rarityEffects = prizeReveal.querySelectorAll('.rarity-effect');
+            rarityEffects.forEach(effect => effect.remove());
+            
+            // Сбрасываем лучи света
+            const lightRays = document.querySelector('.light-rays');
+            if (lightRays) {
+                lightRays.classList.remove('active');
+                lightRays.style.animationDuration = '';
+            }
+            
+            // Очищаем частицы
+            const particlesContainer = document.getElementById('particles-container');
+            if (particlesContainer) {
+                particlesContainer.innerHTML = '';
+            }
+            
+            // Показываем модальное окно
+            const rarity = determinePrizeRarity(prize);
+            showPrizeModal(prize, rarity);
+        }, 0);
+        
+    } catch (error) {
+        console.error('❌ ОШИБКА ОТКРЫТИЯ КЕЙСА:', error);
+        
+        // ОТКАТ ТРАНЗАКЦИИ - восстанавливаем исходное состояние
+        console.log('🔄 ОТКАТ: Восстанавливаем исходное состояние...');
+        
+        userStars = originalStars;
+        userInventory = originalInventory;
+        currentPrize = null;
+        isOpening = false;
+        prizeAutoAdded = false;
+        starsSpent = false;
+        
+        // Обновляем отображение
+        updateStarsDisplay();
+        updateInventoryDisplay();
+        
+        // Очищаем localStorage
+        localStorage.removeItem('starsSpent');
+        localStorage.removeItem('pendingPrize');
+        localStorage.removeItem('prizeProcessed');
+        
+        // Показываем ошибку пользователю
+        showNotification('Ошибка открытия кейса! Деньги возвращены.', 'error');
+        
         // Восстанавливаем интерфейс
         document.body.classList.remove('case-opening');
         const openingArea = document.getElementById('opening-area');
-        openingArea.classList.remove('fullscreen');
-        openingArea.style.display = 'none';
-        
-        // Скрываем кнопку выхода
-        const exitBtn = document.getElementById('exit-fullscreen-btn');
-        exitBtn.style.display = 'none';
-        
-        // Сбрасываем полоску призов
-        const prizeStrip = document.getElementById('prize-strip');
-        prizeStrip.innerHTML = '';
-        prizeStrip.className = 'prize-strip';
-        
-        // Скрываем показ приза
-        const prizeReveal = document.getElementById('prize-reveal');
-        prizeReveal.classList.remove('show');
-        
-        // Очищаем эффекты редкости
-        const rarityEffects = prizeReveal.querySelectorAll('.rarity-effect');
-        rarityEffects.forEach(effect => effect.remove());
-        
-        // Сбрасываем лучи света
-        const lightRays = document.querySelector('.light-rays');
-        if (lightRays) {
-            lightRays.classList.remove('active');
-            lightRays.style.animationDuration = '';
+        if (openingArea) {
+            openingArea.classList.remove('fullscreen');
+            openingArea.style.display = 'none';
         }
         
-        // Очищаем частицы
-        const particlesContainer = document.getElementById('particles-container');
-        if (particlesContainer) {
-            particlesContainer.innerHTML = '';
-        }
-        
-        // Показываем модальное окно
-        const rarity = determinePrizeRarity(prize);
-        showPrizeModal(prize, rarity);
-    }, 0);
+        throw error; // Пробрасываем ошибку дальше
+    }
 }
 
 // Анимация открытия кейса в стиле CS2
@@ -1111,6 +1178,14 @@ function showSoundEffect(text) {
             soundEffect.parentNode.removeChild(soundEffect);
         }
     }, 1500);
+}
+
+// Генерация приза для открытия кейса (обертка над getRandomPrize)
+function generatePrize(caseType) {
+    console.log(`🎁 ГЕНЕРАЦИЯ ПРИЗА: ${caseType}`);
+    const prize = getRandomPrize(caseType);
+    console.log(`🎁 Сгенерирован приз:`, prize);
+    return prize;
 }
 
 // Получение случайного приза с учетом редкости
@@ -2406,6 +2481,96 @@ window.recoverHeart = function() {
     console.log('✅ RECOVERY: Сердечко восстановлено');
 };
 
+// Настройка защиты от потери данных при выходе
+function setupExitProtection() {
+    console.log('🛡️ EXIT_PROTECTION: Настраиваем защиту от потери данных...');
+    
+    // Обработчик перед закрытием страницы
+    window.addEventListener('beforeunload', function(event) {
+        const pendingPrize = localStorage.getItem('pendingPrize');
+        const starsSpent = localStorage.getItem('starsSpent');
+        
+        if (pendingPrize || starsSpent) {
+            console.log('⚠️ EXIT_PROTECTION: Обнаружена незавершенная транзакция при выходе');
+            
+            // Пытаемся сохранить данные перед выходом
+            try {
+                saveUserData();
+                console.log('💾 EXIT_PROTECTION: Данные сохранены перед выходом');
+            } catch (error) {
+                console.error('❌ EXIT_PROTECTION: Ошибка сохранения перед выходом:', error);
+            }
+            
+            // Показываем предупреждение пользователю
+            const message = 'У вас есть незавершенное открытие кейса! Если вы выйдете сейчас, деньги могут быть потеряны.';
+            event.returnValue = message;
+            return message;
+        }
+    });
+    
+    // Обработчик потери фокуса (минимизация приложения)
+    window.addEventListener('blur', function() {
+        const pendingPrize = localStorage.getItem('pendingPrize');
+        const starsSpent = localStorage.getItem('starsSpent');
+        
+        if (pendingPrize || starsSpent) {
+            console.log('⚠️ EXIT_PROTECTION: Приложение потеряло фокус с незавершенной транзакцией');
+            
+            // Сохраняем данные при потере фокуса
+            try {
+                saveUserData();
+                console.log('💾 EXIT_PROTECTION: Данные сохранены при потере фокуса');
+            } catch (error) {
+                console.error('❌ EXIT_PROTECTION: Ошибка сохранения при потере фокуса:', error);
+            }
+        }
+    });
+    
+    // Обработчик восстановления фокуса
+    window.addEventListener('focus', async function() {
+        console.log('🔄 EXIT_PROTECTION: Приложение восстановило фокус');
+        
+        // Проверяем незавершенные транзакции
+        await checkPendingCaseOpening();
+    });
+    
+    console.log('✅ EXIT_PROTECTION: Защита от потери данных настроена');
+}
+
+// Безопасное сохранение открытия кейса на сервер
+async function saveCaseOpening(userId, caseType, price, prize) {
+    try {
+        console.log(`💾 SAVE_CASE_OPENING: Сохраняем открытие кейса ${caseType} для пользователя ${userId}`);
+        
+        const response = await fetch('/api/case/open', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                user_id: userId,
+                case_type: caseType,
+                price: price,
+                prize: prize
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Ошибка сохранения открытия кейса');
+        }
+        
+        const result = await response.json();
+        console.log('✅ SAVE_CASE_OPENING: Кейс успешно сохранен на сервер:', result);
+        
+        return result;
+        
+    } catch (error) {
+        console.error('❌ SAVE_CASE_OPENING: Ошибка сохранения открытия кейса:', error);
+        throw error;
+    }
+}
+
 // Функция для полного восстановления данных
 window.fullRecovery = function() {
     console.log('🔄 FULL_RECOVERY: Полное восстановление данных...');
@@ -2430,7 +2595,7 @@ window.fullRecovery = function() {
 };
 
 // Проверка на наличие незавершенного открытия кейса
-function checkPendingCaseOpening() {
+async function checkPendingCaseOpening() {
     console.log('🔍 CHECK_PENDING: Проверяем незавершенное открытие кейса...');
     
     const pendingPrize = localStorage.getItem('pendingPrize');
@@ -2441,24 +2606,107 @@ function checkPendingCaseOpening() {
         console.log('⚠️ CHECK_PENDING: pendingPrize:', pendingPrize);
         console.log('⚠️ CHECK_PENDING: starsSpent:', starsSpent);
         
-        // Показываем уведомление пользователю
-        showNotification('Обнаружено незавершенное открытие кейса! Используйте кнопку ❌ для отмены.', 'warning');
-        
-        // Устанавливаем флаги
-        isOpening = true;
-        currentCasePrice = 0;
-        
         try {
-            if (starsSpent) {
-                const state = JSON.parse(starsSpent);
-                currentCasePrice = state.amount || 0;
-                console.log('💰 CHECK_PENDING: Цена кейса из localStorage:', currentCasePrice);
+            // Проверяем, есть ли приз в инвентаре
+            let prizeInInventory = false;
+            if (pendingPrize) {
+                const prizeData = JSON.parse(pendingPrize);
+                const prize = prizeData.prize;
+                
+                // Проверяем, есть ли этот приз уже в инвентаре
+                prizeInInventory = userInventory.some(item => 
+                    item.id === prize.id || 
+                    (item.name === prize.name && item.type === prize.type)
+                );
+                
+                if (prizeInInventory) {
+                    console.log('✅ CHECK_PENDING: Приз уже в инвентаре, очищаем localStorage');
+                    localStorage.removeItem('pendingPrize');
+                    localStorage.removeItem('starsSpent');
+                    localStorage.removeItem('prizeProcessed');
+                    return;
+                }
             }
+            
+            // Если приз не в инвентаре, но есть запись о потраченных звездах
+            if (starsSpent && !prizeInInventory) {
+                const state = JSON.parse(starsSpent);
+                const originalStars = state.originalStars || 0;
+                const amount = state.amount || 0;
+                
+                console.log('🔄 CHECK_PENDING: Восстанавливаем баланс - приз не был добавлен');
+                console.log(`💰 Восстанавливаем ${amount} звезд (было ${userStars}, станет ${originalStars})`);
+                
+                // Проверяем серверные данные для подтверждения
+                try {
+                    const serverData = await loadUserData();
+                    if (serverData) {
+                        console.log('🔄 CHECK_PENDING: Проверяем серверные данные...');
+                        
+                        // Если на сервере баланс меньше, чем должен быть, восстанавливаем
+                        if (serverData.stars_balance < originalStars) {
+                            console.log('🔄 CHECK_PENDING: Серверные данные подтверждают потерю денег');
+                            
+                            // Восстанавливаем баланс
+                            userStars = originalStars;
+                            updateStarsDisplay();
+                            
+                            // Очищаем localStorage
+                            localStorage.removeItem('pendingPrize');
+                            localStorage.removeItem('starsSpent');
+                            localStorage.removeItem('prizeProcessed');
+                            
+                            // Сохраняем исправленные данные
+                            saveUserData();
+                            
+                            showNotification('Восстановлен баланс! Приз не был добавлен в инвентарь.', 'success');
+                            console.log('✅ CHECK_PENDING: Баланс восстановлен');
+                            return;
+                        } else {
+                            console.log('✅ CHECK_PENDING: Серверные данные корректны, очищаем localStorage');
+                            localStorage.removeItem('pendingPrize');
+                            localStorage.removeItem('starsSpent');
+                            localStorage.removeItem('prizeProcessed');
+                            return;
+                        }
+                    }
+                } catch (error) {
+                    console.error('❌ CHECK_PENDING: Ошибка проверки серверных данных:', error);
+                }
+                
+                // Если не удалось проверить сервер, восстанавливаем локально
+                userStars = originalStars;
+                updateStarsDisplay();
+                
+                // Очищаем localStorage
+                localStorage.removeItem('pendingPrize');
+                localStorage.removeItem('starsSpent');
+                localStorage.removeItem('prizeProcessed');
+                
+                // Сохраняем исправленные данные
+                saveUserData();
+                
+                showNotification('Восстановлен баланс! Приз не был добавлен в инвентарь.', 'success');
+                console.log('✅ CHECK_PENDING: Баланс восстановлен');
+                return;
+            }
+            
+            // Если есть приз, но нет записи о потраченных звездах - это ошибка
+            if (pendingPrize && !starsSpent) {
+                console.log('❌ CHECK_PENDING: Есть приз без записи о тратах - очищаем');
+                localStorage.removeItem('pendingPrize');
+                localStorage.removeItem('prizeProcessed');
+                return;
+            }
+            
         } catch (e) {
-            console.log('❌ CHECK_PENDING: Ошибка парсинга starsSpent:', e);
+            console.log('❌ CHECK_PENDING: Ошибка обработки незавершенного открытия:', e);
+            // Очищаем поврежденные данные
+            localStorage.removeItem('pendingPrize');
+            localStorage.removeItem('starsSpent');
+            localStorage.removeItem('prizeProcessed');
         }
         
-        console.log('⚠️ CHECK_PENDING: Используйте кнопку ❌ для отмены или дождитесь завершения');
     } else {
         console.log('✅ CHECK_PENDING: Незавершенных открытий кейса не найдено');
     }
@@ -2468,59 +2716,99 @@ function checkPendingCaseOpening() {
 window.cancelCaseOpening = function() {
     console.log('❌ CANCEL_CASE: Отменяем открытие кейса');
     
-    if (!isOpening && !currentPrize) {
+    // Проверяем, есть ли незавершенная транзакция
+    const pendingPrize = localStorage.getItem('pendingPrize');
+    const starsSpent = localStorage.getItem('starsSpent');
+    
+    if (!pendingPrize && !starsSpent && !isOpening && !currentPrize) {
         showNotification('Нет активного открытия кейса', 'info');
         return;
     }
     
-    // Сбрасываем все флаги
-    isOpening = false;
-    currentPrize = null;
-    currentCasePrice = 0;
-    prizeAutoAdded = false;
-    isChoosingPrize = false;
-    
-    // Очищаем localStorage
-    localStorage.removeItem('starsSpent');
-    localStorage.removeItem('pendingPrize');
-    localStorage.removeItem('prizeProcessed');
-    
-    // Восстанавливаем интерфейс
-    document.body.classList.remove('case-opening');
-    const openingArea = document.getElementById('opening-area');
-    if (openingArea) {
-        openingArea.classList.remove('fullscreen');
-        openingArea.style.display = 'none';
+    try {
+        // Если есть запись о потраченных звездах, восстанавливаем баланс
+        if (starsSpent) {
+            const state = JSON.parse(starsSpent);
+            const originalStars = state.originalStars || userStars;
+            const amount = state.amount || 0;
+            
+            console.log(`💰 CANCEL_CASE: Восстанавливаем ${amount} звезд`);
+            userStars = originalStars;
+        }
+        
+        // Если есть приз в инвентаре, удаляем его
+        if (pendingPrize) {
+            const prizeData = JSON.parse(pendingPrize);
+            const prize = prizeData.prize;
+            
+            // Удаляем приз из инвентаря
+            const prizeIndex = userInventory.findIndex(item => 
+                item.id === prize.id || 
+                (item.name === prize.name && item.type === prize.type)
+            );
+            
+            if (prizeIndex !== -1) {
+                userInventory.splice(prizeIndex, 1);
+                console.log('🎁 CANCEL_CASE: Приз удален из инвентаря');
+            }
+        }
+        
+        // Сбрасываем все флаги
+        isOpening = false;
+        currentPrize = null;
+        currentCasePrice = 0;
+        prizeAutoAdded = false;
+        isChoosingPrize = false;
+        
+        // Очищаем localStorage
+        localStorage.removeItem('starsSpent');
+        localStorage.removeItem('pendingPrize');
+        localStorage.removeItem('prizeProcessed');
+        
+        // Восстанавливаем интерфейс
+        document.body.classList.remove('case-opening');
+        const openingArea = document.getElementById('opening-area');
+        if (openingArea) {
+            openingArea.classList.remove('fullscreen');
+            openingArea.style.display = 'none';
+        }
+        
+        // Скрываем кнопку выхода
+        const exitBtn = document.getElementById('exit-fullscreen-btn');
+        if (exitBtn) {
+            exitBtn.style.display = 'none';
+        }
+        
+        // Сбрасываем полоску призов
+        const prizeStrip = document.getElementById('prize-strip');
+        if (prizeStrip) {
+            prizeStrip.innerHTML = '';
+            prizeStrip.className = 'prize-strip';
+        }
+        
+        // Скрываем показ приза
+        const prizeReveal = document.getElementById('prize-reveal');
+        if (prizeReveal) {
+            prizeReveal.classList.remove('show');
+        }
+        
+        // Закрываем модальное окно приза
+        closePrizeModal();
+        
+        // Сохраняем изменения на сервер
+        saveUserData();
+        
+        // Обновляем отображение
+        updateStarsDisplay();
+        updateInventoryDisplay();
+        
+        showNotification('Открытие кейса отменено. Деньги возвращены.', 'success');
+        console.log('✅ CANCEL_CASE: Открытие кейса отменено, деньги возвращены');
+        
+    } catch (error) {
+        console.error('❌ CANCEL_CASE: Ошибка при отмене:', error);
+        showNotification('Ошибка при отмене открытия кейса', 'error');
     }
-    
-    // Скрываем кнопку выхода
-    const exitBtn = document.getElementById('exit-fullscreen-btn');
-    if (exitBtn) {
-        exitBtn.style.display = 'none';
-    }
-    
-    // Сбрасываем полоску призов
-    const prizeStrip = document.getElementById('prize-strip');
-    if (prizeStrip) {
-        prizeStrip.innerHTML = '';
-        prizeStrip.className = 'prize-strip';
-    }
-    
-    // Скрываем показ приза
-    const prizeReveal = document.getElementById('prize-reveal');
-    if (prizeReveal) {
-        prizeReveal.classList.remove('show');
-    }
-    
-    // Закрываем модальное окно приза
-    closePrizeModal();
-    
-    // Обновляем отображение
-    updateStarsDisplay();
-    updateInventoryDisplay();
-    
-    showNotification('Открытие кейса отменено', 'info');
-    console.log('✅ CANCEL_CASE: Открытие кейса отменено');
 };
 
 // Экспорт функций для тестирования
