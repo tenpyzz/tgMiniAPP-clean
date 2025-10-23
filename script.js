@@ -528,39 +528,26 @@ function startDataSync() {
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('Приложение загружено');
     
-    // Определяем iOS устройство
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    // Универсальные настройки для всех устройств
+    console.log('🌐 Применяем универсальные настройки для всех устройств');
     
-    if (isIOS) {
-        console.log('🍎 Обнаружено iOS устройство, применяем специальные настройки');
-        document.body.classList.add('ios-device');
-        
-        // Отключаем зум на двойной тап для iOS
-        let lastTouchEnd = 0;
-        document.addEventListener('touchend', function (event) {
-            const now = (new Date()).getTime();
-            if (now - lastTouchEnd <= 300) {
-                event.preventDefault();
-            }
-            lastTouchEnd = now;
-        }, false);
-        
-        // Предотвращаем скролл при касании
-        document.addEventListener('touchmove', function(e) {
-            if (e.target.closest('.cases-grid, .inventory-grid, .shop-content')) {
-                return; // Разрешаем скролл в контейнерах
-            }
-            e.preventDefault();
-        }, { passive: false });
-    }
+    // Отключаем зум на двойной тап для всех устройств
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function (event) {
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+            event.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, false);
     
-    // Определяем мобильное устройство
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    if (isMobile) {
-        console.log('📱 Обнаружено мобильное устройство');
-        document.body.classList.add('mobile-device');
-    }
+    // Предотвращаем нежелательный скролл
+    document.addEventListener('touchmove', function(e) {
+        if (e.target.closest('.cases-grid, .inventory-grid, .shop-content')) {
+            return; // Разрешаем скролл в контейнерах
+        }
+        e.preventDefault();
+    }, { passive: false });
     
     // Инициализация Telegram WebApp
     if (tg) {
