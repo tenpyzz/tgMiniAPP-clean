@@ -126,11 +126,33 @@
             color: #28a745;
         }
         
+        .inventory-count {
+            font-weight: bold;
+            color: #667eea;
+            text-align: center;
+            display: inline-block;
+            min-width: 30px;
+        }
+        
         .inventory {
-            max-width: 200px;
+            max-width: 300px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+        
+        .inventory:hover {
+            white-space: normal;
+            overflow: visible;
+            position: relative;
+            z-index: 10;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         
         .loading {
@@ -204,6 +226,10 @@
                     <div class="stat-number" id="avgBalance">0</div>
                     <div class="stat-label">Средний баланс</div>
                 </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalInventory">0</div>
+                    <div class="stat-label">Всего предметов</div>
+                </div>
             </div>
             
             <div id="usersSection" class="users-section" style="display: none;">
@@ -239,6 +265,7 @@
                 document.getElementById('usersWithBalance').textContent = statsData.users_with_balance || 0;
                 document.getElementById('totalStars').textContent = statsData.total_stars || 0;
                 document.getElementById('avgBalance').textContent = Math.round(statsData.avg_balance || 0);
+                document.getElementById('totalInventory').textContent = statsData.total_inventory_items || 0;
                 
                 // Создаем таблицу пользователей
                 createUsersTable(statsData.users || []);
@@ -269,6 +296,7 @@
                             <th>ID пользователя</th>
                             <th>Имя в Telegram</th>
                             <th>Баланс</th>
+                            <th>Предметов</th>
                             <th>Инвентарь</th>
                             <th>Создан</th>
                             <th>Обновлен</th>
@@ -278,9 +306,25 @@
             `;
             
             users.forEach(user => {
-                const inventoryText = Array.isArray(user.inventory) 
-                    ? user.inventory.join(', ') 
-                    : 'Пусто';
+                // Правильно обрабатываем инвентарь - это массив объектов
+                let inventoryText = 'Пусто';
+                let inventoryDetails = '';
+                
+                if (Array.isArray(user.inventory) && user.inventory.length > 0) {
+                    const inventoryItems = user.inventory.map(item => {
+                        if (typeof item === 'object' && item.name) {
+                            return `${item.icon || '📦'} ${item.name}`;
+                        }
+                        return String(item);
+                    });
+                    inventoryText = inventoryItems.join(', ');
+                    inventoryDetails = user.inventory.map(item => {
+                        if (typeof item === 'object') {
+                            return `${item.icon || '📦'} ${item.name} (${item.type || 'unknown'}) - ${item.rarity || 'common'}`;
+                        }
+                        return String(item);
+                    }).join('\n');
+                }
                 
                 const createdDate = new Date(user.created_at).toLocaleString('ru-RU');
                 const updatedDate = new Date(user.updated_at).toLocaleString('ru-RU');
@@ -290,7 +334,8 @@
                         <td><span class="user-id">${user.user_id}</span></td>
                         <td>${user.telegram_name || 'Не указано'}</td>
                         <td><span class="balance">${user.stars_balance || user.balance || 0} ⭐</span></td>
-                        <td><span class="inventory" title="${inventoryText}">${inventoryText}</span></td>
+                        <td><span class="inventory-count">${user.inventory_count || 0}</span></td>
+                        <td><span class="inventory" title="${inventoryDetails}">${inventoryText}</span></td>
                         <td>${createdDate}</td>
                         <td>${updatedDate}</td>
                     </tr>

@@ -680,7 +680,9 @@ app.get('/api/admin/stats', async (req, res) => {
             detailedStats.users.push({
                 user_id: user.user_id,
                 telegram_name: user.telegram_name,
-                stars_balance: user.balance,
+                balance: user.balance,
+                stars_balance: user.balance, // для совместимости
+                inventory: user.inventory || [],
                 inventory_count: user.inventory?.length || 0,
                 created_at: user.created_at,
                 updated_at: user.updated_at
