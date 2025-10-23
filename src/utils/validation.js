@@ -1,5 +1,5 @@
 // Утилиты для валидации данных Telegram Mini App
-import crypto from 'crypto';
+import { createHmac } from 'crypto';
 
 /**
  * Валидация init data от Telegram
@@ -30,14 +30,12 @@ export function validateInitData(initData, botToken) {
             .join('\n');
 
         // Создаем секретный ключ
-        const secretKey = crypto
-            .createHmac('sha256', 'WebAppData')
+        const secretKey = createHmac('sha256', 'WebAppData')
             .update(botToken)
             .digest();
 
         // Вычисляем хеш
-        const calculatedHash = crypto
-            .createHmac('sha256', secretKey)
+        const calculatedHash = createHmac('sha256', secretKey)
             .update(dataCheckString)
             .digest('hex');
 

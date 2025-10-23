@@ -4,11 +4,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Database
-*.db
-*.sqlite
-*.sqlite3
-
 # Environment variables
 .env
 .env.local
@@ -33,6 +28,7 @@ coverage/
 .nyc_output
 
 # Dependency directories
+node_modules/
 jspm_packages/
 
 # Optional npm cache directory
@@ -75,6 +71,10 @@ jspm_packages/
 # TernJS port file
 .tern-port
 
+# Backup files
+backup_users.json
+emergency_backup.json
+
 # OS generated files
 .DS_Store
 .DS_Store?
@@ -83,14 +83,3 @@ jspm_packages/
 .Trashes
 ehthumbs.db
 Thumbs.db
-
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# Temporary files
-*.tmp
-*.temp
