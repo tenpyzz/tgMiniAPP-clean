@@ -31,6 +31,14 @@
         -moz-user-select: none;
         -ms-user-select: none;
         user-select: none;
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+        -webkit-touch-callout: none;
+        -webkit-user-drag: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
     }
     
     input, textarea {
@@ -38,6 +46,62 @@
         -moz-user-select: text;
         -ms-user-select: text;
         user-select: text;
+    }
+    
+    /* Специальные настройки для iOS */
+    @supports (-webkit-touch-callout: none) {
+        body {
+            -webkit-overflow-scrolling: touch;
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+        }
+        
+        .case-item, .inventory-item, .shop-item, .tab-btn, .buy-btn {
+            -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -webkit-user-drag: none;
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+        }
+        
+        .case-item:active, .inventory-item:active, .shop-item:active, .tab-btn:active, .buy-btn:active {
+            -webkit-transform: translateZ(0) scale(0.98);
+            transform: translateZ(0) scale(0.98);
+        }
+        
+        /* Оптимизация анимаций для iOS */
+        .case-item, .inventory-item, .shop-item, .tab-btn, .buy-btn, .prize-item {
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            -webkit-perspective: 1000;
+            perspective: 1000;
+        }
+        
+        /* Упрощенные анимации для iOS */
+        .case-item:hover {
+            -webkit-transform: translateZ(0) translateY(-5px);
+            transform: translateZ(0) translateY(-5px);
+        }
+        
+        .inventory-item:hover, .shop-item:hover {
+            -webkit-transform: translateZ(0) translateY(-3px);
+            transform: translateZ(0) translateY(-3px);
+        }
+        
+        /* Отключаем сложные анимации на iOS для лучшей производительности */
+        .case-icon::before, .case-icon::after {
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+        }
+        
+        .prize-strip {
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+            will-change: transform;
+        }
     }
     
     /* Отключаем сложные анимации на слабых устройствах */
@@ -58,13 +122,21 @@
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     min-height: 100vh;
+    min-height: -webkit-fill-available;
     color: var(--text-primary);
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
 }
 
 
@@ -80,6 +152,44 @@ body.mobile-device .case-item:active,
 body.mobile-device .inventory-item:active,
 body.mobile-device .shop-item:active {
     transform: scale(0.98);
+}
+
+/* Специальные настройки для iOS */
+body.ios-device {
+    -webkit-overflow-scrolling: touch;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+}
+
+body.ios-device .case-item,
+body.ios-device .inventory-item,
+body.ios-device .shop-item,
+body.ios-device .tab-btn,
+body.ios-device .buy-btn {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+}
+
+body.ios-device .case-item:active,
+body.ios-device .inventory-item:active,
+body.ios-device .shop-item:active,
+body.ios-device .tab-btn:active,
+body.ios-device .buy-btn:active {
+    -webkit-transform: translateZ(0) scale(0.98);
+    transform: translateZ(0) scale(0.98);
+}
+
+body.ios-device .case-item:hover,
+body.ios-device .inventory-item:hover,
+body.ios-device .shop-item:hover {
+    -webkit-transform: translateZ(0) translateY(-3px);
+    transform: translateZ(0) translateY(-3px);
 }
 
 /* Упрощенные анимации */
@@ -103,7 +213,9 @@ body.reduced-motion *::after {
 .header {
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     padding: 1rem 2rem;
+    padding-top: calc(1rem + env(safe-area-inset-top));
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -156,9 +268,11 @@ body.reduced-motion *::after {
     flex: 1;
     padding: 1rem;
     height: calc(100vh - 80px);
+    height: calc(-webkit-fill-available - 80px);
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    -webkit-overflow-scrolling: touch;
 }
 
 /* Tab Navigation */
@@ -183,6 +297,15 @@ body.reduced-motion *::after {
     cursor: pointer;
     transition: all 0.3s ease;
     text-align: center;
+    -webkit-appearance: none;
+    appearance: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    min-height: 44px;
 }
 
 .tab-btn:hover {
@@ -229,12 +352,14 @@ body.reduced-motion *::after {
     gap: 1rem;
     flex: 1;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     padding: 0.5rem;
 }
 
 .case-item {
     background: rgba(240, 248, 255, 0.95);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border-radius: 15px;
     padding: 1rem;
     text-align: center;
@@ -971,8 +1096,16 @@ body.case-opening {
     z-index: 10000;
     transition: all 0.3s ease;
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border: 2px solid rgba(255, 255, 255, 0.2);
     -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+    -webkit-appearance: none;
+    appearance: none;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
     touch-action: manipulation;
     user-select: none;
     min-height: 44px;
@@ -1594,6 +1727,7 @@ body.case-opening {
     gap: 0.8rem;
     flex: 1;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     padding: 0.5rem;
     align-items: start;
 }
@@ -1601,6 +1735,7 @@ body.case-opening {
 .inventory-item {
     background: rgba(240, 248, 255, 0.95);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border-radius: 15px;
     padding: 1rem;
     text-align: center;
@@ -1651,6 +1786,7 @@ body.case-opening {
 .shop-content {
     flex: 1;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     padding: 0.5rem;
 }
 
@@ -1671,6 +1807,7 @@ body.case-opening {
 .shop-item {
     background: rgba(240, 248, 255, 0.95);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border-radius: 15px;
     padding: 1.5rem;
     text-align: center;
@@ -1712,6 +1849,13 @@ body.case-opening {
     transition: all 0.3s ease;
     width: 100%;
     -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+    -webkit-appearance: none;
+    appearance: none;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
     touch-action: manipulation;
     user-select: none;
     min-height: 44px;
@@ -1820,6 +1964,7 @@ body.case-opening {
 .modal-content {
     background: rgba(240, 248, 255, 0.95);
     backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
     border-radius: 20px;
     padding: 2rem;
     max-width: 500px;
@@ -1966,6 +2111,13 @@ body.case-opening {
     position: relative;
     overflow: hidden;
     -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+    -webkit-appearance: none;
+    appearance: none;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
     touch-action: manipulation;
     user-select: none;
     min-height: 48px;
@@ -1992,6 +2144,13 @@ body.case-opening {
     position: relative;
     overflow: hidden;
     -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+    -webkit-appearance: none;
+    appearance: none;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
     touch-action: manipulation;
     user-select: none;
     min-height: 48px;

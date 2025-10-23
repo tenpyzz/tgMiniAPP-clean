@@ -1,0 +1,164 @@
+/* iOS-специфичные исправления для лучшей совместимости */
+
+/* Исправление для iOS Safari - предотвращение зума при двойном тапе */
+* {
+    touch-action: manipulation;
+}
+
+/* Исправление для iOS - предотвращение выделения текста при касании */
+button, .case-item, .inventory-item, .shop-item, .tab-btn {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Исправление для iOS - предотвращение перетаскивания */
+img, .case-item, .inventory-item, .shop-item {
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
+}
+
+/* Исправление для iOS - предотвращение подсветки при касании */
+button, .case-item, .inventory-item, .shop-item, .tab-btn, .buy-btn {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+/* Исправление для iOS - оптимизация скролла */
+.cases-grid, .inventory-grid, .shop-content {
+    -webkit-overflow-scrolling: touch;
+    overflow-scrolling: touch;
+}
+
+/* Исправление для iOS - предотвращение bounce эффекта */
+body {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Исправление для iOS - предотвращение масштабирования */
+input, textarea, select {
+    font-size: 16px;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+/* Исправление для iOS - предотвращение автоматического масштабирования */
+@media screen and (max-width: 767px) {
+    input, textarea, select {
+        font-size: 16px !important;
+    }
+}
+
+/* Исправление для iOS - предотвращение bounce при скролле */
+html, body {
+    position: fixed;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+}
+
+.app-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Исправление для iOS - предотвращение выделения при длительном нажатии */
+.case-item, .inventory-item, .shop-item, .tab-btn, .buy-btn {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Исправление для iOS - предотвращение контекстного меню */
+.case-item, .inventory-item, .shop-item, .tab-btn, .buy-btn {
+    -webkit-touch-callout: none;
+}
+
+/* Исправление для iOS - оптимизация производительности */
+.case-item, .inventory-item, .shop-item, .tab-btn, .buy-btn {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-perspective: 1000;
+    perspective: 1000;
+}
+
+/* Исправление для iOS - предотвращение мерцания */
+.case-item, .inventory-item, .shop-item, .tab-btn, .buy-btn {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    will-change: transform;
+}
+
+/* Исправление для iOS - предотвращение задержки при касании */
+.case-item, .inventory-item, .shop-item, .tab-btn, .buy-btn {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+}
+
+/* Исправление для iOS - предотвращение выделения при касании */
+.case-item, .inventory-item, .shop-item, .tab-btn, .buy-btn {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Исправление для iOS - предотвращение перетаскивания */
+.case-item, .inventory-item, .shop-item, .tab-btn, .buy-btn {
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
+}
+
+/* Исправление для iOS - предотвращение контекстного меню */
+.case-item, .inventory-item, .shop-item, .tab-btn, .buy-btn {
+    -webkit-touch-callout: none;
+}
+
+/* Исправление для iOS - предотвращение выделения при касании */
+.case-item, .inventory-item, .shop-item, .tab-btn, .buy-btn {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Исправление для iOS - предотвращение перетаскивания */
+.case-item, .inventory-item, .shop-item, .tab-btn, .buy-btn {
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
+}
+
+/* Исправление для iOS - предотвращение контекстного меню */
+.case-item, .inventory-item, .shop-item, .tab-btn, .buy-btn {
+    -webkit-touch-callout: none;
+}
