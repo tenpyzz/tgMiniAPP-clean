@@ -1031,14 +1031,11 @@ async function showCaseOpeningAnimation(caseType) {
     const lightFlash = document.getElementById('light-flash');
     const smokeEffect = document.getElementById('smoke-effect');
     
-    // Проверяем, мобильное ли устройство
-    const isMobile = window.innerWidth <= 768 || document.body.classList.contains('mobile-device');
-    
     // Активируем полноэкранный режим
     document.body.classList.add('case-opening');
     openingArea.classList.add('fullscreen');
     
-    // Включаем все эффекты для всех устройств для единообразия
+    // Включаем все эффекты для всех устройств
     if (lightRays) lightRays.style.display = 'block';
     if (particlesContainer) particlesContainer.style.display = 'block';
     if (smokeEffect) smokeEffect.style.display = 'block';
@@ -1085,16 +1082,13 @@ async function startCS2PrizeAnimation(caseType) {
     const config = caseConfig[caseType];
     const prizes = config.prizes;
     
-    // Проверяем, мобильное ли устройство
-    const isMobile = window.innerWidth <= 768 || document.body.classList.contains('mobile-device');
-    
     // Очищаем полоску
     prizeStrip.innerHTML = '';
     prizeStrip.className = 'prize-strip'; // Сбрасываем все классы
     
-    // Создаем массив призов для анимации (одинаковое количество для всех устройств)
+    // Создаем массив призов для анимации
     const animationPrizes = [];
-    // Используем одинаковое количество призов для всех устройств для единообразия
+    // Одинаковое количество призов для всех устройств
     const totalPrizes = 50;
     
     for (let i = 0; i < totalPrizes; i++) {
