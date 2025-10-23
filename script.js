@@ -359,39 +359,27 @@ function logAdminAction(action) {
     console.log(`🔧 АДМИН: ${action}`);
 }
 
-// Конфигурация кейсов с улучшенной системой редкости
+// Конфигурация уникального кейса со всеми призами
 const caseConfig = {
-    bronze: {
-        price: 10,
+    ultimate: {
+        price: 50,
         prizes: [
-            { type: 'gift', name: 'Сердечко', icon: '❤️', description: 'Подарок сердечко', telegram_gift_id: 'heart_1', rarity: 'common' },
-            { type: 'gift', name: 'Звездочка', icon: '⭐', description: 'Подарок звездочка', telegram_gift_id: 'star_1', rarity: 'common' },
-            { type: 'gift', name: 'Цветок', icon: '🌸', description: 'Подарок цветок', telegram_gift_id: 'flower_1', rarity: 'common' },
-            { type: 'gift', name: 'Торт', icon: '🎂', description: 'Редкий торт', telegram_gift_id: 'cake_1', rarity: 'rare' }
-        ]
-    },
-    silver: {
-        price: 25,
-        prizes: [
+            // Призы из бронзового кейса
             { type: 'gift', name: 'Сердечко', icon: '❤️', description: 'Подарок сердечко', telegram_gift_id: 'heart_1', rarity: 'common' },
             { type: 'gift', name: 'Звездочка', icon: '⭐', description: 'Подарок звездочка', telegram_gift_id: 'star_1', rarity: 'common' },
             { type: 'gift', name: 'Цветок', icon: '🌸', description: 'Подарок цветок', telegram_gift_id: 'flower_1', rarity: 'common' },
             { type: 'gift', name: 'Торт', icon: '🎂', description: 'Редкий торт', telegram_gift_id: 'cake_1', rarity: 'rare' },
+            
+            // Призы из серебряного кейса
             { type: 'sticker', name: 'Кот', icon: '🐱', description: 'Стикер кота', telegram_sticker_id: 'cat_1', rarity: 'rare' },
-            { type: 'sticker', name: 'Собака', icon: '🐶', description: 'Стикер собаки', telegram_sticker_id: 'dog_1', rarity: 'rare' }
-        ]
-    },
-    gold: {
-        price: 50,
-        prizes: [
+            { type: 'sticker', name: 'Собака', icon: '🐶', description: 'Стикер собаки', telegram_sticker_id: 'dog_1', rarity: 'rare' },
+            
+            // Призы из золотого кейса
             { type: 'premium', name: 'Telegram Premium', icon: '👑', description: 'Премиум подписка на 1 месяц', premium_duration: 30, rarity: 'legendary' },
             { type: 'gift', name: 'Королевский подарок', icon: '🎁', description: 'Эксклюзивный подарок', telegram_gift_id: 'royal_1', rarity: 'epic' },
-            { type: 'sticker', name: 'Премиум стикер', icon: '✨', description: 'Стикер премиум качества', telegram_sticker_id: 'premium_1', rarity: 'epic' }
-        ]
-    },
-    diamond: {
-        price: 100,
-        prizes: [
+            { type: 'sticker', name: 'Премиум стикер', icon: '✨', description: 'Стикер премиум качества', telegram_sticker_id: 'premium_1', rarity: 'epic' },
+            
+            // Призы из алмазного кейса
             { type: 'premium', name: 'Telegram Premium', icon: '👑', description: 'Премиум подписка на 3 месяца', premium_duration: 90, rarity: 'legendary' },
             { type: 'gift', name: 'Алмазный подарок', icon: '💎', description: 'Уникальный алмазный подарок', telegram_gift_id: 'diamond_1', rarity: 'legendary' },
             { type: 'sticker', name: 'Эксклюзивный стикер', icon: '🌟', description: 'Эксклюзивный стикер', telegram_sticker_id: 'exclusive_1', rarity: 'epic' }

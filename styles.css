@@ -456,6 +456,64 @@ body.reduced-motion *::after {
     animation: diamondReflection 2s ease-in-out infinite;
 }
 
+/* Уникальная иконка кейса */
+.ultimate-icon {
+    background: linear-gradient(135deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
+    background-size: 400% 400%;
+    box-shadow: 
+        0 0 40px rgba(255, 107, 107, 0.8),
+        inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    animation: ultimateGradient 3s ease-in-out infinite, ultimateGlow 2s ease-in-out infinite alternate;
+}
+
+.ultimate-icon::before {
+    background: linear-gradient(135deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
+    background-size: 400% 400%;
+    animation: ultimateGradient 3s ease-in-out infinite;
+}
+
+.ultimate-icon::after {
+    content: '🎁';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) translateZ(6px);
+    font-size: 2.5rem;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: ultimateBounce 2s ease-in-out infinite;
+}
+
+@keyframes ultimateGradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes ultimateGlow {
+    0% { 
+        box-shadow: 
+            0 0 40px rgba(255, 107, 107, 0.8),
+            inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+    100% { 
+        box-shadow: 
+            0 0 60px rgba(255, 107, 107, 1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+}
+
+@keyframes ultimateBounce {
+    0%, 100% { 
+        transform: translate(-50%, -50%) translateZ(6px) scale(1);
+    }
+    50% { 
+        transform: translate(-50%, -50%) translateZ(6px) scale(1.1);
+    }
+}
+
 @keyframes diamondSparkle {
     0%, 100% { 
         box-shadow: 
@@ -568,6 +626,20 @@ body.reduced-motion *::after {
     box-shadow: 0 0 30px rgba(185, 242, 255, 0.8);
 }
 
+.ultimate-case {
+    background: linear-gradient(135deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
+    background-size: 400% 400%;
+    box-shadow: 0 0 30px rgba(255, 107, 107, 0.6);
+    animation: ultimateGradient 3s ease-in-out infinite;
+}
+
+.ultimate-case .case-glow {
+    background: linear-gradient(135deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
+    background-size: 400% 400%;
+    box-shadow: 0 0 40px rgba(255, 107, 107, 0.9);
+    animation: ultimateGradient 3s ease-in-out infinite;
+}
+
 .case-item h3 {
     font-size: 0.9rem;
     margin-bottom: 0.3rem;
@@ -580,6 +652,14 @@ body.reduced-motion *::after {
     font-weight: bold;
     color: var(--accent-color);
     margin-bottom: 0;
+}
+
+.case-description {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.3rem;
+    font-style: italic;
+    line-height: 1.2;
 }
 
 /* Opening Animation - CS:GO Style */
