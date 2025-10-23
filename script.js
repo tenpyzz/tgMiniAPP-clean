@@ -6,6 +6,8 @@ let userStars = 0; // Начальный баланс звезд (будет з�
 let userInventory = []; // Инвентарь пользователя
 let isOpening = false; // Флаг открытия кейса
 let currentUserId = null; // ID текущего пользователя
+let pendingPrize = null; // Ожидающий приз (если анимация не завершена)
+let pendingCasePrice = 0; // Цена ожидающего кейса
 
 // Админские функции
 const ADMIN_USER_ID = '1165123437'; // ID админа
@@ -448,15 +450,13 @@ function startDataSync() {
             if (userStars === 100 && hasInventory && currentBalance !== 100) {
                 console.log('⚠️ СИНХРОНИЗАЦИЯ: Подозрительное изменение баланса с', currentBalance, 'на 100');
                 console.log('⚠️ Восстанавливаем предыдущий баланс:', currentBalance);
-                userStars = currentBalance;
-                updateStarsDisplay();
+                safeUpdateBalance(currentBalance, 'sync protection');
             }
             
             // Дополнительная защита: проверяем localStorage
             if (savedBalance && parseInt(savedBalance) > 0 && userStars === 100 && hasInventory) {
                 console.log('🔄 СИНХРОНИЗАЦИЯ: Восстанавливаем баланс из localStorage:', savedBalance);
-                userStars = parseInt(savedBalance);
-                updateStarsDisplay();
+                safeUpdateBalance(parseInt(savedBalance), 'localStorage restore');
                 await saveUserData();
             }
         }
@@ -511,15 +511,13 @@ function startDataSync() {
                 if (userStars === 100 && hasInventory && currentBalance !== 100) {
                     console.log('⚠️ ВОЗВРАЩЕНИЕ НА ВКЛАДКУ: Подозрительное изменение баланса с', currentBalance, 'на 100');
                     console.log('⚠️ Восстанавливаем предыдущий баланс:', currentBalance);
-                    userStars = currentBalance;
-                    updateStarsDisplay();
+                    safeUpdateBalance(currentBalance, 'visibility change protection');
                 }
                 
                 // Дополнительная защита: проверяем localStorage
                 if (savedBalance && parseInt(savedBalance) > 0 && userStars === 100 && hasInventory) {
                     console.log('🔄 ВОЗВРАЩЕНИЕ НА ВКЛАДКУ: Восстанавливаем баланс из localStorage:', savedBalance);
-                    userStars = parseInt(savedBalance);
-                    updateStarsDisplay();
+                    safeUpdateBalance(parseInt(savedBalance), 'visibility localStorage restore');
                     saveUserData();
                 }
             }
@@ -617,7 +615,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }
                 
                 // Восстанавливаем правильное количество звезд (оригинальное - потраченное)
-                userStars = state.originalStars - state.amount;
+                safeUpdateBalance(state.originalStars - state.amount, 'prize restoration');
                 starsSpent = true;
                 
                 console.log(`💰 Восстановленный баланс: ${userStars} звезд`);
@@ -649,7 +647,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (hasDiamondPrize) {
             console.log('💎 ОБНАРУЖЕН АЛМАЗНЫЙ ПРИЗ В ИНВЕНТАРЕ ПРИ БАЛАНСЕ 100 (инициализация)');
             console.log('💎 Исправляем баланс на 0 звезд');
-            userStars = 0;
+            safeUpdateBalance(0, 'diamond prize init correction');
             starsSpent = true;
             
             // Сразу сохраняем исправленный баланс на сервер
@@ -661,8 +659,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     const savedBalance = localStorage.getItem('user_balance');
     if (savedBalance && parseInt(savedBalance) > 0 && userStars === 100 && userInventory.length > 0) {
         console.log('🔄 ВОССТАНОВЛЕНИЕ БАЛАНСА из localStorage:', savedBalance);
-        userStars = parseInt(savedBalance);
-        updateStarsDisplay();
+        safeUpdateBalance(parseInt(savedBalance), 'localStorage init restore');
         // Сохраняем восстановленный баланс на сервер
         saveUserData();
     }
@@ -680,7 +677,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (hasDiamondPrize) {
             console.log('💎 ОБНАРУЖЕН АЛМАЗНЫЙ ПРИЗ В ИНВЕНТАРЕ ПРИ БАЛАНСЕ 100');
             console.log('💎 Исправляем баланс на 0 звезд');
-            userStars = 0;
+            safeUpdateBalance(0, 'diamond prize final correction');
             starsSpent = true;
             
             // Сразу сохраняем исправленный баланс на сервер
@@ -691,6 +688,13 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Обновляем отображение
     updateStarsDisplay();
     updateInventoryDisplay();
+    
+    // Автоматическое восстановление потерянных данных
+    console.log('🔄 ИНИЦИАЛИЗАЦИЯ: Проверяем на наличие потерянных данных...');
+    recoverLostItems();
+    
+    // Проверяем, есть ли незавершенное открытие кейса
+    checkPendingCaseOpening();
     
     // Добавляем обработчики событий
     setupEventListeners();
@@ -797,7 +801,7 @@ async function openCase(caseType, price) {
     prizeAutoAdded = false;
     starsSpent = false;
     
-    // Списываем звезды
+    // Списываем звезды сразу (как было раньше)
     userStars -= price;
     starsSpent = true; // Устанавливаем флаг, что звезды потрачены
     updateStarsDisplay();
@@ -1503,19 +1507,25 @@ async function autoAddPrizeToInventory() {
         );
         
         if (!prizeAlreadyAdded) {
+            // Проверяем, что приз получен законно
+            if (!validatePrizeClaim(currentPrize, currentCasePrice)) {
+                console.log('❌ AUTO_ADD: Приз отклонен из-за отсутствия подтверждения трат');
+                return;
+            }
+            
             // Устанавливаем флаг, что приз уже добавлен
             prizeAutoAdded = true;
+            
+            console.log(`🎁 AUTO_ADD: Автоматически добавляем приз ${currentPrize.name} в инвентарь`);
+            console.log(`💰 AUTO_ADD: Звезды уже списаны ранее, не списываем повторно`);
             
             // Добавляем приз в инвентарь
             userInventory.push(currentPrize);
             
-            // НЕ возвращаем звезды - они уже потрачены на открытие кейса
-            // currentCasePrice остается потраченным
-            
             // СРАЗУ сохраняем данные на сервер
             await saveUserData();
             
-            console.log('✅ Приз автоматически добавлен в инвентарь (звезды НЕ возвращены)');
+            console.log('✅ Приз автоматически добавлен в инвентарь');
         } else {
             console.log('⚠️ Приз уже добавлен в инвентарь, пропускаем');
         }
@@ -1523,7 +1533,7 @@ async function autoAddPrizeToInventory() {
         // Сбрасываем флаги
         isChoosingPrize = false;
         currentPrize = null;
-        // НЕ сбрасываем currentCasePrice здесь - звезды уже потрачены!
+        currentCasePrice = 0; // Сбрасываем цену кейса
         
         // Очищаем localStorage
         localStorage.removeItem('pendingPrize');
@@ -1599,6 +1609,16 @@ async function restorePrizeState() {
                 );
                 
                 if (!prizeAlreadyAdded) {
+                    // Для восстановленных призов проверяем, что есть запись о потраченных звездах
+                    const starsSpent = localStorage.getItem('starsSpent');
+                    if (!starsSpent) {
+                        console.log('❌ RESTORE_PRIZE: Нет записи о потраченных звездах - приз не восстанавливаем');
+                        return;
+                    }
+                    
+                    console.log(`🎁 RESTORE_PRIZE: Восстанавливаем приз ${state.prize.name} из localStorage`);
+                    console.log(`💰 RESTORE_PRIZE: Звезды уже были потрачены ранее, не списываем повторно`);
+                    
                     userInventory.push(state.prize);
                     // СРАЗУ сохраняем на сервер, чтобы данные синхронизировались
                     await saveUserData();
@@ -1629,6 +1649,16 @@ async function restorePrizeState() {
                 );
                 
                 if (!prizeAlreadyAdded) {
+                    // Для восстановленных призов проверяем, что есть запись о потраченных звездах
+                    const starsSpent = localStorage.getItem('starsSpent');
+                    if (!starsSpent) {
+                        console.log('❌ RESTORE_PRIZE_TIMEOUT: Нет записи о потраченных звездах - приз не восстанавливаем');
+                        return;
+                    }
+                    
+                    console.log(`🎁 RESTORE_PRIZE_TIMEOUT: Восстанавливаем приз ${state.prize.name} из localStorage (время истекло)`);
+                    console.log(`💰 RESTORE_PRIZE_TIMEOUT: Звезды уже были потрачены ранее, не списываем повторно`);
+                    
                     userInventory.push(state.prize);
                     // СРАЗУ сохраняем на сервер, чтобы данные синхронизировались
                     await saveUserData();
@@ -1661,6 +1691,16 @@ function addToInventory() {
         return;
     }
     
+    // Проверяем, что приз получен законно
+    if (!validatePrizeClaim(currentPrize, currentCasePrice)) {
+        showNotification('Приз не может быть добавлен - нет подтверждения трат!', 'error');
+        console.log('❌ ADD_TO_INVENTORY: Приз отклонен из-за отсутствия подтверждения трат');
+        return;
+    }
+    
+    console.log(`🎁 ADD_TO_INVENTORY: Добавляем приз ${currentPrize.name} в инвентарь`);
+    console.log(`💰 ADD_TO_INVENTORY: Звезды уже списаны ранее, не списываем повторно`);
+    
     // Добавляем приз в инвентарь
     userInventory.push(currentPrize);
     
@@ -1673,10 +1713,10 @@ function addToInventory() {
     // Показываем уведомление
     showNotification('Приз добавлен в инвентарь!', 'success');
     
-    // Сбрасываем флаги (НЕ сбрасываем starsSpent - звезды уже потрачены)
+    // Сбрасываем флаги
     isChoosingPrize = false;
     prizeAutoAdded = false;
-    // starsSpent остается true - звезды уже потрачены
+    currentCasePrice = 0; // Сбрасываем цену кейса
     
     // Очищаем состояние "звезды потрачены" из localStorage
     localStorage.removeItem('starsSpent');
@@ -1722,8 +1762,18 @@ async function claimPrize() {
         });
         
         if (response.ok) {
+            // Проверяем, что приз получен законно
+            if (!validatePrizeClaim(currentPrize, currentCasePrice)) {
+                showNotification('Приз не может быть получен - нет подтверждения трат!', 'error');
+                console.log('❌ CLAIM_PRIZE: Приз отклонен из-за отсутствия подтверждения трат');
+                return;
+            }
+            
             // Отмечаем приз как полученный
             currentPrize.claimed = true;
+            
+            console.log(`🎁 CLAIM_PRIZE: Добавляем приз ${currentPrize.name} в инвентарь`);
+            console.log(`💰 CLAIM_PRIZE: Звезды уже списаны ранее, не списываем повторно`);
             
             // Добавляем в инвентарь
             userInventory.push(currentPrize);
@@ -1737,10 +1787,10 @@ async function claimPrize() {
             // Показываем уведомление
             showNotification('Приз получен!', 'success');
             
-            // Сбрасываем флаги (НЕ сбрасываем starsSpent - звезды уже потрачены)
+            // Сбрасываем флаги
             isChoosingPrize = false;
             prizeAutoAdded = false;
-            // starsSpent остается true - звезды уже потрачены
+            currentCasePrice = 0; // Сбрасываем цену кейса
             
             // Очищаем состояние "звезды потрачены" из localStorage
             localStorage.removeItem('starsSpent');
@@ -1918,6 +1968,11 @@ async function loadInventoryOnly() {
 // Загрузка данных пользователя
 async function loadUserData() {
     try {
+        console.log('🔄 LOAD_USER_DATA: Начало загрузки данных');
+        console.log('🔄 LOAD_USER_DATA: Текущий баланс до загрузки:', userStars);
+        console.log('🔄 LOAD_USER_DATA: Текущий инвентарь до загрузки:', userInventory.length, 'предметов');
+        console.log('🔄 LOAD_USER_DATA: ID пользователя:', currentUserId);
+        
         // Блокируем загрузку данных для тестовых пользователей
         if (currentUserId === 'test_user' || currentUserId === 'test_user_123') {
             console.log('🚫 Блокируем загрузку данных для тестового пользователя:', currentUserId);
@@ -1986,9 +2041,17 @@ async function loadUserData() {
             const oldStars = userStars;
             const oldInventoryLength = userInventory.length;
             
+            console.log('📥 LOAD_USER_DATA: Получены данные с сервера:', {
+                stars_balance: data.stars_balance,
+                inventory_count: data.inventory?.length || 0,
+                inventory: data.inventory
+            });
+            
         // ИСПРАВЛЕНИЕ: Не сбрасываем баланс на 100, если сервер вернул null/undefined
         // Сохраняем текущий баланс, если серверные данные некорректны
         if (data.stars_balance !== null && data.stars_balance !== undefined && data.stars_balance >= 0) {
+            console.log('🔄 LOAD_USER_DATA: Обновляем баланс с', oldStars, 'на', data.stars_balance);
+            
             // ДОПОЛНИТЕЛЬНАЯ ЗАЩИТА: Если мы админ и у нас уже есть баланс больше 100,
             // не сбрасываем его на серверное значение, если серверное значение меньше
             if (isAdmin && userStars > 100 && data.stars_balance < userStars) {
@@ -1996,20 +2059,46 @@ async function loadUserData() {
                 console.log('🔧 АДМИН: Серверное значение:', data.stars_balance, 'Текущее:', userStars);
                 // Не меняем userStars, оставляем текущий
             } else {
-                userStars = data.stars_balance;
+                safeUpdateBalance(data.stars_balance, 'load from server');
             }
         } else {
-            console.log('⚠️ Сервер вернул некорректный баланс, сохраняем текущий:', userStars);
+            console.log('⚠️ LOAD_USER_DATA: Сервер вернул некорректный баланс, сохраняем текущий:', userStars);
             // Если текущий баланс 0 и это первая загрузка, устанавливаем 100
             if (userStars === 0 && userInventory.length === 0) {
-                userStars = 100;
-                console.log('🆕 Первая загрузка - устанавливаем начальный баланс 100');
+                safeUpdateBalance(100, 'first load');
+                console.log('🆕 LOAD_USER_DATA: Первая загрузка - устанавливаем начальный баланс 100');
             }
         }
             
+            const oldInventory = [...userInventory];
             userInventory = data.inventory || [];
             
-            console.log(`Данные загружены: ${userStars} звезд, ${userInventory.length} предметов в инвентаре`);
+            console.log('📦 LOAD_USER_DATA: Инвентарь обновлен:');
+            console.log('📦 LOAD_USER_DATA: Старый инвентарь:', oldInventory.length, 'предметов:', oldInventory.map(item => item.name || item.type));
+            console.log('📦 LOAD_USER_DATA: Новый инвентарь:', userInventory.length, 'предметов:', userInventory.map(item => item.name || item.type));
+            
+            // Проверяем, не потерялись ли предметы
+            if (oldInventory.length > 0 && userInventory.length < oldInventory.length) {
+                console.log('⚠️ LOAD_USER_DATA: ВНИМАНИЕ! Количество предметов в инвентаре уменьшилось!');
+                console.log('⚠️ LOAD_USER_DATA: Было:', oldInventory.length, 'Стало:', userInventory.length);
+                
+                // Ищем потерянные предметы
+                const lostItems = oldInventory.filter(oldItem => 
+                    !userInventory.some(newItem => 
+                        (oldItem.id && newItem.id && oldItem.id === newItem.id) ||
+                        (oldItem.name && newItem.name && oldItem.name === newItem.name)
+                    )
+                );
+                
+                if (lostItems.length > 0) {
+                    console.log('❌ LOAD_USER_DATA: Потерянные предметы:', lostItems);
+                    // Восстанавливаем потерянные предметы
+                    userInventory = [...userInventory, ...lostItems];
+                    console.log('🔄 LOAD_USER_DATA: Восстановлены потерянные предметы');
+                }
+            }
+            
+            console.log(`✅ LOAD_USER_DATA: Итоговые данные: ${userStars} звезд, ${userInventory.length} предметов в инвентаре`);
             
             // Дополнительная проверка: если баланс 100, но в инвентаре есть алмазные призы,
             // значит был открыт алмазный кейс и нужно исправить баланс
@@ -2024,7 +2113,7 @@ async function loadUserData() {
                 if (hasDiamondPrize) {
                     console.log('💎 ОБНАРУЖЕН АЛМАЗНЫЙ ПРИЗ В ИНВЕНТАРЕ ПРИ БАЛАНСЕ 100 (loadUserData)');
                     console.log('💎 Исправляем баланс на 0 звезд');
-                    userStars = 0;
+                    safeUpdateBalance(0, 'diamond prize correction');
                     starsSpent = true;
                     
                     // Сразу сохраняем исправленный баланс на сервер
@@ -2055,7 +2144,7 @@ async function loadUserData() {
         // ИСПРАВЛЕНИЕ: Не сбрасываем баланс на 100 при ошибке, если у нас уже есть данные
         if (userStars === 0 && userInventory.length === 0) {
             // Только если это первая загрузка и нет данных
-            userStars = 100;
+            safeUpdateBalance(100, 'error first load');
             userInventory = [];
             console.log('🆕 Первая загрузка при ошибке - устанавливаем начальный баланс 100');
         }
@@ -2066,6 +2155,11 @@ async function loadUserData() {
 // Сохранение данных пользователя
 async function saveUserData() {
     try {
+        console.log('💾 SAVE_USER_DATA: Начало сохранения данных');
+        console.log('💾 SAVE_USER_DATA: Баланс для сохранения:', userStars);
+        console.log('💾 SAVE_USER_DATA: Инвентарь для сохранения:', userInventory.length, 'предметов');
+        console.log('💾 SAVE_USER_DATA: ID пользователя:', currentUserId);
+        
         // Блокируем сохранение данных для тестовых пользователей
         if (currentUserId === 'test_user' || currentUserId === 'test_user_123') {
             console.log('🚫 Блокируем сохранение данных для тестового пользователя:', currentUserId);
@@ -2080,7 +2174,13 @@ async function saveUserData() {
             init_data: tg?.initData || 'test_data'
         };
         
-        console.log('💾 Сохраняем данные пользователя:', requestData);
+        console.log('💾 SAVE_USER_DATA: Данные для отправки на сервер:', {
+            user_id: requestData.user_id,
+            telegram_name: requestData.telegram_name,
+            stars_balance: requestData.stars_balance,
+            inventory_count: requestData.inventory.length,
+            inventory_items: requestData.inventory.map(item => item.name || item.type)
+        });
         
         const response = await fetch('/api/user/save', {
             method: 'POST',
@@ -2091,12 +2191,81 @@ async function saveUserData() {
         });
         
         if (!response.ok) {
+            console.error('❌ SAVE_USER_DATA: Ошибка ответа сервера:', response.status, response.statusText);
             throw new Error('Ошибка при сохранении данных');
         }
         
+        console.log('✅ SAVE_USER_DATA: Данные успешно сохранены на сервер');
+        
     } catch (error) {
-        console.error('Ошибка при сохранении данных:', error);
+        console.error('❌ SAVE_USER_DATA: Ошибка при сохранении данных:', error);
     }
+}
+
+// Проверка, что приз получен законно (после трат)
+function validatePrizeClaim(prize, casePrice) {
+    console.log(`🔍 VALIDATE_PRIZE: Проверяем законность получения приза ${prize.name}`);
+    
+    // Проверяем, что есть запись о потраченных звездах
+    const starsSpent = localStorage.getItem('starsSpent');
+    if (!starsSpent) {
+        console.log('❌ VALIDATE_PRIZE: Нет записи о потраченных звездах - приз недействителен');
+        return false;
+    }
+    
+    try {
+        const state = JSON.parse(starsSpent);
+        if (!state.spent || state.amount !== casePrice) {
+            console.log('❌ VALIDATE_PRIZE: Несоответствие суммы потраченных звезд');
+            return false;
+        }
+        
+        // Проверяем, что прошло не слишком много времени (защита от старых записей)
+        const timeDiff = Date.now() - state.timestamp;
+        if (timeDiff > 300000) { // 5 минут
+            console.log('❌ VALIDATE_PRIZE: Запись о потраченных звездах слишком старая');
+            return false;
+        }
+        
+        console.log('✅ VALIDATE_PRIZE: Приз получен законно');
+        return true;
+    } catch (e) {
+        console.log('❌ VALIDATE_PRIZE: Ошибка парсинга записи о потраченных звездах');
+        return false;
+    }
+}
+
+// Безопасное обновление баланса с защитой от потери данных
+function safeUpdateBalance(newBalance, reason = 'unknown') {
+    const oldBalance = userStars;
+    console.log(`🔄 SAFE_UPDATE_BALANCE: ${reason} - Изменение баланса с ${oldBalance} на ${newBalance}`);
+    
+    // Защита от сброса баланса на 100, если у нас есть инвентарь
+    if (newBalance === 100 && userInventory.length > 0 && oldBalance !== 100) {
+        console.log('⚠️ SAFE_UPDATE_BALANCE: Защита от сброса баланса на 100 при наличии инвентаря');
+        console.log('⚠️ SAFE_UPDATE_BALANCE: Инвентарь содержит:', userInventory.length, 'предметов');
+        
+        // Проверяем, есть ли алмазные призы
+        const hasDiamondPrize = userInventory.some(item => 
+            item.type === 'premium' || 
+            item.name?.includes('Алмазный') || 
+            item.name?.includes('Premium') ||
+            item.rarity === 'legendary'
+        );
+        
+        if (hasDiamondPrize) {
+            console.log('💎 SAFE_UPDATE_BALANCE: Обнаружен алмазный приз, устанавливаем баланс 0');
+            userStars = 0;
+        } else {
+            console.log('🔄 SAFE_UPDATE_BALANCE: Сохраняем предыдущий баланс:', oldBalance);
+            userStars = oldBalance;
+        }
+    } else {
+        userStars = newBalance;
+    }
+    
+    console.log(`✅ SAFE_UPDATE_BALANCE: Баланс обновлен: ${oldBalance} → ${userStars}`);
+    updateStarsDisplay();
 }
 
 // Функция восстановления баланса из localStorage
@@ -2104,8 +2273,7 @@ window.restoreBalance = function() {
     const savedBalance = localStorage.getItem('user_balance');
     if (savedBalance && parseInt(savedBalance) > 0) {
         const oldBalance = userStars;
-        userStars = parseInt(savedBalance);
-        updateStarsDisplay();
+        safeUpdateBalance(parseInt(savedBalance), 'restore from localStorage');
         saveUserData();
         showNotification(`Баланс восстановлен: ${oldBalance} → ${userStars}`, 'success');
         console.log('🔄 БАЛАНС ВОССТАНОВЛЕН:', oldBalance, '→', userStars);
@@ -2133,6 +2301,226 @@ window.forceLoadBalance = async function() {
         showNotification('Ошибка обновления баланса с сервера', 'error');
         console.log('❌ ОШИБКА ОБНОВЛЕНИЯ БАЛАНСА');
     }
+};
+
+// Функция восстановления потерянных предметов
+function recoverLostItems() {
+    console.log('🔍 RECOVERY: Поиск потерянных предметов...');
+    
+    // Проверяем, что есть запись о потраченных звездах (защита от добавления призов без трат)
+    const starsSpent = localStorage.getItem('starsSpent');
+    if (!starsSpent) {
+        console.log('🔍 RECOVERY: Нет записи о потраченных звездах - пропускаем восстановление');
+        return false;
+    }
+    
+    // Список предметов, которые могли быть потеряны
+    const possibleLostItems = [
+        {
+            id: 'heart_item_' + Date.now(),
+            name: 'Сердечко',
+            type: 'special',
+            rarity: 'rare',
+            description: 'Особый предмет - сердечко',
+            emoji: '❤️'
+        }
+    ];
+    
+    // Проверяем, есть ли эти предметы в инвентаре
+    const missingItems = possibleLostItems.filter(item => 
+        !userInventory.some(invItem => 
+            invItem.name === item.name || 
+            (invItem.id && item.id && invItem.id === item.id)
+        )
+    );
+    
+    if (missingItems.length > 0) {
+        console.log('🔄 RECOVERY: Найдены потерянные предметы:', missingItems);
+        
+        // Добавляем потерянные предметы в инвентарь
+        userInventory.push(...missingItems);
+        
+        // Обновляем отображение
+        updateInventoryDisplay();
+        
+        // Сохраняем на сервер
+        saveUserData();
+        
+        showNotification(`Восстановлено ${missingItems.length} потерянных предметов!`, 'success');
+        console.log('✅ RECOVERY: Восстановлены потерянные предметы');
+        
+        return true;
+    } else {
+        console.log('✅ RECOVERY: Потерянных предметов не найдено');
+        return false;
+    }
+}
+
+// Функция для принудительного восстановления предмета "сердечко"
+window.recoverHeart = function() {
+    console.log('❤️ RECOVERY: Принудительное восстановление сердечка...');
+    
+    // Проверяем, что есть запись о потраченных звездах (защита от добавления призов без трат)
+    const starsSpent = localStorage.getItem('starsSpent');
+    if (!starsSpent) {
+        showNotification('Нельзя восстановить предмет без подтверждения трат!', 'error');
+        console.log('❌ RECOVERY_HEART: Нет записи о потраченных звездах');
+        return;
+    }
+    
+    // Проверяем, есть ли уже сердечко в инвентаре
+    const hasHeart = userInventory.some(item => 
+        item.name === 'Сердечко' || 
+        item.name?.includes('сердечко') ||
+        item.emoji === '❤️'
+    );
+    
+    if (hasHeart) {
+        showNotification('Сердечко уже есть в инвентаре!', 'info');
+        console.log('❤️ RECOVERY: Сердечко уже есть в инвентаре');
+        return;
+    }
+    
+    // Создаем сердечко
+    const heartItem = {
+        id: 'heart_item_' + Date.now(),
+        name: 'Сердечко',
+        type: 'special',
+        rarity: 'rare',
+        description: 'Особый предмет - сердечко',
+        emoji: '❤️',
+        recovered: true,
+        recoveryTime: new Date().toISOString()
+    };
+    
+    // Добавляем в инвентарь
+    userInventory.push(heartItem);
+    
+    // Обновляем отображение
+    updateInventoryDisplay();
+    
+    // Сохраняем на сервер
+    saveUserData();
+    
+    showNotification('Сердечко восстановлено! ❤️', 'success');
+    console.log('✅ RECOVERY: Сердечко восстановлено');
+};
+
+// Функция для полного восстановления данных
+window.fullRecovery = function() {
+    console.log('🔄 FULL_RECOVERY: Полное восстановление данных...');
+    
+    // Восстанавливаем потерянные предметы
+    const itemsRecovered = recoverLostItems();
+    
+    // Принудительно сохраняем данные
+    saveUserData();
+    
+    // Обновляем отображение
+    updateStarsDisplay();
+    updateInventoryDisplay();
+    
+    if (itemsRecovered) {
+        showNotification('Данные восстановлены! Проверьте инвентарь.', 'success');
+    } else {
+        showNotification('Данные проверены и сохранены.', 'info');
+    }
+    
+    console.log('✅ FULL_RECOVERY: Восстановление завершено');
+};
+
+// Проверка на наличие незавершенного открытия кейса
+function checkPendingCaseOpening() {
+    console.log('🔍 CHECK_PENDING: Проверяем незавершенное открытие кейса...');
+    
+    const pendingPrize = localStorage.getItem('pendingPrize');
+    const starsSpent = localStorage.getItem('starsSpent');
+    
+    if (pendingPrize || starsSpent) {
+        console.log('⚠️ CHECK_PENDING: Найдено незавершенное открытие кейса');
+        console.log('⚠️ CHECK_PENDING: pendingPrize:', pendingPrize);
+        console.log('⚠️ CHECK_PENDING: starsSpent:', starsSpent);
+        
+        // Показываем уведомление пользователю
+        showNotification('Обнаружено незавершенное открытие кейса! Используйте кнопку ❌ для отмены.', 'warning');
+        
+        // Устанавливаем флаги
+        isOpening = true;
+        currentCasePrice = 0;
+        
+        try {
+            if (starsSpent) {
+                const state = JSON.parse(starsSpent);
+                currentCasePrice = state.amount || 0;
+                console.log('💰 CHECK_PENDING: Цена кейса из localStorage:', currentCasePrice);
+            }
+        } catch (e) {
+            console.log('❌ CHECK_PENDING: Ошибка парсинга starsSpent:', e);
+        }
+        
+        console.log('⚠️ CHECK_PENDING: Используйте кнопку ❌ для отмены или дождитесь завершения');
+    } else {
+        console.log('✅ CHECK_PENDING: Незавершенных открытий кейса не найдено');
+    }
+}
+
+// Функция для отмены открытия кейса (если анимация не завершена)
+window.cancelCaseOpening = function() {
+    console.log('❌ CANCEL_CASE: Отменяем открытие кейса');
+    
+    if (!isOpening && !currentPrize) {
+        showNotification('Нет активного открытия кейса', 'info');
+        return;
+    }
+    
+    // Сбрасываем все флаги
+    isOpening = false;
+    currentPrize = null;
+    currentCasePrice = 0;
+    prizeAutoAdded = false;
+    isChoosingPrize = false;
+    
+    // Очищаем localStorage
+    localStorage.removeItem('starsSpent');
+    localStorage.removeItem('pendingPrize');
+    localStorage.removeItem('prizeProcessed');
+    
+    // Восстанавливаем интерфейс
+    document.body.classList.remove('case-opening');
+    const openingArea = document.getElementById('opening-area');
+    if (openingArea) {
+        openingArea.classList.remove('fullscreen');
+        openingArea.style.display = 'none';
+    }
+    
+    // Скрываем кнопку выхода
+    const exitBtn = document.getElementById('exit-fullscreen-btn');
+    if (exitBtn) {
+        exitBtn.style.display = 'none';
+    }
+    
+    // Сбрасываем полоску призов
+    const prizeStrip = document.getElementById('prize-strip');
+    if (prizeStrip) {
+        prizeStrip.innerHTML = '';
+        prizeStrip.className = 'prize-strip';
+    }
+    
+    // Скрываем показ приза
+    const prizeReveal = document.getElementById('prize-reveal');
+    if (prizeReveal) {
+        prizeReveal.classList.remove('show');
+    }
+    
+    // Закрываем модальное окно приза
+    closePrizeModal();
+    
+    // Обновляем отображение
+    updateStarsDisplay();
+    updateInventoryDisplay();
+    
+    showNotification('Открытие кейса отменено', 'info');
+    console.log('✅ CANCEL_CASE: Открытие кейса отменено');
 };
 
 // Экспорт функций для тестирования
@@ -2272,8 +2660,7 @@ async function setMyBalance() {
             const result = await response.json();
             
             // Обновляем локальный баланс
-            userStars = amount;
-            updateStarsDisplay();
+            safeUpdateBalance(amount, 'admin set balance');
             
             showNotification(`✅ Ваш баланс установлен: ${amount} звезд`, 'success');
             logAdminAction(`Установлен собственный баланс ${amount}`);
@@ -2318,8 +2705,7 @@ async function addMyBalance() {
             const result = await response.json();
             
             // Обновляем локальный баланс
-            userStars = result.newBalance;
-            updateStarsDisplay();
+            safeUpdateBalance(result.newBalance, 'admin add balance');
             
             showNotification(`✅ Добавлено ${amount} звезд. Новый баланс: ${result.newBalance}`, 'success');
             logAdminAction(`Добавлено ${amount} звезд к собственному балансу. Новый баланс: ${result.newBalance}`);
@@ -2418,8 +2804,7 @@ async function setUserBalance() {
             
             // Если устанавливаем баланс для текущего пользователя, обновляем локальный баланс
             if (userId === currentUserId) {
-                userStars = amount;
-                updateStarsDisplay();
+                safeUpdateBalance(amount, 'admin set other user balance');
                 console.log(`🔧 АДМИН: Локальный баланс обновлен на ${amount}`);
             }
         } else {
@@ -2466,8 +2851,7 @@ async function addUserBalance() {
             
             // Если добавляем баланс для текущего пользователя, обновляем локальный баланс
             if (userId === currentUserId) {
-                userStars = result.newBalance;
-                updateStarsDisplay();
+                safeUpdateBalance(result.newBalance, 'admin add other user balance');
                 console.log(`🔧 АДМИН: Локальный баланс обновлен на ${result.newBalance}`);
             }
         } else {
@@ -2710,7 +3094,7 @@ async function clearAllData() {
     
     try {
         // Очищаем локальные данные
-        userStars = 100;
+        safeUpdateBalance(100, 'data reset');
         userInventory = [];
         localStorage.clear();
         
