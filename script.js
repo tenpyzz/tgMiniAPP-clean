@@ -656,6 +656,31 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
         if (deviceInfo.isIOS) {
             document.body.classList.add('ios-device');
+            
+            // Исправление проблемы с текстом в табах на iOS
+            setTimeout(() => {
+                const tabButtons = document.querySelectorAll('.tab-btn');
+                tabButtons.forEach(btn => {
+                    btn.style.webkitUserSelect = 'auto';
+                    btn.style.userSelect = 'auto';
+                    btn.style.webkitTextSizeAdjust = '100%';
+                    btn.style.textSizeAdjust = '100%';
+                    btn.style.fontSize = '0.9rem';
+                    btn.style.fontWeight = 'bold';
+                    btn.style.color = 'white';
+                    btn.style.textAlign = 'center';
+                    btn.style.lineHeight = '1.2';
+                    btn.style.whiteSpace = 'nowrap';
+                    btn.style.overflow = 'visible';
+                    btn.style.textOverflow = 'unset';
+                    btn.style.display = 'flex';
+                    btn.style.alignItems = 'center';
+                    btn.style.justifyContent = 'center';
+                    btn.style.flexDirection = 'row';
+                    btn.style.gap = '0.3rem';
+                });
+                console.log('🔧 iOS: Применены исправления для отображения текста в табах');
+            }, 100);
         }
         if (deviceInfo.isAndroid) {
             document.body.classList.add('android-device');
@@ -894,6 +919,34 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Добавляем обработчики событий
     setupEventListeners();
+    
+    // Дополнительная проверка для iOS после загрузки всех элементов
+    if (deviceInfo.isIOS) {
+        setTimeout(() => {
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            tabButtons.forEach(btn => {
+                // Принудительно обновляем стили для iOS
+                btn.style.webkitUserSelect = 'auto';
+                btn.style.userSelect = 'auto';
+                btn.style.webkitTextSizeAdjust = '100%';
+                btn.style.textSizeAdjust = '100%';
+                btn.style.fontSize = '0.9rem';
+                btn.style.fontWeight = 'bold';
+                btn.style.color = 'white';
+                btn.style.textAlign = 'center';
+                btn.style.lineHeight = '1.2';
+                btn.style.whiteSpace = 'nowrap';
+                btn.style.overflow = 'visible';
+                btn.style.textOverflow = 'unset';
+                btn.style.display = 'flex';
+                btn.style.alignItems = 'center';
+                btn.style.justifyContent = 'center';
+                btn.style.flexDirection = 'row';
+                btn.style.gap = '0.3rem';
+            });
+            console.log('🔧 iOS: Повторное применение исправлений для табов');
+        }, 500);
+    }
     
     // Добавляем защиту от потери данных при выходе
     setupExitProtection();

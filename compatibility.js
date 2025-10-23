@@ -121,6 +121,31 @@ class CompatibilityManager {
         document.body.style.webkitFontSmoothing = 'antialiased';
         document.body.style.mozOsxFontSmoothing = 'grayscale';
         document.body.style.textRendering = 'optimizeLegibility';
+        
+        // Специальные настройки для iOS
+        if (this.deviceInfo.isIOS) {
+            // Принудительное отображение текста в табах
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            tabButtons.forEach(btn => {
+                btn.style.webkitUserSelect = 'auto';
+                btn.style.userSelect = 'auto';
+                btn.style.webkitTextSizeAdjust = '100%';
+                btn.style.textSizeAdjust = '100%';
+                btn.style.fontSize = '0.9rem';
+                btn.style.fontWeight = 'bold';
+                btn.style.color = 'white';
+                btn.style.textAlign = 'center';
+                btn.style.lineHeight = '1.2';
+                btn.style.whiteSpace = 'nowrap';
+                btn.style.overflow = 'visible';
+                btn.style.textOverflow = 'unset';
+                btn.style.display = 'flex';
+                btn.style.alignItems = 'center';
+                btn.style.justifyContent = 'center';
+                btn.style.flexDirection = 'row';
+                btn.style.gap = '0.3rem';
+            });
+        }
     }
 
     applyDeviceClasses() {

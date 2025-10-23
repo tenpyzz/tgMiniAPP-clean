@@ -1,0 +1,84 @@
+/* Специальные исправления для iOS Safari */
+
+/* Принудительное отображение текста в табах на iOS */
+@supports (-webkit-touch-callout: none) {
+    .tab-btn {
+        -webkit-user-select: auto !important;
+        user-select: auto !important;
+        -webkit-text-size-adjust: 100% !important;
+        text-size-adjust: 100% !important;
+        font-size: 0.9rem !important;
+        font-weight: bold !important;
+        color: white !important;
+        text-align: center !important;
+        line-height: 1.2 !important;
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-direction: row !important;
+        gap: 0.3rem !important;
+        -webkit-font-smoothing: antialiased !important;
+        -moz-osx-font-smoothing: grayscale !important;
+        text-rendering: optimizeLegibility !important;
+    }
+    
+    /* Дополнительные исправления для текста */
+    .tab-btn * {
+        -webkit-user-select: auto !important;
+        user-select: auto !important;
+        -webkit-text-size-adjust: 100% !important;
+        text-size-adjust: 100% !important;
+    }
+    
+    /* Исправление для иконок и текста */
+    .tab-btn::before,
+    .tab-btn::after {
+        -webkit-user-select: auto !important;
+        user-select: auto !important;
+    }
+}
+
+/* Дополнительные исправления для всех iOS устройств */
+.ios-device .tab-btn {
+    -webkit-user-select: auto !important;
+    user-select: auto !important;
+    -webkit-text-size-adjust: 100% !important;
+    text-size-adjust: 100% !important;
+    font-size: 0.9rem !important;
+    font-weight: bold !important;
+    color: white !important;
+    text-align: center !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-direction: row !important;
+    gap: 0.3rem !important;
+}
+
+/* Исправление для Safari на iOS */
+.safari-browser .tab-btn {
+    -webkit-user-select: auto !important;
+    user-select: auto !important;
+    -webkit-text-size-adjust: 100% !important;
+    text-size-adjust: 100% !important;
+    font-size: 0.9rem !important;
+    font-weight: bold !important;
+    color: white !important;
+    text-align: center !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-direction: row !important;
+    gap: 0.3rem !important;
+}

@@ -3150,8 +3150,30 @@ body.case-opening {
         -webkit-overflow-scrolling: touch;
     }
     
+    /* ИСПРАВЛЕНИЕ ПРОБЛЕМЫ С ТЕКСТОМ В ТАБАХ НА iOS */
+    .tab-btn {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        -webkit-user-select: auto !important; /* Разрешаем выделение текста */
+        user-select: auto !important;
+        -webkit-text-size-adjust: 100% !important;
+        text-size-adjust: 100% !important;
+        font-size: 0.9rem !important;
+        font-weight: bold !important;
+        color: white !important;
+        text-align: center !important;
+        line-height: 1.2 !important;
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-direction: row !important;
+        gap: 0.3rem !important;
+    }
+    
     /* Исправление проблем с кнопками на iOS */
-    .tab-btn,
     .buy-btn,
     .case-item,
     .inventory-item,
