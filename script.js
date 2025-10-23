@@ -550,7 +550,22 @@ document.addEventListener('DOMContentLoaded', async function() {
             tg.MainButton.hide();
         }
         
-        console.log('✅ Telegram WebApp инициализирован');
+        // Принудительное ускорение анимаций для идентичности с браузером
+        document.body.style.webkitTransform = 'translateZ(0)';
+        document.body.style.transform = 'translateZ(0)';
+        document.body.style.webkitBackfaceVisibility = 'hidden';
+        document.body.style.backfaceVisibility = 'hidden';
+        
+        // Принудительное ускорение для анимированных элементов
+        const prizeStrip = document.getElementById('prize-strip');
+        if (prizeStrip) {
+            prizeStrip.style.webkitTransform = 'translateZ(0)';
+            prizeStrip.style.transform = 'translateZ(0)';
+            prizeStrip.style.webkitBackfaceVisibility = 'hidden';
+            prizeStrip.style.backfaceVisibility = 'hidden';
+        }
+        
+        console.log('✅ Telegram WebApp инициализирован с принудительным ускорением');
         
         // Настройка темы
         if (tg.colorScheme === 'dark') {
