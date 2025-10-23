@@ -532,6 +532,62 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Инициализация Telegram WebApp
     if (tg) {
         tg.ready();
+        
+        // Настройка для Telegram Mini App
+        tg.expand();
+        tg.enableClosingConfirmation();
+        
+        // Настройка темы
+        if (tg.colorScheme === 'dark') {
+            document.body.classList.add('dark-theme');
+        }
+        
+        // Обработка изменения темы
+        tg.onEvent('themeChanged', () => {
+            if (tg.colorScheme === 'dark') {
+                document.body.classList.add('dark-theme');
+            } else {
+                document.body.classList.remove('dark-theme');
+            }
+        });
+        
+        // Настройка viewport для мобильных устройств
+        const viewport = document.querySelector('meta[name="viewport"]');
+        if (viewport) {
+            viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
+        }
+        
+        // Отключение масштабирования на мобильных
+        document.addEventListener('gesturestart', function (e) {
+            e.preventDefault();
+        });
+        
+        document.addEventListener('gesturechange', function (e) {
+            e.preventDefault();
+        });
+        
+        document.addEventListener('gestureend', function (e) {
+            e.preventDefault();
+        });
+        
+        // Предотвращение двойного тапа для масштабирования
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function (event) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+        
+        // Оптимизация для мобильных устройств
+        if (window.innerWidth <= 768) {
+            // Отключаем hover эффекты на мобильных
+            document.body.classList.add('mobile-device');
+            
+            // Упрощаем анимации
+            document.body.classList.add('reduced-motion');
+        }
         tg.expand();
         
         // Получаем данные пользователя из Telegram
@@ -967,9 +1023,20 @@ async function showCaseOpeningAnimation(caseType) {
     const lightFlash = document.getElementById('light-flash');
     const smokeEffect = document.getElementById('smoke-effect');
     
+    // Проверяем, мобильное ли устройство
+    const isMobile = window.innerWidth <= 768 || document.body.classList.contains('mobile-device');
+    
     // Активируем полноэкранный режим
     document.body.classList.add('case-opening');
     openingArea.classList.add('fullscreen');
+    
+    // Упрощаем анимацию для мобильных устройств
+    if (isMobile) {
+        // Отключаем сложные эффекты на мобильных
+        if (lightRays) lightRays.style.display = 'none';
+        if (particlesContainer) particlesContainer.style.display = 'none';
+        if (smokeEffect) smokeEffect.style.display = 'none';
+    }
     openingArea.style.display = 'block';
     
     // Показываем кнопку выхода
@@ -1013,12 +1080,16 @@ async function startCS2PrizeAnimation(caseType) {
     const config = caseConfig[caseType];
     const prizes = config.prizes;
     
+    // Проверяем, мобильное ли устройство
+    const isMobile = window.innerWidth <= 768 || document.body.classList.contains('mobile-device');
+    
     // Очищаем полоску
     prizeStrip.innerHTML = '';
     
     // Создаем массив призов для анимации (много повторений для плавной прокрутки)
     const animationPrizes = [];
-    const totalPrizes = 50; // Общее количество призов в анимации
+    // Уменьшаем количество призов на мобильных для лучшей производительности
+    const totalPrizes = isMobile ? 30 : 50;
     
     for (let i = 0; i < totalPrizes; i++) {
         // Случайно выбираем приз из доступных
@@ -1040,8 +1111,12 @@ async function startCS2PrizeAnimation(caseType) {
     prizeStrip.classList.add('scrolling');
     showSoundEffect('🎰 Призы крутятся...');
     
-    // Прокручиваем 2 секунды
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Уменьшаем время анимации на мобильных устройствах
+    const scrollTime = isMobile ? 1500 : 2000;
+    const slowTime = isMobile ? 1500 : 2000;
+    
+    // Прокручиваем
+    await new Promise(resolve => setTimeout(resolve, scrollTime));
     
     // Замедляем анимацию
     prizeStrip.classList.remove('scrolling');
@@ -1049,7 +1124,7 @@ async function startCS2PrizeAnimation(caseType) {
     showSoundEffect('⏳ Замедление...');
     
     // Ждем завершения замедления
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, slowTime));
     
     // Останавливаем на выигрышном призе
     const winningElement = prizeStrip.children[prizeStrip.children.length - 1];
