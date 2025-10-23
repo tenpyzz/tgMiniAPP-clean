@@ -1038,13 +1038,10 @@ async function showCaseOpeningAnimation(caseType) {
     document.body.classList.add('case-opening');
     openingArea.classList.add('fullscreen');
     
-    // Упрощаем анимацию для мобильных устройств
-    if (isMobile) {
-        // Отключаем сложные эффекты на мобильных
-        if (lightRays) lightRays.style.display = 'none';
-        if (particlesContainer) particlesContainer.style.display = 'none';
-        if (smokeEffect) smokeEffect.style.display = 'none';
-    }
+    // Включаем все эффекты для всех устройств для единообразия
+    if (lightRays) lightRays.style.display = 'block';
+    if (particlesContainer) particlesContainer.style.display = 'block';
+    if (smokeEffect) smokeEffect.style.display = 'block';
     openingArea.style.display = 'block';
     
     // Показываем кнопку выхода
@@ -1095,10 +1092,10 @@ async function startCS2PrizeAnimation(caseType) {
     prizeStrip.innerHTML = '';
     prizeStrip.className = 'prize-strip'; // Сбрасываем все классы
     
-    // Создаем массив призов для анимации (много повторений для плавной прокрутки)
+    // Создаем массив призов для анимации (одинаковое количество для всех устройств)
     const animationPrizes = [];
-    // Увеличиваем количество призов для более плавной анимации
-    const totalPrizes = isMobile ? 40 : 60;
+    // Используем одинаковое количество призов для всех устройств для единообразия
+    const totalPrizes = 50;
     
     for (let i = 0; i < totalPrizes; i++) {
         // Случайно выбираем приз из доступных
@@ -1120,8 +1117,8 @@ async function startCS2PrizeAnimation(caseType) {
     prizeStrip.classList.add('scrolling');
     showSoundEffect('🎰 Призы крутятся...');
     
-    // Быстрая прокрутка
-    const fastScrollTime = isMobile ? 1500 : 2000;
+    // Унифицированное время быстрой прокрутки для всех устройств
+    const fastScrollTime = 2000;
     await new Promise(resolve => setTimeout(resolve, fastScrollTime));
     
     // Этап 2: Подготовка к замедлению
@@ -1129,7 +1126,8 @@ async function startCS2PrizeAnimation(caseType) {
     prizeStrip.classList.add('preparing-slow');
     showSoundEffect('⏳ Подготовка к замедлению...');
     
-    const preparingTime = isMobile ? 800 : 1000;
+    // Унифицированное время подготовки
+    const preparingTime = 1000;
     await new Promise(resolve => setTimeout(resolve, preparingTime));
     
     // Этап 3: Начало замедления
@@ -1137,7 +1135,8 @@ async function startCS2PrizeAnimation(caseType) {
     prizeStrip.classList.add('starting-slow');
     showSoundEffect('⏳ Начало замедления...');
     
-    const startingSlowTime = isMobile ? 600 : 800;
+    // Унифицированное время начала замедления
+    const startingSlowTime = 800;
     await new Promise(resolve => setTimeout(resolve, startingSlowTime));
     
     // Этап 4: Полное замедление
@@ -1145,8 +1144,8 @@ async function startCS2PrizeAnimation(caseType) {
     prizeStrip.classList.add('slowing');
     showSoundEffect('⏳ Замедление...');
     
-    // Время полного замедления
-    const slowTime = isMobile ? 1500 : 2000;
+    // Унифицированное время полного замедления
+    const slowTime = 2000;
     await new Promise(resolve => setTimeout(resolve, slowTime));
     
     // Этап 5: Остановка на выигрышном призе
@@ -1154,14 +1153,14 @@ async function startCS2PrizeAnimation(caseType) {
     winningElement.classList.add('selected');
     showSoundEffect('🎯 Остановка на призе!');
     
-    // Пауза для эффекта выбора
+    // Унифицированная пауза для эффекта выбора
     await new Promise(resolve => setTimeout(resolve, 500));
     
     // Этап 6: Эффект взрыва для выигрышного приза
     winningElement.classList.add('winner');
     showSoundEffect('💥 ПОБЕДА!');
     
-    // Пауза для завершения анимации взрыва
+    // Унифицированная пауза для завершения анимации взрыва
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     // Возвращаем выигрышный приз для дальнейшего использования
