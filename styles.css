@@ -1028,47 +1028,65 @@ body.reduced-motion *::after {
     }
 }
 
-/* Плавные анимации прокрутки призов - универсальные для всех устройств */
+/* ПЛАВНЫЕ АНИМАЦИИ ПРОКРУТКИ ПРИЗОВ - ПРИНУДИТЕЛЬНЫЕ ИСПРАВЛЕНИЯ */
+.prize-strip {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    -webkit-transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+    will-change: transform !important;
+    -webkit-transform: translateZ(0) !important;
+    transform: translateZ(0) !important;
+    -webkit-backface-visibility: hidden !important;
+    backface-visibility: hidden !important;
+    -webkit-perspective: 1000px !important;
+    perspective: 1000px !important;
+}
+
 .prize-strip.scrolling {
-    -webkit-animation: prizeScroll 0.08s linear infinite;
-    animation: prizeScroll 0.08s linear infinite;
-    will-change: transform;
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
+    -webkit-animation: prizeScroll 0.08s linear infinite !important;
+    animation: prizeScroll 0.08s linear infinite !important;
+    will-change: transform !important;
+    -webkit-transform: translateZ(0) !important;
+    transform: translateZ(0) !important;
+    -webkit-backface-visibility: hidden !important;
+    backface-visibility: hidden !important;
 }
 
 .prize-strip.preparing-slow {
-    -webkit-animation: prizeScroll 0.12s linear infinite;
-    animation: prizeScroll 0.12s linear infinite;
-    will-change: transform;
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
+    -webkit-animation: prizeScroll 0.12s linear infinite !important;
+    animation: prizeScroll 0.12s linear infinite !important;
+    will-change: transform !important;
+    -webkit-transform: translateZ(0) !important;
+    transform: translateZ(0) !important;
+    -webkit-backface-visibility: hidden !important;
+    backface-visibility: hidden !important;
 }
 
 .prize-strip.starting-slow {
-    -webkit-animation: prizeScroll 0.16s linear infinite;
-    animation: prizeScroll 0.16s linear infinite;
-    will-change: transform;
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
+    -webkit-animation: prizeScroll 0.16s linear infinite !important;
+    animation: prizeScroll 0.16s linear infinite !important;
+    will-change: transform !important;
+    -webkit-transform: translateZ(0) !important;
+    transform: translateZ(0) !important;
+    -webkit-backface-visibility: hidden !important;
+    backface-visibility: hidden !important;
 }
 
 .prize-strip.slowing {
-    -webkit-animation: none;
-    animation: none;
-    -webkit-transition: transform 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    transition: transform 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    will-change: transform;
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
+    -webkit-animation: none !important;
+    animation: none !important;
+    -webkit-transition: transform 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+    transition: transform 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+    will-change: transform !important;
+    -webkit-transform: translateZ(0) !important;
+    transform: translateZ(0) !important;
+    -webkit-backface-visibility: hidden !important;
+    backface-visibility: hidden !important;
 }
 
 /* Дополнительные классы для плавных переходов */
@@ -1113,79 +1131,150 @@ body.reduced-motion *::after {
     animation: prizeScroll 0.18s linear infinite;
 }
 
-/* Плавная анимация прокрутки с более частыми ключевыми кадрами */
+/* НОВАЯ ПЛАВНАЯ АНИМАЦИЯ ПРОКРУТКИ С МНОЖЕСТВЕННЫМИ КАДРАМИ */
 @keyframes prizeScroll {
     0% {
+        -webkit-transform: translateX(0);
         transform: translateX(0);
     }
+    10% {
+        -webkit-transform: translateX(-16px);
+        transform: translateX(-16px);
+    }
+    20% {
+        -webkit-transform: translateX(-32px);
+        transform: translateX(-32px);
+    }
+    30% {
+        -webkit-transform: translateX(-48px);
+        transform: translateX(-48px);
+    }
+    40% {
+        -webkit-transform: translateX(-64px);
+        transform: translateX(-64px);
+    }
+    50% {
+        -webkit-transform: translateX(-80px);
+        transform: translateX(-80px);
+    }
+    60% {
+        -webkit-transform: translateX(-96px);
+        transform: translateX(-96px);
+    }
+    70% {
+        -webkit-transform: translateX(-112px);
+        transform: translateX(-112px);
+    }
+    80% {
+        -webkit-transform: translateX(-128px);
+        transform: translateX(-128px);
+    }
+    90% {
+        -webkit-transform: translateX(-144px);
+        transform: translateX(-144px);
+    }
     100% {
+        -webkit-transform: translateX(-160px);
         transform: translateX(-160px);
     }
 }
 
-/* Новая плавная анимация замедления с промежуточными кадрами */
+/* НОВАЯ ПЛАВНАЯ АНИМАЦИЯ ЗАМЕДЛЕНИЯ С МНОЖЕСТВЕННЫМИ КАДРАМИ */
 @keyframes prizeSlowDown {
     0% {
+        -webkit-transform: translateX(0);
         transform: translateX(0);
     }
-    5% {
-        transform: translateX(-100px);
+    2% {
+        -webkit-transform: translateX(-40px);
+        transform: translateX(-40px);
+    }
+    4% {
+        -webkit-transform: translateX(-80px);
+        transform: translateX(-80px);
+    }
+    6% {
+        -webkit-transform: translateX(-120px);
+        transform: translateX(-120px);
+    }
+    8% {
+        -webkit-transform: translateX(-160px);
+        transform: translateX(-160px);
     }
     10% {
+        -webkit-transform: translateX(-200px);
         transform: translateX(-200px);
     }
     15% {
+        -webkit-transform: translateX(-300px);
         transform: translateX(-300px);
     }
     20% {
+        -webkit-transform: translateX(-400px);
         transform: translateX(-400px);
     }
     25% {
+        -webkit-transform: translateX(-500px);
         transform: translateX(-500px);
     }
     30% {
+        -webkit-transform: translateX(-600px);
         transform: translateX(-600px);
     }
     35% {
+        -webkit-transform: translateX(-700px);
         transform: translateX(-700px);
     }
     40% {
+        -webkit-transform: translateX(-800px);
         transform: translateX(-800px);
     }
     45% {
+        -webkit-transform: translateX(-900px);
         transform: translateX(-900px);
     }
     50% {
+        -webkit-transform: translateX(-1000px);
         transform: translateX(-1000px);
     }
     55% {
+        -webkit-transform: translateX(-1100px);
         transform: translateX(-1100px);
     }
     60% {
+        -webkit-transform: translateX(-1200px);
         transform: translateX(-1200px);
     }
     65% {
+        -webkit-transform: translateX(-1300px);
         transform: translateX(-1300px);
     }
     70% {
+        -webkit-transform: translateX(-1400px);
         transform: translateX(-1400px);
     }
     75% {
+        -webkit-transform: translateX(-1500px);
         transform: translateX(-1500px);
     }
     80% {
+        -webkit-transform: translateX(-1600px);
         transform: translateX(-1600px);
     }
     85% {
+        -webkit-transform: translateX(-1700px);
         transform: translateX(-1700px);
     }
     90% {
+        -webkit-transform: translateX(-1800px);
         transform: translateX(-1800px);
     }
     95% {
+        -webkit-transform: translateX(-1900px);
         transform: translateX(-1900px);
     }
     100% {
+        -webkit-transform: translateX(-2000px);
         transform: translateX(-2000px);
     }
 }

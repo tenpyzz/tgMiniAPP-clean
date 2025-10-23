@@ -1098,11 +1098,11 @@ async function showCaseOpeningAnimation(caseType) {
     return winningPrize;
 }
 
-// Улучшенная функция для плавной CS2 анимации прокрутки призов
+// НОВАЯ УЛЬТРА-ПЛАВНАЯ ФУНКЦИЯ АНИМАЦИИ ПРОКРУТКИ ПРИЗОВ
 async function startCS2PrizeAnimation(caseType) {
     const prizeStrip = document.getElementById('prize-strip');
     const config = caseConfig[caseType];
-    const prizes = config.prizes;
+    const prizesParser = config.prizes;
     
     // Очищаем полоску
     prizeStrip.innerHTML = '';
@@ -1115,7 +1115,7 @@ async function startCS2PrizeAnimation(caseType) {
     
     for (let i = 0; i < totalPrizes; i++) {
         // Случайно выбираем приз из доступных
-        const randomPrize = prizes[Math.floor(Math.random() * prizes.length)];
+        const randomPrize = prizesParser[Math.floor(Math.random() * prizesParser.length)];
         animationPrizes.push({ ...randomPrize, id: `anim_${i}` });
     }
     
@@ -1129,45 +1129,61 @@ async function startCS2PrizeAnimation(caseType) {
         prizeStrip.appendChild(prizeElement);
     });
     
-    // Этап 1: Быстрая прокрутка с плавным переходом
+    // НОВАЯ УЛЬТРА-ПЛАВНАЯ АНИМАЦИЯ С ПОШАГОВЫМ ЗАМЕДЛЕНИЕМ
+    console.log('🎰 Начинаем новую ультра-плавную анимацию...');
+    
+    // Этап 1: Очень быстрая прокрутка
     prizeStrip.classList.add('scrolling');
     showSoundEffect('🎰 Призы крутятся...');
+    await new Promise(resolve => setTimeout(resolve, 1500));
     
-    // Плавное замедление с промежуточными состояниями
-    const fastScrollTime = 2000;
-    await smoothTransition(prizeStrip, 'scrolling', 'preparing-slow', fastScrollTime);
-    
-    // Этап 2: Подготовка к замедлению
-    showSoundEffect('⏳ Подготовка к замедлению...');
-    const preparingTime = 1000;
-    await smoothTransition(prizeStrip, 'preparing-slow', 'starting-slow', preparingTime);
-    
-    // Этап 3: Начало замедления
-    showSoundEffect('⏳ Начало замедления...');
-    const startingSlowTime = 800;
-    await smoothTransition(prizeStrip, 'starting-slow', 'slowing', startingSlowTime);
-    
-    // Этап 4: Полное замедление с использованием CSS transition
+    // Этап 2: Плавный переход к средней скорости
+    prizeStrip.classList.remove('scrolling');
+    prizeStrip.classList.add('preparing-slow');
     showSoundEffect('⏳ Замедление...');
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Этап 3: Средняя скорость
+    prizeStrip.classList.remove('preparing-slow');
+    prizeStrip.classList.add('starting-slow');
+    showSoundEffect('⏳ Почти готово...');
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    // Этап 4: Медленная скорость
     prizeStrip.classList.remove('starting-slow');
+    prizeStrip.classList.add('slowing');
+    showSoundEffect('⏳ Остановка...');
+    await new Promise(resolve => setTimeout(resolve, 600));
     
-    // Используем новую функцию плавного замедления
-    const targetTransform = `translateX(-${(totalPrizes - 1) * 170}px)`;
-    await smoothSlowdown(prizeStrip, targetTransform, 2500);
+    // Этап 5: Финальное замедление с CSS transition
+    prizeStrip.classList.remove('slowing');
+    prizeStrip.style.transition = 'transform 2.0s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
     
-    // Этап 5: Остановка на выигрышном призе
+    // Вычисляем точную позицию для последнего приза
+    const prizeWidth = 170; // ширина приза + отступ
+    const targetPosition = -(totalPrizes - 1) * prizeWidth;
+    
+    // Применяем финальное замедление
+    requestAnimationFrame(() => {
+        prizeStrip.style.transform = `translateX(${targetPosition}px)`;
+    });
+    
+    // Ждем завершения финального замедления
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Этап 6: Остановка на выигрышном призе
     const winningElement = prizeStrip.children[prizeStrip.children.length - 1];
     winningElement.classList.add('selected');
     showSoundEffect('🎯 Остановка на призе!');
     
-    // Унифицированная пауза для эффекта выбора
+    // Пауза для эффекта выбора
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    // Этап 6: Эффект взрыва для выигрышного приза
+    // Этап 7: Эффект взрыва для выигрышного приза
     winningElement.classList.add('winner');
     showSoundEffect('💥 ПОБЕДА!');
     
-    // Унифицированная пауза для завершения анимации взрыва
+    // Пауза для завершения анимации взрыва
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     // Возвращаем выигрышный приз для дальнейшего использования
@@ -2923,6 +2939,67 @@ async function checkPendingCaseOpening() {
 window.userStars = userStars;
 window.userInventory = userInventory;
 window.openCase = openCase;
+
+// Функция для принудительного обновления стилей и очистки кэша
+window.forceRefreshStyles = function() {
+    console.log('🔄 Принудительное обновление стилей...');
+    
+    // Принудительно обновляем CSS
+    const links = document.querySelectorAll('link[rel="stylesheet"]');
+    links.forEach(link => {
+        const href = link.href;
+        link.href = href + '?v=' + Date.now();
+    });
+    
+    console.log('✅ Стили обновлены!');
+};
+
+// Функция для тестирования анимации без открытия кейса
+window.testAnimation = function() {
+    console.log('🎬 ТЕСТ: Тестируем анимацию...');
+    
+    // Принудительно запускаем анимацию
+    const prizeStrip = document.getElementById('prize-strip');
+    if (prizeStrip) {
+        prizeStrip.innerHTML = '';
+        prizeStrip.className = 'prize-strip';
+        
+        // Создаем тестовые призы
+        for (let i = 0; i < 10; i++) {
+            const prizeElement = document.createElement('div');
+            prizeElement.className = 'prize-item common';
+            prizeElement.innerHTML = `
+                <div class="prize-item-icon">🎁</div>
+                <div class="prize-item-name">Тест ${i + 1}</div>
+            `;
+            prizeStrip.appendChild(prizeElement);
+        }
+        
+        // Запускаем тестовую анимацию
+        prizeStrip.classList.add('scrolling');
+        setTimeout(() => {
+            prizeStrip.classList.remove('scrolling');
+            prizeStrip.classList.add('preparing-slow');
+            setTimeout(() => {
+                prizeStrip.classList.remove('preparing-slow');
+                prizeStrip.classList.add('starting-slow');
+                setTimeout(() => {
+                    prizeStrip.classList.remove('starting-slow');
+                    prizeStrip.classList.add('slowing');
+                    setTimeout(() => {
+                        prizeStrip.classList.remove('slowing');
+                        prizeStrip.style.transition = 'transform 2.0s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                        prizeStrip.style.transform = 'translateX(-1000px)';
+                    }, 1000);
+                }, 1000);
+            }, 1000);
+        }, 1000);
+        
+        console.log('✅ Тестовая анимация запущена!');
+    } else {
+        console.log('❌ Элемент prize-strip не найден!');
+    }
+};
 
 // Функция для тестирования открытия кейсов
 window.testCaseOpening = function(caseType = 'bronze', price = 10) {
