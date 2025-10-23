@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
@@ -37,14 +38,24 @@ function verifyAdmin(req, res, next) {
     next();
 }
 
-// Инициализация базы данных
-const db = new Database();
+// Инициализация базы данных (опционально для локального тестирования)
+let db;
+try {
+    db = new Database();
+} catch (error) {
+    console.log('⚠️ База данных недоступна для локального тестирования:', error.message);
+    db = { isConnected: false };
+}
 
 // Инициализация базы данных при запуске сервера
 async function initializeDatabase() {
     try {
+        if (db.isConnected === false) {
+            console.log('⚠️ База данных недоступна, пропускаем инициализацию');
+            return;
+        }
         await db.init();
-        console.log('✅ База данных SQLite инициализирована');
+        console.log('✅ База данных PostgreSQL инициализирована');
         
         // Пытаемся восстановить данные из резервной копии
         try {
@@ -702,6 +713,67 @@ app.get('/test', (req, res) => {
 // Админ панель
 app.get('/admin', (req, res) => {
     res.sendFile(__dirname + '/admin.html');
+});
+
+// Моковые данные для локального тестирования админ панели
+app.get('/api/admin/stats', async (req, res) => {
+    try {
+        // Если база данных недоступна, возвращаем моковые данные
+        if (!db.isConnected) {
+            console.log('🔍 АДМИН: База данных недоступна, возвращаем моковые данные');
+            const mockData = {
+                success: true,
+                total_users: 5,
+                users_with_balance: 3,
+                total_stars: 450,
+                avg_balance: 90,
+                total_inventory_items: 12,
+                users: [
+                    {
+                        user_id: '1165123437',
+                        telegram_name: 'Админ',
+                        balance: 200,
+                        inventory_count: 5,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    },
+                    {
+                        user_id: '123456789',
+                        telegram_name: 'Тестовый пользователь',
+                        balance: 150,
+                        inventory_count: 3,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    },
+                    {
+                        user_id: '987654321',
+                        telegram_name: 'Другой пользователь',
+                        balance: 100,
+                        inventory_count: 4,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    }
+                ]
+            };
+            return res.json(mockData);
+        }
+
+        // Если база данных доступна, получаем реальные данные
+        const stats = await db.getStats();
+        const users = await db.getAllUsers();
+        
+        res.json({
+            success: true,
+            ...stats,
+            users: users
+        });
+    } catch (error) {
+        console.error('Ошибка получения статистики:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка получения статистики' 
+        });
+    }
 });
 
 // Информация о сервере

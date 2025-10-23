@@ -1,47 +1,17 @@
 // Утилиты для обеспечения совместимости между устройствами
-// Этот файл обеспечивает одинаковую работу приложения на всех платформах
+// УНИВЕРСАЛЬНЫЙ КОД - ОДИНАКОВЫЙ ДЛЯ ВСЕХ УСТРОЙСТВ И ПЛАТФОРМ
 
 class CompatibilityManager {
     constructor() {
-        this.deviceInfo = this.detectDevice();
         this.init();
-    }
-
-    detectDevice() {
-        const userAgent = navigator.userAgent.toLowerCase();
-        const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
-        const isIOS = /iphone|ipad|ipod/i.test(userAgent);
-        const isAndroid = /android/i.test(userAgent);
-        const isSafari = /safari/i.test(userAgent) && !/chrome/i.test(userAgent);
-        const isChrome = /chrome/i.test(userAgent);
-        const isFirefox = /firefox/i.test(userAgent);
-        const isEdge = /edge/i.test(userAgent);
-        const isOpera = /opera/i.test(userAgent);
-        
-        return {
-            isMobile,
-            isIOS,
-            isAndroid,
-            isSafari,
-            isChrome,
-            isFirefox,
-            isEdge,
-            isOpera,
-            isDesktop: !isMobile,
-            screenWidth: window.innerWidth,
-            screenHeight: window.innerHeight,
-            devicePixelRatio: window.devicePixelRatio || 1,
-            userAgent: userAgent
-        };
     }
 
     init() {
         this.setupViewport();
-        this.setupTouchEvents();
-        this.setupAnimations();
-        this.setupScrollBehavior();
-        this.setupFontRendering();
-        this.applyDeviceClasses();
+        this.setupUniversalEvents();
+        this.setupUniversalAnimations();
+        this.setupUniversalScroll();
+        this.setupUniversalFonts();
     }
 
     setupViewport() {
@@ -51,10 +21,11 @@ class CompatibilityManager {
         }
     }
 
-    setupTouchEvents() {
-        // Универсальная настройка touch событий
+    setupUniversalEvents() {
+        // УНИВЕРСАЛЬНАЯ настройка событий для всех устройств
         let lastTouchEnd = 0;
         
+        // Универсальная обработка touch событий
         document.addEventListener('touchend', (event) => {
             const now = (new Date()).getTime();
             if (now - lastTouchEnd <= 300) {
@@ -63,7 +34,7 @@ class CompatibilityManager {
             lastTouchEnd = now;
         }, false);
 
-        // Предотвращение нежелательного скролла
+        // Универсальное предотвращение нежелательного скролла
         document.addEventListener('touchmove', (e) => {
             if (e.target.closest('.cases-grid, .inventory-grid, .shop-content')) {
                 return;
@@ -71,7 +42,7 @@ class CompatibilityManager {
             e.preventDefault();
         }, { passive: false });
 
-        // Отключение жестов масштабирования
+        // Универсальное отключение жестов масштабирования
         ['gesturestart', 'gesturechange', 'gestureend'].forEach(eventType => {
             document.addEventListener(eventType, (e) => {
                 e.preventDefault();
@@ -79,8 +50,8 @@ class CompatibilityManager {
         });
     }
 
-    setupAnimations() {
-        // Принудительное ускорение для всех браузеров
+    setupUniversalAnimations() {
+        // УНИВЕРСАЛЬНОЕ ускорение для ВСЕХ браузеров и устройств
         const style = document.createElement('style');
         style.textContent = `
             * {
@@ -92,104 +63,48 @@ class CompatibilityManager {
         `;
         document.head.appendChild(style);
 
-        // Специальные настройки для iOS
-        if (this.deviceInfo.isIOS) {
-            document.body.style.webkitOverflowScrolling = 'touch';
-            document.body.style.webkitTransform = 'translate3d(0, 0, 0)';
-            document.body.style.transform = 'translate3d(0, 0, 0)';
-        }
-
-        // Специальные настройки для Android
-        if (this.deviceInfo.isAndroid) {
-            document.body.style.webkitTransform = 'translateZ(0)';
-            document.body.style.transform = 'translateZ(0)';
-        }
+        // УНИВЕРСАЛЬНЫЕ настройки для ВСЕХ устройств
+        document.body.style.webkitOverflowScrolling = 'touch';
+        document.body.style.webkitTransform = 'translate3d(0, 0, 0)';
+        document.body.style.transform = 'translate3d(0, 0, 0)';
     }
 
-    setupScrollBehavior() {
-        // Универсальная настройка скролла
+    setupUniversalScroll() {
+        // УНИВЕРСАЛЬНАЯ настройка скролла для ВСЕХ устройств
         document.documentElement.style.scrollBehavior = 'smooth';
-        
-        // Специальные настройки для iOS
-        if (this.deviceInfo.isIOS) {
-            document.body.style.webkitOverflowScrolling = 'touch';
-        }
+        document.body.style.webkitOverflowScrolling = 'touch';
     }
 
-    setupFontRendering() {
-        // Универсальная настройка рендеринга шрифтов
+    setupUniversalFonts() {
+        // УНИВЕРСАЛЬНАЯ настройка рендеринга шрифтов для ВСЕХ устройств
         document.body.style.webkitFontSmoothing = 'antialiased';
         document.body.style.mozOsxFontSmoothing = 'grayscale';
         document.body.style.textRendering = 'optimizeLegibility';
         
-        // Специальные настройки для iOS
-        if (this.deviceInfo.isIOS) {
-            // Принудительное отображение текста в табах
-            const tabButtons = document.querySelectorAll('.tab-btn');
-            tabButtons.forEach(btn => {
-                btn.style.webkitUserSelect = 'auto';
-                btn.style.userSelect = 'auto';
-                btn.style.webkitTextSizeAdjust = '100%';
-                btn.style.textSizeAdjust = '100%';
-                btn.style.fontSize = '0.9rem';
-                btn.style.fontWeight = 'bold';
-                btn.style.color = 'white';
-                btn.style.textAlign = 'center';
-                btn.style.lineHeight = '1.2';
-                btn.style.whiteSpace = 'nowrap';
-                btn.style.overflow = 'visible';
-                btn.style.textOverflow = 'unset';
-                btn.style.display = 'flex';
-                btn.style.alignItems = 'center';
-                btn.style.justifyContent = 'center';
-                btn.style.flexDirection = 'row';
-                btn.style.gap = '0.3rem';
-            });
-        }
+        // УНИВЕРСАЛЬНЫЕ настройки для ВСЕХ устройств - принудительное отображение текста в табах
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        tabButtons.forEach(btn => {
+            btn.style.webkitUserSelect = 'auto';
+            btn.style.userSelect = 'auto';
+            btn.style.webkitTextSizeAdjust = '100%';
+            btn.style.textSizeAdjust = '100%';
+            btn.style.fontSize = '0.9rem';
+            btn.style.fontWeight = 'bold';
+            btn.style.color = 'white';
+            btn.style.textAlign = 'center';
+            btn.style.lineHeight = '1.2';
+            btn.style.whiteSpace = 'nowrap';
+            btn.style.overflow = 'visible';
+            btn.style.textOverflow = 'unset';
+            btn.style.display = 'flex';
+            btn.style.alignItems = 'center';
+            btn.style.justifyContent = 'center';
+            btn.style.flexDirection = 'row';
+            btn.style.gap = '0.3rem';
+        });
     }
 
-    applyDeviceClasses() {
-        // Применяем классы для устройства
-        if (this.deviceInfo.isMobile) {
-            document.body.classList.add('mobile-device');
-        }
-        if (this.deviceInfo.isIOS) {
-            document.body.classList.add('ios-device');
-        }
-        if (this.deviceInfo.isAndroid) {
-            document.body.classList.add('android-device');
-        }
-        if (this.deviceInfo.isDesktop) {
-            document.body.classList.add('desktop-device');
-        }
-        if (this.deviceInfo.isSafari) {
-            document.body.classList.add('safari-browser');
-        }
-        if (this.deviceInfo.isChrome) {
-            document.body.classList.add('chrome-browser');
-        }
-        if (this.deviceInfo.isFirefox) {
-            document.body.classList.add('firefox-browser');
-        }
-
-        // Применяем классы для поддержки функций
-        if (!this.supportsFeature('backdrop-filter')) {
-            document.body.classList.add('no-backdrop-filter');
-        }
-        if (!this.supportsFeature('css-grid')) {
-            document.body.classList.add('no-css-grid');
-        }
-        if (!this.supportsFeature('flexbox')) {
-            document.body.classList.add('no-flexbox');
-        }
-    }
-
-    // Метод для получения информации об устройстве
-    getDeviceInfo() {
-        return this.deviceInfo;
-    }
-
-    // Метод для проверки поддержки определенных функций
+    // УНИВЕРСАЛЬНЫЙ метод для проверки поддержки функций
     supportsFeature(feature) {
         switch (feature) {
             case 'backdrop-filter':
@@ -207,28 +122,27 @@ class CompatibilityManager {
         }
     }
 
-    // Метод для оптимизации анимаций на слабых устройствах
-    shouldReduceMotion() {
-        return this.deviceInfo.isMobile && 
-               (this.deviceInfo.screenWidth <= 480 || 
-                this.deviceInfo.devicePixelRatio < 2 ||
-                window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-    }
-
-    // Метод для настройки производительности
+    // УНИВЕРСАЛЬНАЯ оптимизация производительности для всех устройств
     optimizePerformance() {
-        if (this.shouldReduceMotion()) {
-            document.body.classList.add('reduced-motion');
+        // Применяем классы для поддержки функций
+        if (!this.supportsFeature('backdrop-filter')) {
+            document.body.classList.add('no-backdrop-filter');
+        }
+        if (!this.supportsFeature('css-grid')) {
+            document.body.classList.add('no-css-grid');
+        }
+        if (!this.supportsFeature('flexbox')) {
+            document.body.classList.add('no-flexbox');
         }
 
-        // Отключаем сложные эффекты на слабых устройствах
-        if (this.deviceInfo.isMobile && this.deviceInfo.screenWidth <= 480) {
-            document.body.classList.add('low-performance');
+        // УНИВЕРСАЛЬНАЯ проверка на сокращение анимаций
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            document.body.classList.add('reduced-motion');
         }
     }
 }
 
-// Инициализация менеджера совместимости
+// Инициализация УНИВЕРСАЛЬНОГО менеджера совместимости
 const compatibilityManager = new CompatibilityManager();
 
 // Экспорт для использования в других файлах

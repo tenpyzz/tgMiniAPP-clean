@@ -1,5 +1,5 @@
-// Telegram WebApp API
-const tg = window.Telegram.WebApp;
+// Telegram WebApp API (опционально)
+const tg = window.Telegram?.WebApp;
 
 // Глобальные переменные
 let userStars = 0; // Начальный баланс звезд (будет загружен с сервера)
@@ -513,33 +513,7 @@ function startDataSync() {
 }
 
 // Инициализация приложения
-// Универсальная функция детекции устройств
-function detectDevice() {
-    const userAgent = navigator.userAgent.toLowerCase();
-    const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
-    const isIOS = /iphone|ipad|ipod/i.test(userAgent);
-    const isAndroid = /android/i.test(userAgent);
-    const isSafari = /safari/i.test(userAgent) && !/chrome/i.test(userAgent);
-    const isChrome = /chrome/i.test(userAgent);
-    const isFirefox = /firefox/i.test(userAgent);
-    const isEdge = /edge/i.test(userAgent);
-    const isOpera = /opera/i.test(userAgent);
-    
-    return {
-        isMobile,
-        isIOS,
-        isAndroid,
-        isSafari,
-        isChrome,
-        isFirefox,
-        isEdge,
-        isOpera,
-        isDesktop: !isMobile,
-        screenWidth: window.innerWidth,
-        screenHeight: window.innerHeight,
-        devicePixelRatio: window.devicePixelRatio || 1
-    };
-}
+// УНИВЕРСАЛЬНЫЙ код для ВСЕХ устройств - БЕЗ ДЕТЕКЦИИ
 
 // Универсальная функция настройки viewport
 function setupViewport() {
@@ -585,25 +559,13 @@ function setupTouchEvents() {
 }
 
 // Универсальная функция настройки анимаций
-function setupAnimations(deviceInfo) {
-    // Принудительное ускорение для всех браузеров
+function setupUniversalAnimations() {
+    // УНИВЕРСАЛЬНОЕ ускорение для ВСЕХ браузеров и устройств
     document.body.style.webkitTransform = 'translateZ(0)';
     document.body.style.transform = 'translateZ(0)';
     document.body.style.webkitBackfaceVisibility = 'hidden';
     document.body.style.backfaceVisibility = 'hidden';
-    
-    // Специальные настройки для iOS Safari
-    if (deviceInfo.isIOS && deviceInfo.isSafari) {
-        document.body.style.webkitOverflowScrolling = 'touch';
-        document.body.style.webkitTransform = 'translate3d(0, 0, 0)';
-        document.body.style.transform = 'translate3d(0, 0, 0)';
-    }
-    
-    // Специальные настройки для Android Chrome
-    if (deviceInfo.isAndroid && deviceInfo.isChrome) {
-        document.body.style.webkitTransform = 'translateZ(0)';
-        document.body.style.transform = 'translateZ(0)';
-    }
+    document.body.style.webkitOverflowScrolling = 'touch';
     
     // Принудительное ускорение для анимированных элементов
     const animatedElements = [
@@ -628,12 +590,8 @@ function setupAnimations(deviceInfo) {
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('Приложение загружено');
     
-    // Используем менеджер совместимости (если доступен)
-    let deviceInfo;
+    // УНИВЕРСАЛЬНАЯ инициализация для ВСЕХ устройств
     if (typeof compatibilityManager !== 'undefined') {
-        deviceInfo = compatibilityManager.getDeviceInfo();
-        console.log('🔍 Информация об устройстве:', deviceInfo);
-        
         // Оптимизация производительности
         compatibilityManager.optimizePerformance();
         
@@ -645,70 +603,23 @@ document.addEventListener('DOMContentLoaded', async function() {
             'touch': compatibilityManager.supportsFeature('touch'),
             'webgl': compatibilityManager.supportsFeature('webgl')
         });
-    } else {
-        // Fallback: используем старую систему детекции
-        deviceInfo = detectDevice();
-        console.log('🔍 Информация об устройстве (fallback):', deviceInfo);
-        
-        // Применяем классы для устройства
-        if (deviceInfo.isMobile) {
-            document.body.classList.add('mobile-device');
-        }
-        if (deviceInfo.isIOS) {
-            document.body.classList.add('ios-device');
-            
-            // Исправление проблемы с текстом в табах на iOS
-            setTimeout(() => {
-                const tabButtons = document.querySelectorAll('.tab-btn');
-                tabButtons.forEach(btn => {
-                    btn.style.webkitUserSelect = 'auto';
-                    btn.style.userSelect = 'auto';
-                    btn.style.webkitTextSizeAdjust = '100%';
-                    btn.style.textSizeAdjust = '100%';
-                    btn.style.fontSize = '0.9rem';
-                    btn.style.fontWeight = 'bold';
-                    btn.style.color = 'white';
-                    btn.style.textAlign = 'center';
-                    btn.style.lineHeight = '1.2';
-                    btn.style.whiteSpace = 'nowrap';
-                    btn.style.overflow = 'visible';
-                    btn.style.textOverflow = 'unset';
-                    btn.style.display = 'flex';
-                    btn.style.alignItems = 'center';
-                    btn.style.justifyContent = 'center';
-                    btn.style.flexDirection = 'row';
-                    btn.style.gap = '0.3rem';
-                });
-                console.log('🔧 iOS: Применены исправления для отображения текста в табах');
-            }, 100);
-        }
-        if (deviceInfo.isAndroid) {
-            document.body.classList.add('android-device');
-        }
-        if (deviceInfo.isDesktop) {
-            document.body.classList.add('desktop-device');
-        }
-        
-        // Настройка viewport для всех устройств
-        setupViewport();
-        
-        // Настройка touch событий
-        setupTouchEvents();
-        
-        // Настройка анимаций
-        setupAnimations(deviceInfo);
     }
     
-    // Инициализация Telegram WebApp
-    if (tg) {
+    // УНИВЕРСАЛЬНАЯ настройка для ВСЕХ устройств
+    setupViewport();
+    setupTouchEvents();
+    setupUniversalAnimations();
+    
+    // Инициализация Telegram WebApp (опционально)
+    if (tg && tg.ready) {
         tg.ready();
         
         // Настройка для Telegram Mini App
-        tg.expand();
+        if (tg.expand) tg.expand();
         
         // Базовые настройки для Telegram WebApp
-        tg.enableClosingConfirmation();
-        if (tg.MainButton) {
+        if (tg.enableClosingConfirmation) tg.enableClosingConfirmation();
+        if (tg.MainButton && tg.MainButton.hide) {
             tg.MainButton.hide();
         }
         
@@ -729,31 +640,24 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         console.log('✅ Telegram WebApp инициализирован с принудительным ускорением');
         
-        // Настройка темы
+        // Настройка темы (опционально)
         if (tg.colorScheme === 'dark') {
             document.body.classList.add('dark-theme');
         }
         
-        // Обработка изменения темы
-        tg.onEvent('themeChanged', () => {
-            if (tg.colorScheme === 'dark') {
-                document.body.classList.add('dark-theme');
-            } else {
-                document.body.classList.remove('dark-theme');
-            }
-        });
-        
-        // Оптимизация для мобильных устройств
-        if (deviceInfo.isMobile) {
-            // Отключаем hover эффекты на мобильных
-            document.body.classList.add('mobile-device');
-            
-            // Упрощаем анимации на слабых устройствах
-            if (deviceInfo.screenWidth <= 480 || deviceInfo.devicePixelRatio < 2) {
-                document.body.classList.add('reduced-motion');
-            }
+        // Обработка изменения темы (опционально)
+        if (tg.onEvent) {
+            tg.onEvent('themeChanged', () => {
+                if (tg.colorScheme === 'dark') {
+                    document.body.classList.add('dark-theme');
+                } else {
+                    document.body.classList.remove('dark-theme');
+                }
+            });
         }
-        tg.expand();
+        
+        // УНИВЕРСАЛЬНАЯ оптимизация для ВСЕХ устройств
+        if (tg.expand) tg.expand();
         
         // Получаем данные пользователя из Telegram
         const user = tg.initDataUnsafe?.user;
@@ -920,33 +824,31 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Добавляем обработчики событий
     setupEventListeners();
     
-    // Дополнительная проверка для iOS после загрузки всех элементов
-    if (deviceInfo.isIOS) {
-        setTimeout(() => {
-            const tabButtons = document.querySelectorAll('.tab-btn');
-            tabButtons.forEach(btn => {
-                // Принудительно обновляем стили для iOS
-                btn.style.webkitUserSelect = 'auto';
-                btn.style.userSelect = 'auto';
-                btn.style.webkitTextSizeAdjust = '100%';
-                btn.style.textSizeAdjust = '100%';
-                btn.style.fontSize = '0.9rem';
-                btn.style.fontWeight = 'bold';
-                btn.style.color = 'white';
-                btn.style.textAlign = 'center';
-                btn.style.lineHeight = '1.2';
-                btn.style.whiteSpace = 'nowrap';
-                btn.style.overflow = 'visible';
-                btn.style.textOverflow = 'unset';
-                btn.style.display = 'flex';
-                btn.style.alignItems = 'center';
-                btn.style.justifyContent = 'center';
-                btn.style.flexDirection = 'row';
-                btn.style.gap = '0.3rem';
-            });
-            console.log('🔧 iOS: Повторное применение исправлений для табов');
-        }, 500);
-    }
+    // УНИВЕРСАЛЬНАЯ проверка для ВСЕХ устройств после загрузки всех элементов
+    setTimeout(() => {
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        tabButtons.forEach(btn => {
+            // УНИВЕРСАЛЬНО обновляем стили для ВСЕХ устройств
+            btn.style.webkitUserSelect = 'auto';
+            btn.style.userSelect = 'auto';
+            btn.style.webkitTextSizeAdjust = '100%';
+            btn.style.textSizeAdjust = '100%';
+            btn.style.fontSize = '0.9rem';
+            btn.style.fontWeight = 'bold';
+            btn.style.color = 'white';
+            btn.style.textAlign = 'center';
+            btn.style.lineHeight = '1.2';
+            btn.style.whiteSpace = 'nowrap';
+            btn.style.overflow = 'visible';
+            btn.style.textOverflow = 'unset';
+            btn.style.display = 'flex';
+            btn.style.alignItems = 'center';
+            btn.style.justifyContent = 'center';
+            btn.style.flexDirection = 'row';
+            btn.style.gap = '0.3rem';
+        });
+        console.log('🔧 УНИВЕРСАЛЬНО: Повторное применение исправлений для табов');
+    }, 500);
     
     // Добавляем защиту от потери данных при выходе
     setupExitProtection();
@@ -1923,7 +1825,7 @@ function setupAppCloseHandlers() {
         autoAddPrizeToInventory();
     });
     
-    // Обработчик для Telegram WebApp
+    // Обработчик для Telegram WebApp (опционально)
     if (tg && tg.onEvent) {
         tg.onEvent('viewportChanged', function() {
             console.log('📱 TELEGRAM VIEWPORT CHANGED');
@@ -2314,7 +2216,7 @@ function buyStars(amount = 100) {
             ]
         });
     } else {
-        // Для тестирования добавляем звезды
+        // УНИВЕРСАЛЬНЫЙ fallback для ВСЕХ устройств - для тестирования добавляем звезды
         userStars += amount;
         updateStarsDisplay();
         saveUserData();

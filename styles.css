@@ -63,26 +63,7 @@ input, textarea {
     user-select: text;
 }
 
-/* Специальные стили для разных устройств */
-.ios-device * {
-    -webkit-overflow-scrolling: touch;
-    -webkit-transform: translate3d(0, 0, 0);
-    transform: translate3d(0, 0, 0);
-}
-
-.android-device * {
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
-}
-
-.desktop-device * {
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
-}
+/* УНИВЕРСАЛЬНЫЕ стили для ВСЕХ устройств */
 
 /* Универсальные стили для всех устройств */
 body {
@@ -94,67 +75,9 @@ body {
     text-size-adjust: 100%;
 }
 
-/* Специальные стили для iOS Safari */
-@supports (-webkit-touch-callout: none) {
-    body {
-        -webkit-overflow-scrolling: touch;
-        -webkit-transform: translateZ(0);
-        transform: translateZ(0);
-    }
-    
-    .app-container {
-        -webkit-overflow-scrolling: touch;
-        -webkit-transform: translateZ(0);
-        transform: translateZ(0);
-    }
-    
-    .main-content {
-        -webkit-overflow-scrolling: touch;
-    }
-    
-    .tab-content {
-        -webkit-overflow-scrolling: touch;
-    }
-    
-    .cases-grid {
-        -webkit-overflow-scrolling: touch;
-    }
-    
-    .inventory-grid {
-        -webkit-overflow-scrolling: touch;
-    }
-    
-    .shop-content {
-        -webkit-overflow-scrolling: touch;
-    }
-}
+/* УНИВЕРСАЛЬНЫЕ стили для ВСЕХ браузеров */
 
-/* Универсальные стили для WebKit браузеров */
-@supports (-webkit-appearance: none) {
-    .case-item,
-    .inventory-item,
-    .shop-item,
-    .tab-btn,
-    .buy-btn {
-        -webkit-appearance: none;
-        appearance: none;
-        -webkit-tap-highlight-color: transparent;
-        -webkit-touch-callout: none;
-        -webkit-user-select: none;
-        user-select: none;
-        -webkit-user-drag: none;
-    }
-    
-    button {
-        -webkit-appearance: none;
-        appearance: none;
-        -webkit-tap-highlight-color: transparent;
-        -webkit-touch-callout: none;
-        -webkit-user-select: none;
-        user-select: none;
-        -webkit-user-drag: none;
-    }
-}
+/* УНИВЕРСАЛЬНЫЕ стили для ВСЕХ браузеров */
 
 /* Принудительное ускорение для анимаций */
 .prize-strip {
@@ -224,135 +147,7 @@ body.reduced-motion *::after {
     transition-duration: 0.01ms !important;
 }
 
-/* Универсальные медиа-запросы для всех устройств */
-@media (max-width: 1200px) {
-    .app-container {
-        max-width: 100%;
-        padding: 0 1rem;
-    }
-}
-
-@media (max-width: 768px) {
-    .header {
-        padding: 0.8rem 1rem;
-        min-height: 50px;
-    }
-    
-    .app-title {
-        font-size: 1.5rem;
-    }
-    
-    .stars-balance {
-        font-size: 1rem;
-    }
-    
-    .main-content {
-        padding: 0.8rem;
-        min-height: calc(100vh - 50px);
-    }
-    
-    .tab-btn {
-        padding: 0.6rem 0.8rem;
-        font-size: 0.8rem;
-        min-height: 40px;
-    }
-    
-    .cases-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.8rem;
-    }
-    
-    .case-item {
-        padding: 0.8rem;
-        min-height: 100px;
-    }
-    
-    .case-image {
-        width: 60px;
-        height: 60px;
-        margin-bottom: 0.3rem;
-    }
-    
-    .case-icon {
-        width: 50px;
-        height: 50px;
-        font-size: 1.5rem;
-    }
-    
-    .case-item h3 {
-        font-size: 0.8rem;
-        margin-bottom: 0.2rem;
-    }
-    
-    .case-price {
-        font-size: 0.9rem;
-    }
-    
-    .case-description {
-        font-size: 0.7rem;
-    }
-}
-
-@media (max-width: 480px) {
-    .header {
-        padding: 0.6rem 0.8rem;
-        min-height: 45px;
-    }
-    
-    .app-title {
-        font-size: 1.3rem;
-    }
-    
-    .stars-balance {
-        font-size: 0.9rem;
-    }
-    
-    .main-content {
-        padding: 0.6rem;
-        min-height: calc(100vh - 45px);
-    }
-    
-    .tab-btn {
-        padding: 0.5rem 0.6rem;
-        font-size: 0.7rem;
-        min-height: 36px;
-    }
-    
-    .cases-grid {
-        grid-template-columns: 1fr;
-        gap: 0.6rem;
-    }
-    
-    .case-item {
-        padding: 0.6rem;
-        min-height: 90px;
-    }
-    
-    .case-image {
-        width: 50px;
-        height: 50px;
-        margin-bottom: 0.2rem;
-    }
-    
-    .case-icon {
-        width: 40px;
-        height: 40px;
-        font-size: 1.2rem;
-    }
-    
-    .case-item h3 {
-        font-size: 0.7rem;
-        margin-bottom: 0.1rem;
-    }
-    
-    .case-price {
-        font-size: 0.8rem;
-    }
-    
-    .case-description {
-        font-size: 0.6rem;
-    }
-}
+/* УНИВЕРСАЛЬНЫЕ стили для ВСЕХ устройств - БЕЗ МЕДИА-ЗАПРОСОВ */
 
 .app-container {
     max-width: 1200px;
@@ -1193,40 +988,7 @@ body.reduced-motion *::after {
     transition: all 0.3s ease !important;
 }
 
-/* Специальные настройки для iOS */
-.ios-device .prize-strip,
-.ios-device .prize-item,
-.ios-device .case-item,
-.ios-device .inventory-item,
-.ios-device .shop-item {
-    -webkit-transform: translate3d(0, 0, 0) !important;
-    transform: translate3d(0, 0, 0) !important;
-    -webkit-overflow-scrolling: touch !important;
-}
-
-/* Специальные настройки для Android */
-.android-device .prize-strip,
-.android-device .prize-item,
-.android-device .case-item,
-.android-device .inventory-item,
-.android-device .shop-item {
-    -webkit-transform: translateZ(0) !important;
-    transform: translateZ(0) !important;
-    -webkit-backface-visibility: hidden !important;
-    backface-visibility: hidden !important;
-}
-
-/* Специальные настройки для Desktop */
-.desktop-device .prize-strip,
-.desktop-device .prize-item,
-.desktop-device .case-item,
-.desktop-device .inventory-item,
-.desktop-device .shop-item {
-    -webkit-transform: translateZ(0) !important;
-    transform: translateZ(0) !important;
-    -webkit-backface-visibility: hidden !important;
-    backface-visibility: hidden !important;
-}
+/* УНИВЕРСАЛЬНЫЕ настройки для ВСЕХ устройств */
 
 /* Стили для низкопроизводительных устройств */
 .low-performance * {
@@ -1504,48 +1266,7 @@ body.reduced-motion *::after {
     }
 }
 
-/* Универсальные стили для всех устройств - БЕЗ УПРОЩЕНИЙ */
-@media (max-width: 768px) {
-    /* Только адаптивные размеры, анимации идентичны */
-    .prize-strip-container {
-        max-width: 95%;
-        height: 200px;
-    }
-    
-    .prize-item {
-        width: 150px;
-        height: 150px;
-        margin: 0 10px;
-    }
-    
-    .prize-item-icon {
-        font-size: 3rem;
-    }
-    
-    .prize-item-name {
-        font-size: 0.8rem;
-    }
-}
-
-@media (max-width: 480px) {
-    .prize-strip-container {
-        height: 180px;
-    }
-    
-    .prize-item {
-        width: 130px;
-        height: 130px;
-        margin: 0 8px;
-    }
-    
-    .prize-item-icon {
-        font-size: 2.5rem;
-    }
-    
-    .prize-item-name {
-        font-size: 0.7rem;
-    }
-}
+/* УНИВЕРСАЛЬНЫЕ стили для ВСЕХ устройств - ОДИНАКОВЫЕ РАЗМЕРЫ */
 
 /* Красивая подсветка выбранного приза */
 .prize-item.selected {
@@ -1637,47 +1358,7 @@ body.reduced-motion *::after {
     }
 }
 
-/* Адаптивность для мобильных устройств */
-@media (max-width: 768px) {
-    .prize-strip-container {
-        max-width: 90%;
-        height: 150px;
-    }
-    
-    .prize-item {
-        width: 120px;
-        height: 120px;
-        margin: 0 8px;
-    }
-    
-    .prize-item-icon {
-        font-size: 2.5rem;
-    }
-    
-    .prize-item-name {
-        font-size: 0.7rem;
-    }
-}
-
-@media (max-width: 480px) {
-    .prize-strip-container {
-        height: 120px;
-    }
-    
-    .prize-item {
-        width: 100px;
-        height: 100px;
-        margin: 0 6px;
-    }
-    
-    .prize-item-icon {
-        font-size: 2rem;
-    }
-    
-    .prize-item-name {
-        font-size: 0.6rem;
-    }
-}
+/* УНИВЕРСАЛЬНЫЕ размеры для ВСЕХ устройств */
 
 /* Полноэкранный режим для открытия кейса */
 .opening-area.fullscreen {
@@ -2244,58 +1925,7 @@ body.case-opening {
     transform: translateY(0) scale(1.2) rotateX(0deg);
 }
 
-/* Адаптивные размеры для мобильных устройств - анимации идентичны */
-@media (max-width: 768px) {
-    .prize-reveal {
-        margin-top: 2rem;
-        transform: translateY(80px) scale(0.7) rotateX(15deg);
-    }
-    
-    .prize-reveal.show {
-        transform: translateY(0) scale(1) rotateX(0deg);
-    }
-    
-    .prize-container {
-        padding: 2rem;
-        max-width: 90%;
-    }
-    
-    .prize-icon {
-        font-size: 5rem;
-    }
-    
-    .prize-name {
-        font-size: 1.8rem;
-    }
-    
-    .prize-description {
-        font-size: 1.1rem;
-    }
-}
-
-@media (max-width: 480px) {
-    .prize-reveal {
-        margin-top: 1.5rem;
-        transform: translateY(80px) scale(0.7) rotateX(15deg);
-    }
-    
-    .prize-container {
-        padding: 1.5rem;
-        max-width: 95%;
-    }
-    
-    .prize-icon {
-        font-size: 4.5rem;
-    }
-    
-    .prize-name {
-        font-size: 1.6rem;
-    }
-    
-    .prize-description {
-        font-size: 1rem;
-    }
-}
+/* УНИВЕРСАЛЬНЫЕ размеры для призов на ВСЕХ устройствах */
 
 .prize-reveal.show {
     opacity: 1;
@@ -3113,95 +2743,6 @@ body.case-opening {
     transform: scale(0.98);
 }
 
-/* Специальные стили для iOS Safari */
-@supports (-webkit-touch-callout: none) {
-    /* Исправление проблем с анимациями на iOS */
-    .prize-strip {
-        -webkit-transform: translate3d(0, 0, 0);
-        transform: translate3d(0, 0, 0);
-        -webkit-backface-visibility: hidden;
-        backface-visibility: hidden;
-        -webkit-perspective: 1000px;
-        perspective: 1000px;
-    }
-    
-    .prize-item {
-        -webkit-transform: translate3d(0, 0, 0);
-        transform: translate3d(0, 0, 0);
-        -webkit-backface-visibility: hidden;
-        backface-visibility: hidden;
-    }
-    
-    /* Исправление проблем с backdrop-filter на iOS */
-    .case-item,
-    .inventory-item,
-    .shop-item,
-    .header {
-        -webkit-backdrop-filter: blur(10px);
-        backdrop-filter: blur(10px);
-    }
-    
-    /* Исправление проблем с overflow на iOS */
-    .main-content,
-    .tab-content,
-    .cases-grid,
-    .inventory-grid,
-    .shop-content {
-        -webkit-overflow-scrolling: touch;
-    }
-    
-    /* ИСПРАВЛЕНИЕ ПРОБЛЕМЫ С ТЕКСТОМ В ТАБАХ НА iOS */
-    .tab-btn {
-        -webkit-tap-highlight-color: transparent;
-        -webkit-touch-callout: none;
-        -webkit-user-select: auto !important; /* Разрешаем выделение текста */
-        user-select: auto !important;
-        -webkit-text-size-adjust: 100% !important;
-        text-size-adjust: 100% !important;
-        font-size: 0.9rem !important;
-        font-weight: bold !important;
-        color: white !important;
-        text-align: center !important;
-        line-height: 1.2 !important;
-        white-space: nowrap !important;
-        overflow: visible !important;
-        text-overflow: unset !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        flex-direction: row !important;
-        gap: 0.3rem !important;
-    }
-    
-    /* Исправление проблем с кнопками на iOS */
-    .buy-btn,
-    .case-item,
-    .inventory-item,
-    .shop-item {
-        -webkit-tap-highlight-color: transparent;
-        -webkit-touch-callout: none;
-        -webkit-user-select: none;
-        user-select: none;
-    }
-}
+/* УНИВЕРСАЛЬНЫЕ стили для ВСЕХ браузеров */
 
-/* Дополнительные стили для WebKit браузеров */
-@supports (-webkit-appearance: none) {
-    /* Универсальные стили для всех WebKit браузеров */
-    * {
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-    }
-    
-    /* Исправление проблем с анимациями */
-    .prize-strip,
-    .prize-item,
-    .case-item,
-    .inventory-item,
-    .shop-item {
-        -webkit-transform: translateZ(0);
-        transform: translateZ(0);
-        -webkit-backface-visibility: hidden;
-        backface-visibility: hidden;
-    }
-}
+/* УНИВЕРСАЛЬНЫЕ стили для ВСЕХ браузеров */
