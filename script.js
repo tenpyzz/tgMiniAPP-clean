@@ -2586,63 +2586,6 @@ function recoverLostItems() {
 }
 
 // Функция для принудительного восстановления предмета "сердечко"
-window.recoverHeart = function() {
-    console.log('❤️ RECOVERY: Принудительное восстановление сердечка...');
-    
-    // Проверяем, что есть запись о потраченных звездах ИЛИ незавершенное открытие кейса
-    const starsSpent = localStorage.getItem('starsSpent');
-    const pendingPrize = localStorage.getItem('pendingPrize');
-    
-    if (!starsSpent && !pendingPrize) {
-        showNotification('Нельзя восстановить предмет без подтверждения трат!', 'error');
-        console.log('❌ RECOVERY_HEART: Нет записи о потраченных звездах или незавершенном открытии');
-        return;
-    }
-    
-    // Если есть pendingPrize, но нет starsSpent - это означает, что анимация не завершилась
-    if (pendingPrize && !starsSpent) {
-        showNotification('Нельзя восстановить предмет во время незавершенного открытия кейса!', 'error');
-        console.log('❌ RECOVERY_HEART: Есть незавершенное открытие кейса, но деньги не списаны');
-        return;
-    }
-    
-    // Проверяем, есть ли уже сердечко в инвентаре
-    const hasHeart = userInventory.some(item => 
-        item.name === 'Сердечко' || 
-        item.name?.includes('сердечко') ||
-        item.emoji === '❤️'
-    );
-    
-    if (hasHeart) {
-        showNotification('Сердечко уже есть в инвентаре!', 'info');
-        console.log('❤️ RECOVERY: Сердечко уже есть в инвентаре');
-        return;
-    }
-    
-    // Создаем сердечко
-    const heartItem = {
-        id: 'heart_item_' + Date.now(),
-        name: 'Сердечко',
-        type: 'special',
-        rarity: 'rare',
-        description: 'Особый предмет - сердечко',
-        emoji: '❤️',
-        recovered: true,
-        recoveryTime: new Date().toISOString()
-    };
-    
-    // Добавляем в инвентарь
-    userInventory.push(heartItem);
-    
-    // Обновляем отображение
-    updateInventoryDisplay();
-    
-    // Сохраняем на сервер
-    saveUserData();
-    
-    showNotification('Сердечко восстановлено! ❤️', 'success');
-    console.log('✅ RECOVERY: Сердечко восстановлено');
-};
 
 // Настройка защиты от потери данных при выходе
 function setupExitProtection() {
@@ -2745,27 +2688,6 @@ async function saveCaseOpening(userId, caseType, price, prize) {
 }
 
 // Функция для полного восстановления данных
-window.fullRecovery = function() {
-    console.log('🔄 FULL_RECOVERY: Полное восстановление данных...');
-    
-    // Восстанавливаем потерянные предметы
-    const itemsRecovered = recoverLostItems();
-    
-    // Принудительно сохраняем данные
-    saveUserData();
-    
-    // Обновляем отображение
-    updateStarsDisplay();
-    updateInventoryDisplay();
-    
-    if (itemsRecovered) {
-        showNotification('Данные восстановлены! Проверьте инвентарь.', 'success');
-    } else {
-        showNotification('Данные проверены и сохранены.', 'info');
-    }
-    
-    console.log('✅ FULL_RECOVERY: Восстановление завершено');
-};
 
 // Проверка на наличие незавершенного открытия кейса
 async function checkPendingCaseOpening() {
@@ -2900,108 +2822,6 @@ async function checkPendingCaseOpening() {
 }
 
 // Функция для отмены открытия кейса (если анимация не завершена)
-window.cancelCaseOpening = function() {
-    console.log('❌ CANCEL_CASE: Отменяем открытие кейса');
-    
-    // Проверяем, есть ли незавершенная транзакция
-    const pendingPrize = localStorage.getItem('pendingPrize');
-    const starsSpent = localStorage.getItem('starsSpent');
-    
-    if (!pendingPrize && !starsSpent && !isOpening && !currentPrize) {
-        showNotification('Нет активного открытия кейса', 'info');
-        return;
-    }
-    
-    try {
-        // Если есть запись о потраченных звездах, восстанавливаем баланс
-        if (starsSpent) {
-            const state = JSON.parse(starsSpent);
-            const originalStars = state.originalStars || userStars;
-            const amount = state.amount || 0;
-            
-            console.log(`💰 CANCEL_CASE: Восстанавливаем ${amount} звезд`);
-            userStars = originalStars;
-        }
-        
-        // Если есть приз в инвентаре, удаляем его
-        if (pendingPrize) {
-            const prizeData = JSON.parse(pendingPrize);
-            const prize = prizeData.prize;
-            
-            // Удаляем приз из инвентаря (только по ID)
-            const prizeIndex = userInventory.findIndex(item => 
-                item.id === prize.id
-            );
-            
-            if (prizeIndex !== -1) {
-                userInventory.splice(prizeIndex, 1);
-                console.log('🎁 CANCEL_CASE: Приз удален из инвентаря');
-            }
-        }
-        
-        // Если есть pendingPrize, но нет starsSpent - это означает, что анимация не завершилась
-        if (pendingPrize && !starsSpent) {
-            console.log('⚠️ CANCEL_CASE: Отменяем незавершенную анимацию (деньги не списаны)');
-            // В этом случае ничего не нужно восстанавливать, так как деньги не были списаны
-        }
-        
-        // Сбрасываем все флаги
-        isOpening = false;
-        currentPrize = null;
-        currentCasePrice = 0;
-        prizeAutoAdded = false;
-        isChoosingPrize = false;
-        
-        // Очищаем localStorage
-        localStorage.removeItem('starsSpent');
-        localStorage.removeItem('pendingPrize');
-        localStorage.removeItem('prizeProcessed');
-        
-        // Восстанавливаем интерфейс
-        document.body.classList.remove('case-opening');
-        const openingArea = document.getElementById('opening-area');
-        if (openingArea) {
-            openingArea.classList.remove('fullscreen');
-            openingArea.style.display = 'none';
-        }
-        
-        // Скрываем кнопку выхода
-        const exitBtn = document.getElementById('exit-fullscreen-btn');
-        if (exitBtn) {
-            exitBtn.style.display = 'none';
-        }
-        
-        // Сбрасываем полоску призов
-        const prizeStrip = document.getElementById('prize-strip');
-        if (prizeStrip) {
-            prizeStrip.innerHTML = '';
-            prizeStrip.className = 'prize-strip';
-        }
-        
-        // Скрываем показ приза
-        const prizeReveal = document.getElementById('prize-reveal');
-        if (prizeReveal) {
-            prizeReveal.classList.remove('show');
-        }
-        
-        // Закрываем модальное окно приза
-        closePrizeModal();
-        
-        // Сохраняем изменения на сервер
-        saveUserData();
-        
-        // Обновляем отображение
-        updateStarsDisplay();
-        updateInventoryDisplay();
-        
-        showNotification('Открытие кейса отменено. Деньги возвращены.', 'success');
-        console.log('✅ CANCEL_CASE: Открытие кейса отменено, деньги возвращены');
-        
-    } catch (error) {
-        console.error('❌ CANCEL_CASE: Ошибка при отмене:', error);
-        showNotification('Ошибка при отмене открытия кейса', 'error');
-    }
-};
 
 // Экспорт функций для тестирования
 window.userStars = userStars;
@@ -3066,15 +2886,6 @@ window.clearInventory = function() {
     showNotification('Инвентарь очищен!', 'info');
 };
 window.showNotification = showNotification;
-window.refreshData = async function() {
-    console.log('Ручное обновление данных...');
-    const success = await loadUserData();
-    if (success) {
-        showNotification('Данные обновлены!', 'success');
-    } else {
-        showNotification('Ошибка обновления данных', 'error');
-    }
-};
 
 // Функция выхода из полноэкранного режима
 window.exitFullscreenMode = function() {

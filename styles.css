@@ -137,11 +137,6 @@ body.reduced-motion *::after {
     z-index: 100;
 }
 
-.header-buttons {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-}
 
 .stars-balance {
     display: flex;
@@ -171,58 +166,9 @@ body.reduced-motion *::after {
     background-clip: text;
 }
 
-.settings-btn, .refresh-btn, .recovery-btn, .heart-btn, .cancel-btn {
-    font-size: 1.5rem;
-    cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 50%;
-    transition: all 0.3s;
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
-    user-select: none;
-}
 
-.settings-btn:hover, .refresh-btn:hover, .recovery-btn:hover, .heart-btn:hover, .cancel-btn:hover {
-    background-color: rgba(0, 0, 0, 0.1);
-    transform: scale(1.1);
-}
 
-.refresh-btn:hover {
-    animation: spin 0.5s linear;
-}
 
-.recovery-btn:hover {
-    background-color: rgba(255, 165, 0, 0.2);
-    animation: pulse 1s infinite;
-}
-
-.heart-btn:hover {
-    background-color: rgba(255, 192, 203, 0.3);
-    animation: heartbeat 1s infinite;
-}
-
-.cancel-btn:hover {
-    background-color: rgba(255, 0, 0, 0.2);
-    animation: shake 0.5s infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-}
-
-@keyframes heartbeat {
-    0%, 100% { transform: scale(1); }
-    25% { transform: scale(1.2); }
-    50% { transform: scale(1); }
-    75% { transform: scale(1.1); }
-}
-
-@keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-2px); }
-    75% { transform: translateX(2px); }
-}
 
 @keyframes spin {
     from { transform: rotate(0deg); }
@@ -2159,23 +2105,6 @@ body.case-opening {
         font-size: 1rem;
     }
     
-    .header-buttons {
-        order: 3;
-        width: 100%;
-        justify-content: center;
-        gap: 0.8rem;
-        flex-wrap: wrap;
-    }
-    
-    .settings-btn, .refresh-btn, .recovery-btn, .heart-btn, .cancel-btn {
-        font-size: 1.8rem;
-        padding: 0.8rem;
-        min-width: 44px;
-        min-height: 44px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
     
     .main-content {
         padding: 0.8rem;
