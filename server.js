@@ -382,7 +382,7 @@ app.post('/bot/webhook', async (req, res) => {
                         {
                             text: "🎮 Открыть игру",
                             web_app: {
-                                url: "${process.env.WEBAPP_URL || 'https://your-domain.com/'}"
+                                url: process.env.WEBAPP_URL || 'https://your-domain.com/'
                             }
                         }
                     ]]
@@ -421,7 +421,7 @@ app.post('/bot/webhook', async (req, res) => {
                         {
                             text: "🎮 Играть",
                             web_app: {
-                                url: "${process.env.WEBAPP_URL || 'https://your-domain.com/'}"
+                                url: process.env.WEBAPP_URL || 'https://your-domain.com/'
                             }
                         }
                     ]]
@@ -450,7 +450,7 @@ app.post('/bot/webhook', async (req, res) => {
                         {
                             text: "🎮 Начать игру",
                             web_app: {
-                                url: "${process.env.WEBAPP_URL || 'https://your-domain.com/'}"
+                                url: process.env.WEBAPP_URL || 'https://your-domain.com/'
                             }
                         }
                     ]]
@@ -505,7 +505,7 @@ app.post('/webhook/payment', async (req, res) => {
 // Установка webhook для Telegram бота
 app.post('/setup-webhook', async (req, res) => {
     try {
-        const webhookUrl = process.env.WEBHOOK_URL || req.body.webhook_url || '${process.env.WEBAPP_URL || 'https://your-domain.com/'}bot/webhook';
+        const webhookUrl = process.env.WEBHOOK_URL || req.body.webhook_url || `${process.env.WEBAPP_URL || 'https://your-domain.com/'}bot/webhook`;
         
         console.log(`Setting Telegram webhook to: ${webhookUrl}`);
         
@@ -547,7 +547,7 @@ app.post('/setup-webhook', async (req, res) => {
 // Настройка Mini App для бота
 app.post('/setup-miniapp', async (req, res) => {
     try {
-        const miniAppUrl = '${process.env.WEBAPP_URL || 'https://your-domain.com/'}';
+        const miniAppUrl = process.env.WEBAPP_URL || 'https://your-domain.com/';
         console.log('Setting up Mini App for bot...');
         
         // Настраиваем Mini App через Telegram API
@@ -646,8 +646,8 @@ app.get('/api/info', async (req, res) => {
             version: '1.0.0',
             status: 'running',
             timestamp: new Date().toISOString(),
-            webhook_url: process.env.WEBHOOK_URL || '${process.env.WEBAPP_URL || 'https://your-domain.com/'}bot/webhook',
-            webapp_url: process.env.WEBAPP_URL || '${process.env.WEBAPP_URL || 'https://your-domain.com/'}',
+            webhook_url: process.env.WEBHOOK_URL || `${process.env.WEBAPP_URL || 'https://your-domain.com/'}bot/webhook`,
+            webapp_url: process.env.WEBAPP_URL || 'https://your-domain.com/',
             bot_token: BOT_TOKEN ? 'configured' : 'missing',
             database: 'PostgreSQL',
             total_users: stats.total_users || 0,
