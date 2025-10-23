@@ -43,46 +43,34 @@ const db = new Database();
 // Инициализация базы данных при запуске сервера
 async function initializeDatabase() {
     try {
-        console.log('🚀 REDEPLOY TEST - Начинаем инициализацию базы данных');
         await db.init();
         console.log('✅ База данных SQLite инициализирована');
         
         // Пытаемся восстановить данные из резервной копии
         try {
-            console.log('🔄 REDEPLOY TEST - Пытаемся восстановить данные из резервной копии');
             const restored = await db.restoreFromBackup();
             if (restored) {
-                console.log('✅ REDEPLOY TEST - Данные успешно восстановлены из резервной копии');
             } else {
-                console.log('⚠️ REDEPLOY TEST - Резервная копия не найдена или пуста');
                 
                 // Пытаемся восстановить из экстренной резервной копии
-                console.log('🚨 REDEPLOY TEST - Пытаемся восстановить из экстренной резервной копии');
                 const emergencyRestored = await db.restoreFromEmergencyBackup();
                 if (emergencyRestored) {
-                    console.log('✅ REDEPLOY TEST - Данные восстановлены из экстренной резервной копии');
                 } else {
-                    console.log('⚠️ REDEPLOY TEST - Экстренная резервная копия не найдена');
                 }
             }
         } catch (backupError) {
-            console.log('❌ REDEPLOY TEST - Ошибка восстановления из резервной копии:', backupError.message);
             console.log('📁 Резервная копия не найдена или повреждена, начинаем с чистой базы');
         }
         
         // Создаем начальную резервную копию
-        console.log('💾 REDEPLOY TEST - Создаем резервную копию');
         await db.createBackup();
-        console.log('✅ REDEPLOY TEST - Резервная копия создана');
         
         // Создаем экстренную резервную копию
-        console.log('🚨 REDEPLOY TEST - Создаем экстренную резервную копию');
         await db.createEmergencyBackup();
-        console.log('✅ REDEPLOY TEST - Экстренная резервная копия создана');
         
         // Проверяем количество пользователей в базе
         const userCount = await db.getUserCount();
-        console.log(`📊 REDEPLOY TEST - Количество пользователей в базе: ${userCount}`);
+        console.log(`📊  - Количество пользователей в базе: ${userCount}`);
         
     } catch (error) {
         console.error('❌ Ошибка инициализации базы данных:', error);
@@ -95,7 +83,7 @@ app.post('/api/user/data', verifyTelegramData, async (req, res) => {
     try {
         const { user_id, telegram_name } = req.body;
         
-        console.log('📥 REDEPLOY TEST - Получен запрос данных пользователя:', {
+        console.log('📥  - Получен запрос данных пользователя:', {
             user_id,
             telegram_name,
             full_body: req.body
@@ -107,19 +95,19 @@ app.post('/api/user/data', verifyTelegramData, async (req, res) => {
         if (!user) {
             // Проверяем, не является ли это тестовым пользователем
             if (user_id === 'test_user' || user_id === 'test_user_123') {
-                console.log(`🚫 REDEPLOY TEST - Блокируем создание тестового пользователя ${user_id}`);
+                console.log(`🚫  - Блокируем создание тестового пользователя ${user_id}`);
                 return res.status(404).json({ 
                     error: 'User not found',
                     message: 'Тестовые пользователи не создаются автоматически'
                 });
             }
             
-            console.log(`👤 REDEPLOY TEST - Пользователь ${user_id} не найден, создаем нового`);
+            console.log(`👤  - Пользователь ${user_id} не найден, создаем нового`);
             // Создаем нового пользователя если его нет с балансом 100
             user = await db.upsertUser(user_id, telegram_name || 'Unknown User', 100, []);
-            console.log(`✅ REDEPLOY TEST - Создан новый пользователь ${user_id}:`, user);
+            console.log(`✅  - Создан новый пользователь ${user_id}:`, user);
         } else {
-            console.log(`👤 REDEPLOY TEST - Пользователь ${user_id} найден:`, {
+            console.log(`👤  - Пользователь ${user_id} найден:`, {
                 user_id: user.user_id,
                 telegram_name: user.telegram_name,
                 balance: user.balance,
@@ -153,11 +141,11 @@ app.post('/api/user/data', verifyTelegramData, async (req, res) => {
             inventory: user.inventory || []
         };
         
-        console.log('📤 REDEPLOY TEST - Отправляем ответ:', response);
+        console.log('📤  - Отправляем ответ:', response);
         
         res.json(response);
     } catch (error) {
-        console.error('❌ REDEPLOY TEST - Ошибка получения данных пользователя:', error);
+        console.error('❌  - Ошибка получения данных пользователя:', error);
         res.status(500).json({ error: 'Failed to get user data' });
     }
 });
@@ -167,7 +155,7 @@ app.post('/api/user/save', verifyTelegramData, async (req, res) => {
     try {
         const { user_id, telegram_name, stars_balance, inventory } = req.body;
         
-        console.log('💾 REDEPLOY TEST - Получен запрос сохранения данных пользователя:', {
+        console.log('💾  - Получен запрос сохранения данных пользователя:', {
             user_id,
             telegram_name,
             stars_balance,
@@ -177,7 +165,7 @@ app.post('/api/user/save', verifyTelegramData, async (req, res) => {
         
         // Проверяем, не является ли это тестовым пользователем
         if (user_id === 'test_user' || user_id === 'test_user_123') {
-            console.log(`🚫 REDEPLOY TEST - Блокируем сохранение данных для тестового пользователя ${user_id}`);
+            console.log(`🚫  - Блокируем сохранение данных для тестового пользователя ${user_id}`);
             return res.status(403).json({ 
                 error: 'Access denied',
                 message: 'Сохранение данных для тестовых пользователей запрещено'
@@ -186,7 +174,7 @@ app.post('/api/user/save', verifyTelegramData, async (req, res) => {
         
         // Проверяем, существует ли пользователь
         const existingUser = await db.getUser(user_id);
-        console.log(`🔍 REDEPLOY TEST - Пользователь ${user_id} существует:`, !!existingUser);
+        console.log(`🔍  - Пользователь ${user_id} существует:`, !!existingUser);
         
         // Сохраняем данные пользователя в базу данных с резервным копированием
         await db.updateUserWithBackup(user_id, {
@@ -195,11 +183,11 @@ app.post('/api/user/save', verifyTelegramData, async (req, res) => {
             inventory: inventory || []
         });
         
-        console.log(`✅ REDEPLOY TEST - Данные пользователя ${user_id} сохранены успешно`);
+        console.log(`✅  - Данные пользователя ${user_id} сохранены успешно`);
         
         // Проверяем, что пользователь действительно сохранился
         const savedUser = await db.getUser(user_id);
-        console.log(`✅ REDEPLOY TEST - Пользователь ${user_id} в базе после сохранения:`, {
+        console.log(`✅  - Пользователь ${user_id} в базе после сохранения:`, {
             exists: !!savedUser,
             balance: savedUser?.balance,
             inventory_count: savedUser?.inventory?.length || 0
@@ -207,7 +195,7 @@ app.post('/api/user/save', verifyTelegramData, async (req, res) => {
         
         res.json({ success: true });
     } catch (error) {
-        console.error('❌ REDEPLOY TEST - Ошибка сохранения данных пользователя:', error);
+        console.error('❌  - Ошибка сохранения данных пользователя:', error);
         res.status(500).json({ error: 'Failed to save user data' });
     }
 });
@@ -223,7 +211,7 @@ app.post('/api/prize/claim', verifyTelegramData, async (req, res) => {
         
         // Проверяем, не является ли это тестовым пользователем
         if (user_id === 'test_user' || user_id === 'test_user_123') {
-            console.log(`🚫 REDEPLOY TEST - Блокируем обработку приза для тестового пользователя ${user_id}`);
+            console.log(`🚫  - Блокируем обработку приза для тестового пользователя ${user_id}`);
             return res.status(403).json({ 
                 error: 'Access denied',
                 message: 'Обработка призов для тестовых пользователей запрещена'
@@ -267,18 +255,18 @@ app.post('/api/prize/claim', verifyTelegramData, async (req, res) => {
 // Получение всех пользователей (для администрирования)
 app.get('/api/admin/users', async (req, res) => {
     try {
-        console.log('🔍 REDEPLOY TEST - Запрос всех пользователей для админ панели');
+        console.log('🔍  - Запрос всех пользователей для админ панели');
         
         // Проверяем количество пользователей в базе
         const userCount = await db.getUserCount();
-        console.log(`📊 REDEPLOY TEST - Количество пользователей в базе: ${userCount}`);
+        console.log(`📊  - Количество пользователей в базе: ${userCount}`);
         
         const users = await db.getAllUsers();
-        console.log(`📊 REDEPLOY TEST - Найдено пользователей: ${users.length}`);
-        console.log('👥 REDEPLOY TEST - Пользователи:', users.map(u => ({ id: u.user_id, name: u.telegram_name, balance: u.balance })));
+        console.log(`📊  - Найдено пользователей: ${users.length}`);
+        console.log('👥  - Пользователи:', users.map(u => ({ id: u.user_id, name: u.telegram_name, balance: u.balance })));
         
         // Проверяем подключение к PostgreSQL
-        console.log(`🔍 REDEPLOY TEST - Подключение к PostgreSQL: ${db.isConnected ? 'активно' : 'неактивно'}`);
+        console.log(`🔍  - Подключение к PostgreSQL: ${db.isConnected ? 'активно' : 'неактивно'}`);
         
         res.json({
             success: true,
@@ -286,7 +274,7 @@ app.get('/api/admin/users', async (req, res) => {
             total: users.length
         });
     } catch (error) {
-        console.error('❌ REDEPLOY TEST - Ошибка получения пользователей:', error);
+        console.error('❌  - Ошибка получения пользователей:', error);
         res.status(500).json({ error: 'Failed to get users' });
     }
 });
@@ -394,7 +382,7 @@ app.post('/bot/webhook', async (req, res) => {
                         {
                             text: "🎮 Открыть игру",
                             web_app: {
-                                url: "https://web-production-877f.up.railway.app/"
+                                url: "${process.env.WEBAPP_URL || 'https://your-domain.com/'}"
                             }
                         }
                     ]]
@@ -433,7 +421,7 @@ app.post('/bot/webhook', async (req, res) => {
                         {
                             text: "🎮 Играть",
                             web_app: {
-                                url: "https://web-production-877f.up.railway.app/"
+                                url: "${process.env.WEBAPP_URL || 'https://your-domain.com/'}"
                             }
                         }
                     ]]
@@ -462,7 +450,7 @@ app.post('/bot/webhook', async (req, res) => {
                         {
                             text: "🎮 Начать игру",
                             web_app: {
-                                url: "https://web-production-877f.up.railway.app/"
+                                url: "${process.env.WEBAPP_URL || 'https://your-domain.com/'}"
                             }
                         }
                     ]]
@@ -517,7 +505,7 @@ app.post('/webhook/payment', async (req, res) => {
 // Установка webhook для Telegram бота
 app.post('/setup-webhook', async (req, res) => {
     try {
-        const webhookUrl = process.env.WEBHOOK_URL || req.body.webhook_url || 'https://web-production-877f.up.railway.app/bot/webhook';
+        const webhookUrl = process.env.WEBHOOK_URL || req.body.webhook_url || '${process.env.WEBAPP_URL || 'https://your-domain.com/'}bot/webhook';
         
         console.log(`Setting Telegram webhook to: ${webhookUrl}`);
         
@@ -559,7 +547,7 @@ app.post('/setup-webhook', async (req, res) => {
 // Настройка Mini App для бота
 app.post('/setup-miniapp', async (req, res) => {
     try {
-        const miniAppUrl = 'https://web-production-877f.up.railway.app/';
+        const miniAppUrl = '${process.env.WEBAPP_URL || 'https://your-domain.com/'}';
         console.log('Setting up Mini App for bot...');
         
         // Настраиваем Mini App через Telegram API
@@ -658,8 +646,8 @@ app.get('/api/info', async (req, res) => {
             version: '1.0.0',
             status: 'running',
             timestamp: new Date().toISOString(),
-            webhook_url: process.env.WEBHOOK_URL || 'https://web-production-877f.up.railway.app/bot/webhook',
-            webapp_url: process.env.WEBAPP_URL || 'https://web-production-877f.up.railway.app/',
+            webhook_url: process.env.WEBHOOK_URL || '${process.env.WEBAPP_URL || 'https://your-domain.com/'}bot/webhook',
+            webapp_url: process.env.WEBAPP_URL || '${process.env.WEBAPP_URL || 'https://your-domain.com/'}',
             bot_token: BOT_TOKEN ? 'configured' : 'missing',
             database: 'PostgreSQL',
             total_users: stats.total_users || 0,

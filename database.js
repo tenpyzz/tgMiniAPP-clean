@@ -66,29 +66,29 @@ class Database {
         
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
             try {
-                console.log(`🔍 REDEPLOY TEST - Попытка подключения к PostgreSQL (${attempt}/${maxRetries})`);
+                console.log(`🔍  - Попытка подключения к PostgreSQL (${attempt}/${maxRetries})`);
                 
                 // Тестируем подключение
                 const client = await this.pool.connect();
-                console.log('✅ REDEPLOY TEST - Подключение к PostgreSQL установлено');
+                console.log('✅  - Подключение к PostgreSQL установлено');
                 
                 // Создаем таблицы
                 await this.createTables(client);
                 
                 client.release();
                 this.isConnected = true;
-                console.log('✅ REDEPLOY TEST - База данных PostgreSQL готова к работе');
+                console.log('✅  - База данных PostgreSQL готова к работе');
                 return;
                 
             } catch (error) {
-                console.error(`❌ REDEPLOY TEST - Ошибка подключения к PostgreSQL (попытка ${attempt}/${maxRetries}):`, error.message);
+                console.error(`❌  - Ошибка подключения к PostgreSQL (попытка ${attempt}/${maxRetries}):`, error.message);
                 
                 if (attempt === maxRetries) {
-                    console.error('❌ REDEPLOY TEST - Все попытки подключения исчерпаны');
+                    console.error('❌  - Все попытки подключения исчерпаны');
                     throw error;
                 }
                 
-                console.log(`⏳ REDEPLOY TEST - Ожидание ${retryDelay}ms перед следующей попыткой...`);
+                console.log(`⏳  - Ожидание ${retryDelay}ms перед следующей попыткой...`);
                 await new Promise(resolve => setTimeout(resolve, retryDelay));
             }
         }
@@ -316,8 +316,8 @@ class Database {
         try {
             const backupFile = backupPath || path.join(__dirname, 'backup_users.json');
             
-            console.log(`🔍 REDEPLOY TEST - Проверяем файл резервной копии: ${backupFile}`);
-            console.log(`🔍 REDEPLOY TEST - Файл существует: ${fs.existsSync(backupFile)}`);
+            console.log(`🔍  - Проверяем файл резервной копии: ${backupFile}`);
+            console.log(`🔍  - Файл существует: ${fs.existsSync(backupFile)}`);
             
             if (!fs.existsSync(backupFile)) {
                 console.log('📁 Резервная копия не найдена');
@@ -325,18 +325,18 @@ class Database {
             }
             
             const backupData = JSON.parse(fs.readFileSync(backupFile, 'utf8'));
-            console.log(`📥 REDEPLOY TEST - Восстанавливаем данные из резервной копии от ${backupData.timestamp}`);
-            console.log(`📥 REDEPLOY TEST - Пользователей в резервной копии: ${backupData.users.length}`);
+            console.log(`📥  - Восстанавливаем данные из резервной копии от ${backupData.timestamp}`);
+            console.log(`📥  - Пользователей в резервной копии: ${backupData.users.length}`);
             
             for (const user of backupData.users) {
-                console.log(`🔄 REDEPLOY TEST - Восстанавливаем пользователя: ${user.user_id} (${user.telegram_name})`);
+                console.log(`🔄  - Восстанавливаем пользователя: ${user.user_id} (${user.telegram_name})`);
                 await this.upsertUser(user.user_id, user.telegram_name, user.balance, user.inventory);
             }
             
-            console.log(`✅ REDEPLOY TEST - Восстановлено ${backupData.users.length} пользователей`);
+            console.log(`✅  - Восстановлено ${backupData.users.length} пользователей`);
             return true;
         } catch (error) {
-            console.error('❌ REDEPLOY TEST - Ошибка восстановления из резервной копии:', error);
+            console.error('❌  - Ошибка восстановления из резервной копии:', error);
             throw error;
         }
     }
@@ -344,14 +344,14 @@ class Database {
     // Автоматическое создание резервной копии при обновлении данных
     async updateUserWithBackup(userId, data) {
         try {
-            console.log(`🔄 REDEPLOY TEST - Обновляем пользователя ${userId} с данными:`, data);
+            console.log(`🔄  - Обновляем пользователя ${userId} с данными:`, data);
             
             // Обновляем данные
             await this.updateUser(userId, data);
-            console.log(`✅ REDEPLOY TEST - Пользователь ${userId} обновлен в базе данных`);
+            console.log(`✅  - Пользователь ${userId} обновлен в базе данных`);
             
             // Создаем резервную копию при каждом обновлении (опционально)
-            console.log(`💾 REDEPLOY TEST - Создаем резервную копию при каждом обновлении`);
+            console.log(`💾  - Создаем резервную копию при каждом обновлении`);
             await this.createBackup();
             
             // Дополнительно сохраняем данные в JSON файл для надежности
@@ -359,16 +359,16 @@ class Database {
             
             // Проверяем количество пользователей после обновления
             const userCount = await this.getUserCount();
-            console.log(`📊 REDEPLOY TEST - Количество пользователей в базе после обновления: ${userCount}`);
+            console.log(`📊  - Количество пользователей в базе после обновления: ${userCount}`);
             
             // Счетчик для статистики
             const backupCount = global.backupCount || 0;
             global.backupCount = backupCount + 1;
-            console.log(`📊 REDEPLOY TEST - Счетчик обновлений: ${global.backupCount}`);
+            console.log(`📊  - Счетчик обновлений: ${global.backupCount}`);
             
             return true;
         } catch (error) {
-            console.error('❌ REDEPLOY TEST - Ошибка обновления с резервным копированием:', error);
+            console.error('❌  - Ошибка обновления с резервным копированием:', error);
             throw error;
         }
     }
@@ -385,10 +385,10 @@ class Database {
             
             const emergencyPath = path.join(__dirname, 'emergency_backup.json');
             fs.writeFileSync(emergencyPath, JSON.stringify(emergencyData, null, 2));
-            console.log(`🚨 REDEPLOY TEST - Экстренная резервная копия создана: ${emergencyPath}`);
+            console.log(`🚨  - Экстренная резервная копия создана: ${emergencyPath}`);
             return emergencyPath;
         } catch (error) {
-            console.error('❌ REDEPLOY TEST - Ошибка создания экстренной резервной копии:', error);
+            console.error('❌  - Ошибка создания экстренной резервной копии:', error);
             throw error;
         }
     }
@@ -399,23 +399,23 @@ class Database {
             const emergencyPath = path.join(__dirname, 'emergency_backup.json');
             
             if (!fs.existsSync(emergencyPath)) {
-                console.log('🚨 REDEPLOY TEST - Экстренная резервная копия не найдена');
+                console.log('🚨  - Экстренная резервная копия не найдена');
                 return false;
             }
             
             const emergencyData = JSON.parse(fs.readFileSync(emergencyPath, 'utf8'));
-            console.log(`🚨 REDEPLOY TEST - Восстанавливаем из экстренной резервной копии от ${emergencyData.timestamp}`);
-            console.log(`🚨 REDEPLOY TEST - Пользователей в экстренной копии: ${emergencyData.users.length}`);
+            console.log(`🚨  - Восстанавливаем из экстренной резервной копии от ${emergencyData.timestamp}`);
+            console.log(`🚨  - Пользователей в экстренной копии: ${emergencyData.users.length}`);
             
             for (const user of emergencyData.users) {
-                console.log(`🔄 REDEPLOY TEST - Восстанавливаем пользователя: ${user.user_id} (${user.telegram_name})`);
+                console.log(`🔄  - Восстанавливаем пользователя: ${user.user_id} (${user.telegram_name})`);
                 await this.upsertUser(user.user_id, user.telegram_name, user.balance, user.inventory);
             }
             
-            console.log(`✅ REDEPLOY TEST - Восстановлено ${emergencyData.users.length} пользователей из экстренной копии`);
+            console.log(`✅  - Восстановлено ${emergencyData.users.length} пользователей из экстренной копии`);
             return true;
         } catch (error) {
-            console.error('❌ REDEPLOY TEST - Ошибка восстановления из экстренной резервной копии:', error);
+            console.error('❌  - Ошибка восстановления из экстренной резервной копии:', error);
             return false;
         }
     }
