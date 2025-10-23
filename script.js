@@ -238,7 +238,6 @@ function showAdminPanel() {
                 <div class="admin-section">
                     <h4>🔧 Система</h4>
                     <div class="admin-controls">
-                        <button onclick="refreshData()" class="admin-btn">🔄 Обновить данные</button>
                         <button onclick="deleteTestUsers()" class="admin-btn" style="background: #dc3545;">🗑️ Удалить тестовых пользователей</button>
                         <button onclick="clearAllData()" class="admin-btn">⚠️ Очистить все данные</button>
                     </div>
