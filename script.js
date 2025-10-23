@@ -2297,6 +2297,25 @@ async function saveUserData() {
 function validatePrizeClaim(prize, casePrice) {
     console.log(`🔍 VALIDATE_PRIZE: Проверяем законность получения приза ${prize.name}`);
     
+    // Проверяем, что приз уже есть в инвентаре (значит, он был добавлен законно)
+    const prizeInInventory = userInventory.some(item => 
+        item.id === prize.id || 
+        (item.name === prize.name && item.type === prize.type)
+    );
+    
+    if (prizeInInventory) {
+        console.log('✅ VALIDATE_PRIZE: Приз уже в инвентаре - получен законно');
+        return true;
+    }
+    
+    // Проверяем, что приз был добавлен автоматически в текущей сессии
+    if (prizeAutoAdded && currentPrize && 
+        (currentPrize.id === prize.id || 
+         (currentPrize.name === prize.name && currentPrize.type === prize.type))) {
+        console.log('✅ VALIDATE_PRIZE: Приз добавлен автоматически в текущей сессии - получен законно');
+        return true;
+    }
+    
     // Проверяем, что есть запись о потраченных звездах
     const starsSpent = localStorage.getItem('starsSpent');
     if (!starsSpent) {
