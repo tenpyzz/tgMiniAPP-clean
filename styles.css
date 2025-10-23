@@ -16,17 +16,21 @@
     --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.2);
 }
 
-/* Универсальные настройки для всех платформ */
+/* Универсальный CSS Reset для всех браузеров */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* Универсальные настройки для всех браузеров */
 html {
     -webkit-text-size-adjust: 100%;
     -ms-text-size-adjust: 100%;
     text-size-adjust: 100%;
-}
-
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
 }
 
 /* Универсальные настройки для всех устройств */
@@ -43,7 +47,7 @@ html {
     -o-user-drag: none;
 }
 
-/* Специальные настройки для обеспечения идентичности между браузером и Telegram WebApp */
+/* Принудительное ускорение для всех элементов */
 * {
     -webkit-transform: translateZ(0);
     transform: translateZ(0);
@@ -51,39 +55,36 @@ html {
     backface-visibility: hidden;
 }
 
-/* Универсальные стили для iOS Safari */
-* {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
-    -webkit-text-size-adjust: 100%;
-    -ms-text-size-adjust: 100%;
-    text-size-adjust: 100%;
+/* Разрешаем выделение текста для input и textarea */
+input, textarea {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
 }
 
-/* Специальные настройки для iOS */
-* {
-    -webkit-tap-highlight-color: transparent;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-    -webkit-user-drag: none;
-    -khtml-user-drag: none;
-    -moz-user-drag: none;
-    -o-user-drag: none;
+/* Специальные стили для разных устройств */
+.ios-device * {
+    -webkit-overflow-scrolling: touch;
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
 }
 
-/* Универсальные стили для всех устройств - iOS, Android, PC */
-html {
-    -webkit-text-size-adjust: 100%;
-    -ms-text-size-adjust: 100%;
-    text-size-adjust: 100%;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+.android-device * {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
 }
 
+.desktop-device * {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+}
+
+/* Универсальные стили для всех устройств */
 body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -221,6 +222,136 @@ body.reduced-motion *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+}
+
+/* Универсальные медиа-запросы для всех устройств */
+@media (max-width: 1200px) {
+    .app-container {
+        max-width: 100%;
+        padding: 0 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .header {
+        padding: 0.8rem 1rem;
+        min-height: 50px;
+    }
+    
+    .app-title {
+        font-size: 1.5rem;
+    }
+    
+    .stars-balance {
+        font-size: 1rem;
+    }
+    
+    .main-content {
+        padding: 0.8rem;
+        min-height: calc(100vh - 50px);
+    }
+    
+    .tab-btn {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.8rem;
+        min-height: 40px;
+    }
+    
+    .cases-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.8rem;
+    }
+    
+    .case-item {
+        padding: 0.8rem;
+        min-height: 100px;
+    }
+    
+    .case-image {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 0.3rem;
+    }
+    
+    .case-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+    }
+    
+    .case-item h3 {
+        font-size: 0.8rem;
+        margin-bottom: 0.2rem;
+    }
+    
+    .case-price {
+        font-size: 0.9rem;
+    }
+    
+    .case-description {
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .header {
+        padding: 0.6rem 0.8rem;
+        min-height: 45px;
+    }
+    
+    .app-title {
+        font-size: 1.3rem;
+    }
+    
+    .stars-balance {
+        font-size: 0.9rem;
+    }
+    
+    .main-content {
+        padding: 0.6rem;
+        min-height: calc(100vh - 45px);
+    }
+    
+    .tab-btn {
+        padding: 0.5rem 0.6rem;
+        font-size: 0.7rem;
+        min-height: 36px;
+    }
+    
+    .cases-grid {
+        grid-template-columns: 1fr;
+        gap: 0.6rem;
+    }
+    
+    .case-item {
+        padding: 0.6rem;
+        min-height: 90px;
+    }
+    
+    .case-image {
+        width: 50px;
+        height: 50px;
+        margin-bottom: 0.2rem;
+    }
+    
+    .case-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+    
+    .case-item h3 {
+        font-size: 0.7rem;
+        margin-bottom: 0.1rem;
+    }
+    
+    .case-price {
+        font-size: 0.8rem;
+    }
+    
+    .case-description {
+        font-size: 0.6rem;
+    }
 }
 
 .app-container {
@@ -1028,7 +1159,7 @@ body.reduced-motion *::after {
     }
 }
 
-/* ПЛАВНЫЕ АНИМАЦИИ ПРОКРУТКИ ПРИЗОВ - ПРИНУДИТЕЛЬНЫЕ ИСПРАВЛЕНИЯ */
+/* УНИВЕРСАЛЬНЫЕ АНИМАЦИИ ДЛЯ ВСЕХ УСТРОЙСТВ */
 .prize-strip {
     position: absolute !important;
     top: 0 !important;
@@ -1045,6 +1176,100 @@ body.reduced-motion *::after {
     backface-visibility: hidden !important;
     -webkit-perspective: 1000px !important;
     perspective: 1000px !important;
+}
+
+/* Универсальные стили для всех анимированных элементов */
+.prize-item,
+.case-item,
+.inventory-item,
+.shop-item,
+.tab-btn,
+.buy-btn {
+    -webkit-transform: translateZ(0) !important;
+    transform: translateZ(0) !important;
+    -webkit-backface-visibility: hidden !important;
+    backface-visibility: hidden !important;
+    -webkit-transition: all 0.3s ease !important;
+    transition: all 0.3s ease !important;
+}
+
+/* Специальные настройки для iOS */
+.ios-device .prize-strip,
+.ios-device .prize-item,
+.ios-device .case-item,
+.ios-device .inventory-item,
+.ios-device .shop-item {
+    -webkit-transform: translate3d(0, 0, 0) !important;
+    transform: translate3d(0, 0, 0) !important;
+    -webkit-overflow-scrolling: touch !important;
+}
+
+/* Специальные настройки для Android */
+.android-device .prize-strip,
+.android-device .prize-item,
+.android-device .case-item,
+.android-device .inventory-item,
+.android-device .shop-item {
+    -webkit-transform: translateZ(0) !important;
+    transform: translateZ(0) !important;
+    -webkit-backface-visibility: hidden !important;
+    backface-visibility: hidden !important;
+}
+
+/* Специальные настройки для Desktop */
+.desktop-device .prize-strip,
+.desktop-device .prize-item,
+.desktop-device .case-item,
+.desktop-device .inventory-item,
+.desktop-device .shop-item {
+    -webkit-transform: translateZ(0) !important;
+    transform: translateZ(0) !important;
+    -webkit-backface-visibility: hidden !important;
+    backface-visibility: hidden !important;
+}
+
+/* Стили для низкопроизводительных устройств */
+.low-performance * {
+    -webkit-animation-duration: 0.3s !important;
+    animation-duration: 0.3s !important;
+    -webkit-transition-duration: 0.2s !important;
+    transition-duration: 0.2s !important;
+}
+
+.low-performance .prize-strip {
+    -webkit-animation-duration: 0.1s !important;
+    animation-duration: 0.1s !important;
+}
+
+.low-performance .case-icon,
+.low-performance .prize-icon {
+    -webkit-animation: none !important;
+    animation: none !important;
+}
+
+/* Стили для браузеров без поддержки backdrop-filter */
+.no-backdrop-filter .case-item,
+.no-backdrop-filter .inventory-item,
+.no-backdrop-filter .shop-item,
+.no-backdrop-filter .header {
+    background: rgba(240, 248, 255, 0.98) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* Стили для браузеров без поддержки CSS Grid */
+.no-css-grid .cases-grid,
+.no-css-grid .inventory-grid,
+.no-css-grid .shop-items {
+    display: flex !important;
+    flex-wrap: wrap !important;
+}
+
+.no-css-grid .case-item,
+.no-css-grid .inventory-item,
+.no-css-grid .shop-item {
+    flex: 1 1 calc(50% - 0.5rem) !important;
+    margin: 0.25rem !important;
 }
 
 .prize-strip.scrolling {

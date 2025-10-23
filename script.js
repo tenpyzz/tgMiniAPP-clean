@@ -513,14 +513,47 @@ function startDataSync() {
 }
 
 // Инициализация приложения
-document.addEventListener('DOMContentLoaded', async function() {
-    console.log('Приложение загружено');
+// Универсальная функция детекции устройств
+function detectDevice() {
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+    const isIOS = /iphone|ipad|ipod/i.test(userAgent);
+    const isAndroid = /android/i.test(userAgent);
+    const isSafari = /safari/i.test(userAgent) && !/chrome/i.test(userAgent);
+    const isChrome = /chrome/i.test(userAgent);
+    const isFirefox = /firefox/i.test(userAgent);
+    const isEdge = /edge/i.test(userAgent);
+    const isOpera = /opera/i.test(userAgent);
     
-    // Универсальные настройки для всех устройств
-    console.log('🌐 Применяем универсальные настройки для всех устройств');
-    
-    // Отключаем зум на двойной тап для всех устройств
+    return {
+        isMobile,
+        isIOS,
+        isAndroid,
+        isSafari,
+        isChrome,
+        isFirefox,
+        isEdge,
+        isOpera,
+        isDesktop: !isMobile,
+        screenWidth: window.innerWidth,
+        screenHeight: window.innerHeight,
+        devicePixelRatio: window.devicePixelRatio || 1
+    };
+}
+
+// Универсальная функция настройки viewport
+function setupViewport() {
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport) {
+        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no');
+    }
+}
+
+// Универсальная функция настройки touch событий
+function setupTouchEvents() {
     let lastTouchEnd = 0;
+    
+    // Отключаем зум на двойной тап
     document.addEventListener('touchend', function (event) {
         const now = (new Date()).getTime();
         if (now - lastTouchEnd <= 300) {
@@ -536,6 +569,80 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
         e.preventDefault();
     }, { passive: false });
+    
+    // Отключение жестов масштабирования
+    document.addEventListener('gesturestart', function (e) {
+        e.preventDefault();
+    });
+    
+    document.addEventListener('gesturechange', function (e) {
+        e.preventDefault();
+    });
+    
+    document.addEventListener('gestureend', function (e) {
+        e.preventDefault();
+    });
+}
+
+// Универсальная функция настройки анимаций
+function setupAnimations(deviceInfo) {
+    // Принудительное ускорение для всех браузеров
+    document.body.style.webkitTransform = 'translateZ(0)';
+    document.body.style.transform = 'translateZ(0)';
+    document.body.style.webkitBackfaceVisibility = 'hidden';
+    document.body.style.backfaceVisibility = 'hidden';
+    
+    // Специальные настройки для iOS Safari
+    if (deviceInfo.isIOS && deviceInfo.isSafari) {
+        document.body.style.webkitOverflowScrolling = 'touch';
+        document.body.style.webkitTransform = 'translate3d(0, 0, 0)';
+        document.body.style.transform = 'translate3d(0, 0, 0)';
+    }
+    
+    // Специальные настройки для Android Chrome
+    if (deviceInfo.isAndroid && deviceInfo.isChrome) {
+        document.body.style.webkitTransform = 'translateZ(0)';
+        document.body.style.transform = 'translateZ(0)';
+    }
+    
+    // Принудительное ускорение для анимированных элементов
+    const animatedElements = [
+        'prize-strip',
+        'prize-item',
+        'case-item',
+        'inventory-item',
+        'shop-item'
+    ];
+    
+    animatedElements.forEach(selector => {
+        const elements = document.querySelectorAll(`.${selector}`);
+        elements.forEach(el => {
+            el.style.webkitTransform = 'translateZ(0)';
+            el.style.transform = 'translateZ(0)';
+            el.style.webkitBackfaceVisibility = 'hidden';
+            el.style.backfaceVisibility = 'hidden';
+        });
+    });
+}
+
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('Приложение загружено');
+    
+    // Используем менеджер совместимости
+    const deviceInfo = compatibilityManager.getDeviceInfo();
+    console.log('🔍 Информация об устройстве:', deviceInfo);
+    
+    // Оптимизация производительности
+    compatibilityManager.optimizePerformance();
+    
+    // Проверяем поддержку функций
+    console.log('🔧 Поддержка функций:', {
+        'backdrop-filter': compatibilityManager.supportsFeature('backdrop-filter'),
+        'css-grid': compatibilityManager.supportsFeature('css-grid'),
+        'flexbox': compatibilityManager.supportsFeature('flexbox'),
+        'touch': compatibilityManager.supportsFeature('touch'),
+        'webgl': compatibilityManager.supportsFeature('webgl')
+    });
     
     // Инициализация Telegram WebApp
     if (tg) {
@@ -581,42 +688,15 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         });
         
-        // Настройка viewport для мобильных устройств
-        const viewport = document.querySelector('meta[name="viewport"]');
-        if (viewport) {
-            viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
-        }
-        
-        // Отключение масштабирования на мобильных
-        document.addEventListener('gesturestart', function (e) {
-            e.preventDefault();
-        });
-        
-        document.addEventListener('gesturechange', function (e) {
-            e.preventDefault();
-        });
-        
-        document.addEventListener('gestureend', function (e) {
-            e.preventDefault();
-        });
-        
-        // Предотвращение двойного тапа для масштабирования
-        let lastTouchEnd = 0;
-        document.addEventListener('touchend', function (event) {
-            const now = (new Date()).getTime();
-            if (now - lastTouchEnd <= 300) {
-                event.preventDefault();
-            }
-            lastTouchEnd = now;
-        }, false);
-        
         // Оптимизация для мобильных устройств
-        if (window.innerWidth <= 768) {
+        if (deviceInfo.isMobile) {
             // Отключаем hover эффекты на мобильных
             document.body.classList.add('mobile-device');
             
-            // Упрощаем анимации
-            document.body.classList.add('reduced-motion');
+            // Упрощаем анимации на слабых устройствах
+            if (deviceInfo.screenWidth <= 480 || deviceInfo.devicePixelRatio < 2) {
+                document.body.classList.add('reduced-motion');
+            }
         }
         tg.expand();
         
