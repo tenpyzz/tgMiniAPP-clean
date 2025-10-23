@@ -628,21 +628,51 @@ function setupAnimations(deviceInfo) {
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('Приложение загружено');
     
-    // Используем менеджер совместимости
-    const deviceInfo = compatibilityManager.getDeviceInfo();
-    console.log('🔍 Информация об устройстве:', deviceInfo);
-    
-    // Оптимизация производительности
-    compatibilityManager.optimizePerformance();
-    
-    // Проверяем поддержку функций
-    console.log('🔧 Поддержка функций:', {
-        'backdrop-filter': compatibilityManager.supportsFeature('backdrop-filter'),
-        'css-grid': compatibilityManager.supportsFeature('css-grid'),
-        'flexbox': compatibilityManager.supportsFeature('flexbox'),
-        'touch': compatibilityManager.supportsFeature('touch'),
-        'webgl': compatibilityManager.supportsFeature('webgl')
-    });
+    // Используем менеджер совместимости (если доступен)
+    let deviceInfo;
+    if (typeof compatibilityManager !== 'undefined') {
+        deviceInfo = compatibilityManager.getDeviceInfo();
+        console.log('🔍 Информация об устройстве:', deviceInfo);
+        
+        // Оптимизация производительности
+        compatibilityManager.optimizePerformance();
+        
+        // Проверяем поддержку функций
+        console.log('🔧 Поддержка функций:', {
+            'backdrop-filter': compatibilityManager.supportsFeature('backdrop-filter'),
+            'css-grid': compatibilityManager.supportsFeature('css-grid'),
+            'flexbox': compatibilityManager.supportsFeature('flexbox'),
+            'touch': compatibilityManager.supportsFeature('touch'),
+            'webgl': compatibilityManager.supportsFeature('webgl')
+        });
+    } else {
+        // Fallback: используем старую систему детекции
+        deviceInfo = detectDevice();
+        console.log('🔍 Информация об устройстве (fallback):', deviceInfo);
+        
+        // Применяем классы для устройства
+        if (deviceInfo.isMobile) {
+            document.body.classList.add('mobile-device');
+        }
+        if (deviceInfo.isIOS) {
+            document.body.classList.add('ios-device');
+        }
+        if (deviceInfo.isAndroid) {
+            document.body.classList.add('android-device');
+        }
+        if (deviceInfo.isDesktop) {
+            document.body.classList.add('desktop-device');
+        }
+        
+        // Настройка viewport для всех устройств
+        setupViewport();
+        
+        // Настройка touch событий
+        setupTouchEvents();
+        
+        // Настройка анимаций
+        setupAnimations(deviceInfo);
+    }
     
     // Инициализация Telegram WebApp
     if (tg) {
