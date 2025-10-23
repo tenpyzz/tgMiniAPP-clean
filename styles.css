@@ -67,6 +67,49 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
+/* Автоматическая темная тема на основе системных настроек */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --text-primary: #ffffff;
+        --text-secondary: #cccccc;
+        --light-bg: #2a2a2a;
+        --border-color: #444;
+    }
+    
+    .case-item,
+    .inventory-item,
+    .shop-item {
+        background: rgba(42, 42, 42, 0.9);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+        backdrop-filter: blur(10px);
+    }
+    
+    .modal-content {
+        background: rgba(42, 42, 42, 0.95);
+        color: var(--text-primary);
+        backdrop-filter: blur(15px);
+        border: 1px solid var(--border-color);
+    }
+    
+    .prize-container {
+        background: linear-gradient(135deg, rgba(42, 42, 42, 0.9), rgba(42, 42, 42, 0.8));
+        color: var(--text-primary);
+        backdrop-filter: blur(15px);
+        border: 2px solid rgba(255, 215, 0, 0.3);
+    }
+    
+    .tab-navigation {
+        background: rgba(42, 42, 42, 0.1);
+        backdrop-filter: blur(10px);
+    }
+    
+    .header {
+        background: rgba(42, 42, 42, 0.95);
+        color: var(--text-primary);
+    }
+}
+
 /* Темная тема для Telegram */
 body.dark-theme {
     --text-primary: #ffffff;
@@ -83,14 +126,29 @@ body.dark-theme .header {
 body.dark-theme .case-item,
 body.dark-theme .inventory-item,
 body.dark-theme .shop-item {
-    background: var(--light-bg);
+    background: rgba(42, 42, 42, 0.9);
     color: var(--text-primary);
     border: 1px solid var(--border-color);
+    backdrop-filter: blur(10px);
 }
 
 body.dark-theme .modal-content {
-    background: var(--light-bg);
+    background: rgba(42, 42, 42, 0.95);
     color: var(--text-primary);
+    backdrop-filter: blur(15px);
+    border: 1px solid var(--border-color);
+}
+
+body.dark-theme .prize-container {
+    background: linear-gradient(135deg, rgba(42, 42, 42, 0.9), rgba(42, 42, 42, 0.8));
+    color: var(--text-primary);
+    backdrop-filter: blur(15px);
+    border: 2px solid rgba(255, 215, 0, 0.3);
+}
+
+body.dark-theme .tab-navigation {
+    background: rgba(42, 42, 42, 0.1);
+    backdrop-filter: blur(10px);
 }
 
 /* Мобильные устройства */
@@ -257,7 +315,8 @@ body.reduced-motion *::after {
 }
 
 .case-item {
-    background: white;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
     border-radius: 15px;
     padding: 1rem;
     text-align: center;
@@ -274,6 +333,7 @@ body.reduced-motion *::after {
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
     user-select: none;
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .case-item:hover {
@@ -1509,8 +1569,8 @@ body.case-opening {
 }
 
 .prize-container {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.9));
-    backdrop-filter: blur(10px);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.8));
+    backdrop-filter: blur(15px);
     border-radius: 25px;
     padding: 2.5rem;
     box-shadow: 
@@ -1621,7 +1681,8 @@ body.case-opening {
 }
 
 .inventory-item {
-    background: white;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
     border-radius: 15px;
     padding: 1rem;
     text-align: center;
@@ -1634,6 +1695,7 @@ body.case-opening {
     align-items: center;
     min-height: 120px;
     max-height: 120px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .inventory-item:hover {
@@ -1689,12 +1751,14 @@ body.case-opening {
 }
 
 .shop-item {
-    background: white;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
     border-radius: 15px;
     padding: 1.5rem;
     text-align: center;
     box-shadow: var(--shadow);
     transition: transform 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .shop-item:hover {
@@ -1836,7 +1900,8 @@ body.case-opening {
 }
 
 .modal-content {
-    background: white;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
     border-radius: 20px;
     padding: 2rem;
     max-width: 500px;
@@ -1849,6 +1914,7 @@ body.case-opening {
     pointer-events: auto;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .prize-modal.show .modal-content {
