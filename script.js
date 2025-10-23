@@ -251,10 +251,12 @@ async function openCase(caseType, price) {
         }
 
         isOpening = true;
-        showOpeningAnimation();
-
-        // Генерируем приз
+        
+        // Генерируем приз заранее
         const prize = generateCasePrize();
+        
+        // Запускаем анимацию и ждем её завершения
+        const animatedPrize = await showOpeningAnimation(caseType);
         
         // Отправляем запрос на сервер
         const result = await apiRequest('/api/case/open', {
@@ -397,11 +399,25 @@ function switchTab(tabName) {
 }
 
 // Показ анимации открытия
-function showOpeningAnimation() {
+async function showOpeningAnimation(caseType) {
     const openingArea = document.getElementById('opening-area');
     if (openingArea) {
         openingArea.style.display = 'block';
+        
+        // Импортируем и запускаем анимацию
+        try {
+            const { caseAnimation } = await import('./src/utils/caseAnimation.js');
+            return new Promise((resolve) => {
+                caseAnimation.startAnimation(caseType, (prize) => {
+                    resolve(prize);
+                });
+            });
+        } catch (error) {
+            console.error('Ошибка загрузки анимации:', error);
+            return null;
+        }
     }
+    return null;
 }
 
 // Скрытие анимации открытия
@@ -409,6 +425,11 @@ function hideOpeningAnimation() {
     const openingArea = document.getElementById('opening-area');
     if (openingArea) {
         openingArea.style.display = 'none';
+    }
+    
+    // Сбрасываем анимацию
+    if (window.caseAnimation) {
+        window.caseAnimation.reset();
     }
 }
 
@@ -574,7 +595,13 @@ async function initApp() {
 // Запуск при загрузке страницы
 document.addEventListener('DOMContentLoaded', initApp);
 
+// Выход из полноэкранного режима
+function exitFullscreenMode() {
+    hideOpeningAnimation();
+}
+
 // Экспорт функций для глобального доступа
 window.openCase = openCase;
 window.buyStars = buyStars;
 window.switchTab = switchTab;
+window.exitFullscreenMode = exitFullscreenMode;

@@ -184,8 +184,8 @@ class TelegramMiniApp {
                 return;
             }
 
-            // Показываем анимацию открытия
-            this.showOpeningAnimation();
+            // Запускаем анимацию и ждем её завершения
+            const animatedPrize = await this.showOpeningAnimation(caseType);
 
             // Открываем кейс
             const result = await caseManager.openCase(caseType, price);
@@ -308,11 +308,25 @@ class TelegramMiniApp {
     /**
      * Показ анимации открытия
      */
-    showOpeningAnimation() {
+    async showOpeningAnimation(caseType) {
         const openingArea = document.getElementById('opening-area');
         if (openingArea) {
             openingArea.style.display = 'block';
+            
+            // Импортируем и запускаем анимацию
+            try {
+                const { caseAnimation } = await import('./utils/caseAnimation.js');
+                return new Promise((resolve) => {
+                    caseAnimation.startAnimation(caseType, (prize) => {
+                        resolve(prize);
+                    });
+                });
+            } catch (error) {
+                console.error('Ошибка загрузки анимации:', error);
+                return null;
+            }
         }
+        return null;
     }
 
     /**
@@ -322,6 +336,11 @@ class TelegramMiniApp {
         const openingArea = document.getElementById('opening-area');
         if (openingArea) {
             openingArea.style.display = 'none';
+        }
+        
+        // Сбрасываем анимацию
+        if (window.caseAnimation) {
+            window.caseAnimation.reset();
         }
     }
 
