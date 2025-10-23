@@ -1082,7 +1082,7 @@ async function showCaseOpeningAnimation(caseType) {
     return winningPrize;
 }
 
-// Новая функция для CS2 анимации прокрутки призов
+// Улучшенная функция для плавной CS2 анимации прокрутки призов
 async function startCS2PrizeAnimation(caseType) {
     const prizeStrip = document.getElementById('prize-strip');
     const config = caseConfig[caseType];
@@ -1093,11 +1093,12 @@ async function startCS2PrizeAnimation(caseType) {
     
     // Очищаем полоску
     prizeStrip.innerHTML = '';
+    prizeStrip.className = 'prize-strip'; // Сбрасываем все классы
     
     // Создаем массив призов для анимации (много повторений для плавной прокрутки)
     const animationPrizes = [];
-    // Уменьшаем количество призов на мобильных для лучшей производительности
-    const totalPrizes = isMobile ? 30 : 50;
+    // Увеличиваем количество призов для более плавной анимации
+    const totalPrizes = isMobile ? 40 : 60;
     
     for (let i = 0; i < totalPrizes; i++) {
         // Случайно выбираем приз из доступных
@@ -1115,34 +1116,53 @@ async function startCS2PrizeAnimation(caseType) {
         prizeStrip.appendChild(prizeElement);
     });
     
-    // Запускаем анимацию прокрутки
+    // Этап 1: Быстрая прокрутка
     prizeStrip.classList.add('scrolling');
     showSoundEffect('🎰 Призы крутятся...');
     
-    // Уменьшаем время анимации на мобильных устройствах
-    const scrollTime = isMobile ? 1500 : 2000;
-    const slowTime = isMobile ? 1500 : 2000;
+    // Быстрая прокрутка
+    const fastScrollTime = isMobile ? 1500 : 2000;
+    await new Promise(resolve => setTimeout(resolve, fastScrollTime));
     
-    // Прокручиваем
-    await new Promise(resolve => setTimeout(resolve, scrollTime));
-    
-    // Замедляем анимацию
+    // Этап 2: Подготовка к замедлению
     prizeStrip.classList.remove('scrolling');
+    prizeStrip.classList.add('preparing-slow');
+    showSoundEffect('⏳ Подготовка к замедлению...');
+    
+    const preparingTime = isMobile ? 800 : 1000;
+    await new Promise(resolve => setTimeout(resolve, preparingTime));
+    
+    // Этап 3: Начало замедления
+    prizeStrip.classList.remove('preparing-slow');
+    prizeStrip.classList.add('starting-slow');
+    showSoundEffect('⏳ Начало замедления...');
+    
+    const startingSlowTime = isMobile ? 600 : 800;
+    await new Promise(resolve => setTimeout(resolve, startingSlowTime));
+    
+    // Этап 4: Полное замедление
+    prizeStrip.classList.remove('starting-slow');
     prizeStrip.classList.add('slowing');
     showSoundEffect('⏳ Замедление...');
     
-    // Ждем завершения замедления
+    // Время полного замедления
+    const slowTime = isMobile ? 1500 : 2000;
     await new Promise(resolve => setTimeout(resolve, slowTime));
     
-    // Останавливаем на выигрышном призе
+    // Этап 5: Остановка на выигрышном призе
     const winningElement = prizeStrip.children[prizeStrip.children.length - 1];
     winningElement.classList.add('selected');
     showSoundEffect('🎯 Остановка на призе!');
     
-    // Эффект взрыва для выигрышного приза
+    // Пауза для эффекта выбора
     await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Этап 6: Эффект взрыва для выигрышного приза
     winningElement.classList.add('winner');
     showSoundEffect('💥 ПОБЕДА!');
+    
+    // Пауза для завершения анимации взрыва
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     // Возвращаем выигрышный приз для дальнейшего использования
     return winningPrize;
