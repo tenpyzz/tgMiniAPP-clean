@@ -813,6 +813,7 @@ async function openCase(caseType, price) {
         console.log('🎁 Генерируем приз перед списанием денег...');
         const prize = generatePrize(caseType);
         currentPrize = prize;
+        console.log('🎁 Приз сгенерирован:', prize);
         
         // 2. Списываем звезды
         userStars -= price;
@@ -846,8 +847,18 @@ async function openCase(caseType, price) {
         
         // 5. Сохраняем ВСЕ данные на сервер атомарно через безопасный эндпоинт
         console.log('💾 Сохраняем данные на сервер через безопасный эндпоинт...');
-        await saveCaseOpening(user_id, caseType, price, prize);
-        console.log(`✅ Данные сохранены на сервер: ${userStars} звезд, приз добавлен`);
+        const userId = getUserId();
+        console.log('🆔 UserId для сохранения:', userId);
+        
+        try {
+            await saveCaseOpening(userId, caseType, price, prize);
+            console.log(`✅ Данные сохранены на сервер через безопасный эндпоинт: ${userStars} звезд, приз добавлен`);
+        } catch (error) {
+            console.warn('⚠️ Безопасный эндпоинт не работает, используем fallback:', error);
+            // Fallback: используем старый метод сохранения
+            await saveUserData();
+            console.log(`✅ Данные сохранены на сервер через fallback: ${userStars} звезд, приз добавлен`);
+        }
         
         // 6. Показываем анимацию открытия кейса
         await showCaseOpeningAnimation(caseType);
@@ -2541,6 +2552,12 @@ function setupExitProtection() {
 async function saveCaseOpening(userId, caseType, price, prize) {
     try {
         console.log(`💾 SAVE_CASE_OPENING: Сохраняем открытие кейса ${caseType} для пользователя ${userId}`);
+        console.log(`💾 SAVE_CASE_OPENING: Данные запроса:`, {
+            user_id: userId,
+            case_type: caseType,
+            price: price,
+            prize: prize
+        });
         
         const response = await fetch('/api/case/open', {
             method: 'POST',
@@ -2551,12 +2568,16 @@ async function saveCaseOpening(userId, caseType, price, prize) {
                 user_id: userId,
                 case_type: caseType,
                 price: price,
-                prize: prize
+                prize: prize,
+                init_data: tg?.initData || ''
             })
         });
         
+        console.log(`💾 SAVE_CASE_OPENING: Ответ сервера:`, response.status, response.statusText);
+        
         if (!response.ok) {
             const errorData = await response.json();
+            console.error('❌ SAVE_CASE_OPENING: Ошибка сервера:', errorData);
             throw new Error(errorData.message || 'Ошибка сохранения открытия кейса');
         }
         
@@ -2815,6 +2836,27 @@ window.cancelCaseOpening = function() {
 window.userStars = userStars;
 window.userInventory = userInventory;
 window.openCase = openCase;
+
+// Функция для тестирования открытия кейсов
+window.testCaseOpening = function(caseType = 'bronze', price = 10) {
+    console.log('🧪 ТЕСТ: Тестируем открытие кейса', caseType, 'за', price, 'звезд');
+    console.log('🧪 ТЕСТ: Текущий баланс:', userStars);
+    console.log('🧪 ТЕСТ: UserId:', getUserId());
+    console.log('🧪 ТЕСТ: Telegram данные:', {
+        initData: tg?.initData,
+        initDataUnsafe: tg?.initDataUnsafe,
+        user: tg?.initDataUnsafe?.user
+    });
+    
+    if (userStars < price) {
+        console.log('❌ ТЕСТ: Недостаточно звезд для тестирования');
+        return false;
+    }
+    
+    // Вызываем функцию открытия кейса
+    openCase(caseType, price);
+    return true;
+};
 window.addStars = function(amount) {
     userStars += amount;
     updateStarsDisplay();
