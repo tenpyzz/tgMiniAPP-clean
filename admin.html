@@ -171,6 +171,163 @@
             transform: translateY(-2px);
         }
 
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.4rem 0.8rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-edit {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #1976D2;
+        }
+
+        .btn-delete {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #d32f2f;
+        }
+
+        .btn-add-balance {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-add-balance:hover {
+            background: #388E3C;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+        }
+
+        .btn-save {
+            background: #4CAF50;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .btn-cancel {
+            background: #f44336;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .page-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid #ddd;
+            background: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .page-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .page-btn:hover:not(.active) {
+            background: #f5f5f5;
+        }
+
         @media (max-width: 768px) {
             .admin-container {
                 padding: 1rem;
@@ -232,6 +389,8 @@
                 <button class="refresh-btn" onclick="loadStats()">🔄 Обновить</button>
             </div>
             
+            <input type="text" id="search-box" class="search-box" placeholder="Поиск по имени или ID..." onkeyup="filterUsers()">
+            
             <div id="loading" class="loading">
                 Загрузка данных...
             </div>
@@ -247,37 +406,100 @@
                         <th>Предметы</th>
                         <th>Создан</th>
                         <th>Обновлен</th>
+                        <th>Действия</th>
                     </tr>
                 </thead>
                 <tbody id="users-tbody">
                 </tbody>
             </table>
+            
+            <div class="pagination" id="pagination" style="display: none;">
+            </div>
+        </div>
+
+        <!-- Модальное окно для редактирования пользователя -->
+        <div id="editModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Редактировать пользователя</h3>
+                    <span class="close" onclick="closeModal()">&times;</span>
+                </div>
+                <div class="form-group">
+                    <label>ID пользователя:</label>
+                    <input type="text" id="edit-user-id" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Имя в Telegram:</label>
+                    <input type="text" id="edit-user-name">
+                </div>
+                <div class="form-group">
+                    <label>Баланс звезд:</label>
+                    <input type="number" id="edit-user-balance" min="0">
+                </div>
+                <div class="modal-buttons">
+                    <button class="btn-save" onclick="saveUser()">Сохранить</button>
+                    <button class="btn-cancel" onclick="closeModal()">Отмена</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модальное окно для добавления баланса -->
+        <div id="addBalanceModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Добавить звезды</h3>
+                    <span class="close" onclick="closeAddBalanceModal()">&times;</span>
+                </div>
+                <div class="form-group">
+                    <label>ID пользователя:</label>
+                    <input type="text" id="add-balance-user-id" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Количество звезд для добавления:</label>
+                    <input type="number" id="add-balance-amount" min="1" value="100">
+                </div>
+                <div class="modal-buttons">
+                    <button class="btn-save" onclick="addBalance()">Добавить</button>
+                    <button class="btn-cancel" onclick="closeAddBalanceModal()">Отмена</button>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
         let currentStats = null;
+        let allUsers = [];
+        let filteredUsers = [];
+        let currentPage = 1;
+        const usersPerPage = 10;
 
         async function loadStats() {
             const loading = document.getElementById('loading');
             const error = document.getElementById('error');
             const usersTable = document.getElementById('users-table');
+            const pagination = document.getElementById('pagination');
             
             loading.style.display = 'block';
             error.style.display = 'none';
             usersTable.style.display = 'none';
+            pagination.style.display = 'none';
 
             try {
                 const response = await fetch('/api/admin/stats');
                 const data = await response.json();
 
-                if (data.success) {
+                if (data.success || data.total_users !== undefined) {
                     currentStats = data;
+                    allUsers = data.users || [];
+                    filteredUsers = [...allUsers];
+                    
                     updateStatsDisplay(data);
-                    updateUsersTable(data.users);
+                    updateUsersTable();
+                    updatePagination();
                     
                     loading.style.display = 'none';
                     usersTable.style.display = 'table';
+                    pagination.style.display = 'flex';
                 } else {
                     throw new Error(data.error || 'Ошибка загрузки данных');
                 }
@@ -297,16 +519,20 @@
             document.getElementById('total-items').textContent = stats.total_inventory_items || 0;
         }
 
-        function updateUsersTable(users) {
+        function updateUsersTable() {
             const tbody = document.getElementById('users-tbody');
             tbody.innerHTML = '';
 
-            if (!users || users.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #666;">Пользователи не найдены</td></tr>';
+            const startIndex = (currentPage - 1) * usersPerPage;
+            const endIndex = startIndex + usersPerPage;
+            const pageUsers = filteredUsers.slice(startIndex, endIndex);
+
+            if (!pageUsers || pageUsers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #666;">Пользователи не найдены</td></tr>';
                 return;
             }
 
-            users.forEach(user => {
+            pageUsers.forEach(user => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${user.user_id}</td>
@@ -315,9 +541,179 @@
                     <td class="user-inventory">${user.inventory_count || 0} предметов</td>
                     <td>${user.created_at ? new Date(user.created_at).toLocaleDateString('ru-RU') : 'Неизвестно'}</td>
                     <td>${user.updated_at ? new Date(user.updated_at).toLocaleDateString('ru-RU') : 'Неизвестно'}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-edit" onclick="editUser('${user.user_id}', '${user.telegram_name || ''}', ${user.balance || 0})">✏️</button>
+                            <button class="btn btn-add-balance" onclick="openAddBalanceModal('${user.user_id}')">➕</button>
+                        </div>
+                    </td>
                 `;
                 tbody.appendChild(row);
             });
+        }
+
+        function updatePagination() {
+            const pagination = document.getElementById('pagination');
+            const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+            
+            if (totalPages <= 1) {
+                pagination.style.display = 'none';
+                return;
+            }
+
+            pagination.innerHTML = '';
+            
+            // Кнопка "Предыдущая"
+            const prevBtn = document.createElement('button');
+            prevBtn.textContent = '←';
+            prevBtn.className = 'page-btn';
+            prevBtn.disabled = currentPage === 1;
+            prevBtn.onclick = () => changePage(currentPage - 1);
+            pagination.appendChild(prevBtn);
+
+            // Номера страниц
+            for (let i = 1; i <= totalPages; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.textContent = i;
+                pageBtn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+                pageBtn.onclick = () => changePage(i);
+                pagination.appendChild(pageBtn);
+            }
+
+            // Кнопка "Следующая"
+            const nextBtn = document.createElement('button');
+            nextBtn.textContent = '→';
+            nextBtn.className = 'page-btn';
+            nextBtn.disabled = currentPage === totalPages;
+            nextBtn.onclick = () => changePage(currentPage + 1);
+            pagination.appendChild(nextBtn);
+        }
+
+        function changePage(page) {
+            const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+            if (page < 1 || page > totalPages) return;
+            
+            currentPage = page;
+            updateUsersTable();
+            updatePagination();
+        }
+
+        function filterUsers() {
+            const searchTerm = document.getElementById('search-box').value.toLowerCase();
+            filteredUsers = allUsers.filter(user => 
+                user.user_id.toLowerCase().includes(searchTerm) ||
+                (user.telegram_name && user.telegram_name.toLowerCase().includes(searchTerm))
+            );
+            currentPage = 1;
+            updateUsersTable();
+            updatePagination();
+        }
+
+        function editUser(userId, userName, balance) {
+            document.getElementById('edit-user-id').value = userId;
+            document.getElementById('edit-user-name').value = userName;
+            document.getElementById('edit-user-balance').value = balance;
+            document.getElementById('editModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        function openAddBalanceModal(userId) {
+            document.getElementById('add-balance-user-id').value = userId;
+            document.getElementById('add-balance-amount').value = 100;
+            document.getElementById('addBalanceModal').style.display = 'block';
+        }
+
+        function closeAddBalanceModal() {
+            document.getElementById('addBalanceModal').style.display = 'none';
+        }
+
+        async function saveUser() {
+            const userId = document.getElementById('edit-user-id').value;
+            const userName = document.getElementById('edit-user-name').value;
+            const balance = parseInt(document.getElementById('edit-user-balance').value);
+
+            if (!userId || balance < 0) {
+                alert('Пожалуйста, заполните все поля корректно');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/users/${userId}/balance`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        balance: balance,
+                        user_id: '1165123437' // Админ ID
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('Пользователь успешно обновлен!');
+                    closeModal();
+                    loadStats(); // Перезагружаем данные
+                } else {
+                    alert('Ошибка обновления: ' + (result.message || result.error));
+                }
+            } catch (error) {
+                console.error('Ошибка сохранения пользователя:', error);
+                alert('Ошибка сохранения пользователя: ' + error.message);
+            }
+        }
+
+        async function addBalance() {
+            const userId = document.getElementById('add-balance-user-id').value;
+            const amount = parseInt(document.getElementById('add-balance-amount').value);
+
+            if (!userId || amount <= 0) {
+                alert('Пожалуйста, введите корректное количество звезд');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/users/${userId}/add-balance`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        amount: amount,
+                        user_id: '1165123437' // Админ ID
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(`Успешно добавлено ${amount} звезд! Новый баланс: ${result.newBalance}`);
+                    closeAddBalanceModal();
+                    loadStats(); // Перезагружаем данные
+                } else {
+                    alert('Ошибка добавления баланса: ' + (result.message || result.error));
+                }
+            } catch (error) {
+                console.error('Ошибка добавления баланса:', error);
+                alert('Ошибка добавления баланса: ' + error.message);
+            }
+        }
+
+        // Закрытие модальных окон при клике вне их
+        window.onclick = function(event) {
+            const editModal = document.getElementById('editModal');
+            const addBalanceModal = document.getElementById('addBalanceModal');
+            
+            if (event.target === editModal) {
+                closeModal();
+            }
+            if (event.target === addBalanceModal) {
+                closeAddBalanceModal();
+            }
         }
 
         // Автоматическое обновление каждые 30 секунд

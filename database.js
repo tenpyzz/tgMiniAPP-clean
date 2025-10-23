@@ -1,6 +1,11 @@
-const { Pool } = require('pg');
-const path = require('path');
-const fs = require('fs');
+import pkg from 'pg';
+const { Pool } = pkg;
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import fs from 'fs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 class Database {
     constructor() {
@@ -449,4 +454,4 @@ class Database {
     }
 }
 
-module.exports = Database;
+export default Database;
