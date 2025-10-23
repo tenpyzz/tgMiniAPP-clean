@@ -1666,10 +1666,9 @@ async function autoAddPrizeToInventory() {
         console.log('- Текущие звезды ДО:', userStars);
         console.log('- Цена кейса:', currentCasePrice);
         
-        // Проверяем, не добавлен ли уже приз в инвентарь
+        // Проверяем, не добавлен ли уже приз в инвентарь (только по ID)
         const prizeAlreadyAdded = userInventory.some(item => 
-            item.id === currentPrize.id || 
-            (item.name === currentPrize.name && item.type === currentPrize.type)
+            item.id === currentPrize.id
         );
         
         if (!prizeAlreadyAdded) {
@@ -1768,10 +1767,9 @@ async function restorePrizeState() {
                 // чтобы не перезаписать потраченные звезды
                 console.log('Используем локальные данные, НЕ загружаем с сервера');
                 
-                // Проверяем, не добавлен ли уже приз в инвентарь
+                // Проверяем, не добавлен ли уже приз в инвентарь (только по ID)
                 const prizeAlreadyAdded = userInventory.some(item => 
-                    item.id === state.prize.id || 
-                    (item.name === state.prize.name && item.type === state.prize.type)
+                    item.id === state.prize.id
                 );
                 
                 if (!prizeAlreadyAdded) {
@@ -1808,10 +1806,9 @@ async function restorePrizeState() {
                 // НЕ загружаем данные с сервера - используем локальные данные
                 console.log('Используем локальные данные, НЕ загружаем с сервера (время истекло)');
                 
-                // Проверяем, не добавлен ли уже приз в инвентарь
+                // Проверяем, не добавлен ли уже приз в инвентарь (только по ID)
                 const prizeAlreadyAdded = userInventory.some(item => 
-                    item.id === state.prize.id || 
-                    (item.name === state.prize.name && item.type === state.prize.type)
+                    item.id === state.prize.id
                 );
                 
                 if (!prizeAlreadyAdded) {
@@ -1861,6 +1858,27 @@ function addToInventory() {
     if (!validatePrizeClaim(currentPrize, currentCasePrice)) {
         showNotification('Приз не может быть добавлен - нет подтверждения трат!', 'error');
         console.log('❌ ADD_TO_INVENTORY: Приз отклонен из-за отсутствия подтверждения трат');
+        return;
+    }
+    
+    // Проверяем, не добавлен ли уже приз в инвентарь (только по ID)
+    const prizeAlreadyAdded = userInventory.some(item => 
+        item.id === currentPrize.id
+    );
+    
+    if (prizeAlreadyAdded) {
+        showNotification('Приз уже добавлен в инвентарь!', 'info');
+        console.log('ℹ️ ADD_TO_INVENTORY: Приз уже в инвентаре, не добавляем повторно');
+        
+        // Закрываем модальное окно приза
+        closePrizeModal();
+        
+        // Сбрасываем флаги
+        isChoosingPrize = false;
+        prizeAutoAdded = false;
+        currentCasePrice = 0;
+        currentPrize = null;
+        
         return;
     }
     
@@ -1932,6 +1950,27 @@ async function claimPrize() {
             if (!validatePrizeClaim(currentPrize, currentCasePrice)) {
                 showNotification('Приз не может быть получен - нет подтверждения трат!', 'error');
                 console.log('❌ CLAIM_PRIZE: Приз отклонен из-за отсутствия подтверждения трат');
+                return;
+            }
+            
+            // Проверяем, не добавлен ли уже приз в инвентарь (только по ID)
+            const prizeAlreadyAdded = userInventory.some(item => 
+                item.id === currentPrize.id
+            );
+            
+            if (prizeAlreadyAdded) {
+                showNotification('Приз уже получен!', 'info');
+                console.log('ℹ️ CLAIM_PRIZE: Приз уже в инвентаре, не добавляем повторно');
+                
+                // Закрываем модальное окно приза
+                closePrizeModal();
+                
+                // Сбрасываем флаги
+                isChoosingPrize = false;
+                prizeAutoAdded = false;
+                currentCasePrice = 0;
+                currentPrize = null;
+                
                 return;
             }
             
@@ -2374,8 +2413,7 @@ function validatePrizeClaim(prize, casePrice) {
     
     // Проверяем, что приз уже есть в инвентаре (значит, он был добавлен законно)
     const prizeInInventory = userInventory.some(item => 
-        item.id === prize.id || 
-        (item.name === prize.name && item.type === prize.type)
+        item.id === prize.id
     );
     
     if (prizeInInventory) {
@@ -2384,9 +2422,7 @@ function validatePrizeClaim(prize, casePrice) {
     }
     
     // Проверяем, что приз был добавлен автоматически в текущей сессии
-    if (prizeAutoAdded && currentPrize && 
-        (currentPrize.id === prize.id || 
-         (currentPrize.name === prize.name && currentPrize.type === prize.type))) {
+    if (prizeAutoAdded && currentPrize && currentPrize.id === prize.id) {
         console.log('✅ VALIDATE_PRIZE: Приз добавлен автоматически в текущей сессии - получен законно');
         return true;
     }
@@ -2750,10 +2786,9 @@ async function checkPendingCaseOpening() {
                 const prizeData = JSON.parse(pendingPrize);
                 const prize = prizeData.prize;
                 
-                // Проверяем, есть ли этот приз уже в инвентаре
+                // Проверяем, есть ли этот приз уже в инвентаре (только по ID)
                 prizeInInventory = userInventory.some(item => 
-                    item.id === prize.id || 
-                    (item.name === prize.name && item.type === prize.type)
+                    item.id === prize.id
                 );
                 
                 if (prizeInInventory) {
@@ -2893,10 +2928,9 @@ window.cancelCaseOpening = function() {
             const prizeData = JSON.parse(pendingPrize);
             const prize = prizeData.prize;
             
-            // Удаляем приз из инвентаря
+            // Удаляем приз из инвентаря (только по ID)
             const prizeIndex = userInventory.findIndex(item => 
-                item.id === prize.id || 
-                (item.name === prize.name && item.type === prize.type)
+                item.id === prize.id
             );
             
             if (prizeIndex !== -1) {
