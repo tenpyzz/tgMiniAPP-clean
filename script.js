@@ -544,20 +544,13 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Настройка для Telegram Mini App
         tg.expand();
         
-        // Специальные оптимизации для Telegram WebApp
+        // Базовые настройки для Telegram WebApp
         tg.enableClosingConfirmation();
         if (tg.MainButton) {
             tg.MainButton.hide();
         }
         
-        // Принудительное ускорение анимаций для Telegram
-        document.body.style.webkitTransform = 'translateZ(0)';
-        document.body.style.transform = 'translateZ(0)';
-        document.body.style.webkitBackfaceVisibility = 'hidden';
-        document.body.style.backfaceVisibility = 'hidden';
-        
-        console.log('✅ Telegram WebApp оптимизирован для анимаций');
-        tg.enableClosingConfirmation();
+        console.log('✅ Telegram WebApp инициализирован');
         
         // Настройка темы
         if (tg.colorScheme === 'dark') {
