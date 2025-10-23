@@ -1129,40 +1129,31 @@ async function startCS2PrizeAnimation(caseType) {
         prizeStrip.appendChild(prizeElement);
     });
     
-    // Этап 1: Быстрая прокрутка
+    // Этап 1: Быстрая прокрутка с плавным переходом
     prizeStrip.classList.add('scrolling');
     showSoundEffect('🎰 Призы крутятся...');
     
-    // Унифицированное время быстрой прокрутки для всех устройств
+    // Плавное замедление с промежуточными состояниями
     const fastScrollTime = 2000;
-    await new Promise(resolve => setTimeout(resolve, fastScrollTime));
+    await smoothTransition(prizeStrip, 'scrolling', 'preparing-slow', fastScrollTime);
     
     // Этап 2: Подготовка к замедлению
-    prizeStrip.classList.remove('scrolling');
-    prizeStrip.classList.add('preparing-slow');
     showSoundEffect('⏳ Подготовка к замедлению...');
-    
-    // Унифицированное время подготовки
     const preparingTime = 1000;
-    await new Promise(resolve => setTimeout(resolve, preparingTime));
+    await smoothTransition(prizeStrip, 'preparing-slow', 'starting-slow', preparingTime);
     
     // Этап 3: Начало замедления
-    prizeStrip.classList.remove('preparing-slow');
-    prizeStrip.classList.add('starting-slow');
     showSoundEffect('⏳ Начало замедления...');
-    
-    // Унифицированное время начала замедления
     const startingSlowTime = 800;
-    await new Promise(resolve => setTimeout(resolve, startingSlowTime));
+    await smoothTransition(prizeStrip, 'starting-slow', 'slowing', startingSlowTime);
     
-    // Этап 4: Полное замедление
-    prizeStrip.classList.remove('starting-slow');
-    prizeStrip.classList.add('slowing');
+    // Этап 4: Полное замедление с использованием CSS transition
     showSoundEffect('⏳ Замедление...');
+    prizeStrip.classList.remove('starting-slow');
     
-    // Унифицированное время полного замедления
-    const slowTime = 2000;
-    await new Promise(resolve => setTimeout(resolve, slowTime));
+    // Используем новую функцию плавного замедления
+    const targetTransform = `translateX(-${(totalPrizes - 1) * 170}px)`;
+    await smoothSlowdown(prizeStrip, targetTransform, 2500);
     
     // Этап 5: Остановка на выигрышном призе
     const winningElement = prizeStrip.children[prizeStrip.children.length - 1];
@@ -1181,6 +1172,68 @@ async function startCS2PrizeAnimation(caseType) {
     
     // Возвращаем выигрышный приз для дальнейшего использования
     return winningPrize;
+}
+
+// Функция для плавного перехода между состояниями анимации
+function smoothTransition(element, fromClass, toClass, duration) {
+    return new Promise((resolve) => {
+        // Добавляем класс для плавного перехода
+        element.classList.add('transitioning');
+        
+        // Небольшая задержка для начала перехода
+        requestAnimationFrame(() => {
+            // Переключаем классы
+            element.classList.remove(fromClass);
+            element.classList.add(toClass);
+            
+            // Ждем завершения перехода
+            setTimeout(() => {
+                element.classList.remove('transitioning');
+                resolve();
+            }, duration);
+        });
+    });
+}
+
+// Функция для плавного замедления анимации
+function smoothSlowdown(element, targetTransform, duration) {
+    return new Promise((resolve) => {
+        element.classList.add('slowing');
+        element.style.transition = `transform ${duration}ms cubic-bezier(0.25, 0.46, 0.45, 0.94)`;
+        
+        requestAnimationFrame(() => {
+            element.style.transform = targetTransform;
+            
+            setTimeout(() => {
+                element.style.transition = '';
+                resolve();
+            }, duration);
+        });
+    });
+}
+
+// Функция для создания промежуточных состояний анимации
+function createIntermediateStates(element, fromClass, toClass, steps = 3) {
+    return new Promise(async (resolve) => {
+        const classNames = [fromClass, toClass];
+        
+        // Создаем промежуточные классы
+        for (let i = 1; i < steps; i++) {
+            const intermediateClass = `${fromClass}-step-${i}`;
+            classNames.splice(i, 0, intermediateClass);
+        }
+        
+        // Переключаем между состояниями с небольшими задержками
+        for (let i = 0; i < classNames.length - 1; i++) {
+            element.classList.remove(classNames[i]);
+            element.classList.add(classNames[i + 1]);
+            
+            // Небольшая задержка между переходами
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        resolve();
+    });
 }
 
 // Создание элемента приза для анимации

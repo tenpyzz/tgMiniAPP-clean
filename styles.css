@@ -51,6 +51,110 @@ html {
     backface-visibility: hidden;
 }
 
+/* Универсальные стили для iOS Safari */
+* {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+/* Специальные настройки для iOS */
+* {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+}
+
+/* Универсальные стили для всех устройств - iOS, Android, PC */
+html {
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+/* Специальные стили для iOS Safari */
+@supports (-webkit-touch-callout: none) {
+    body {
+        -webkit-overflow-scrolling: touch;
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+    }
+    
+    .app-container {
+        -webkit-overflow-scrolling: touch;
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+    }
+    
+    .main-content {
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .tab-content {
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .cases-grid {
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .inventory-grid {
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .shop-content {
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* Универсальные стили для WebKit браузеров */
+@supports (-webkit-appearance: none) {
+    .case-item,
+    .inventory-item,
+    .shop-item,
+    .tab-btn,
+    .buy-btn {
+        -webkit-appearance: none;
+        appearance: none;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-user-drag: none;
+    }
+    
+    button {
+        -webkit-appearance: none;
+        appearance: none;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-user-drag: none;
+    }
+}
+
 /* Принудительное ускорение для анимаций */
 .prize-strip {
     -webkit-transform: translateZ(0);
@@ -214,6 +318,7 @@ body.reduced-motion *::after {
     font-size: 0.9rem;
     font-weight: bold;
     cursor: pointer;
+    -webkit-transition: all 0.3s ease;
     transition: all 0.3s ease;
     text-align: center;
     -webkit-appearance: none;
@@ -226,6 +331,10 @@ body.reduced-motion *::after {
     min-height: 44px;
     width: 100%;
     box-sizing: border-box;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
 }
 
 .tab-btn:hover {
@@ -285,6 +394,7 @@ body.reduced-motion *::after {
     padding: 1rem;
     text-align: center;
     box-shadow: var(--shadow-lg);
+    -webkit-transition: all 0.3s ease;
     transition: all 0.3s ease;
     cursor: pointer;
     position: relative;
@@ -300,6 +410,10 @@ body.reduced-motion *::after {
     touch-action: manipulation;
     user-select: none;
     border: 1px solid rgba(200, 220, 240, 0.3);
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
 }
 
 .case-item:hover {
@@ -745,8 +859,14 @@ body.reduced-motion *::after {
     height: 100%;
     display: flex;
     align-items: center;
-    transition: transform 0.1s linear, animation-duration 0.3s ease-out;
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     will-change: transform;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    perspective: 1000px;
+    -webkit-perspective: 1000px;
 }
 
 /* Отдельный приз в полоске */
@@ -908,27 +1028,92 @@ body.reduced-motion *::after {
     }
 }
 
-/* Красивые анимации - работают везде одинаково */
+/* Плавные анимации прокрутки призов - универсальные для всех устройств */
 .prize-strip.scrolling {
+    -webkit-animation: prizeScroll 0.08s linear infinite;
     animation: prizeScroll 0.08s linear infinite;
     will-change: transform;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
 }
 
 .prize-strip.preparing-slow {
+    -webkit-animation: prizeScroll 0.12s linear infinite;
     animation: prizeScroll 0.12s linear infinite;
     will-change: transform;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
 }
 
 .prize-strip.starting-slow {
+    -webkit-animation: prizeScroll 0.16s linear infinite;
     animation: prizeScroll 0.16s linear infinite;
     will-change: transform;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
 }
 
 .prize-strip.slowing {
-    animation: prizeSlowDown 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    -webkit-animation: none;
+    animation: none;
+    -webkit-transition: transform 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transition: transform 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     will-change: transform;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
 }
 
+/* Дополнительные классы для плавных переходов */
+.prize-strip.transitioning {
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.prize-strip.fast-scroll {
+    animation: prizeScroll 0.06s linear infinite;
+}
+
+.prize-strip.medium-scroll {
+    animation: prizeScroll 0.10s linear infinite;
+}
+
+.prize-strip.slow-scroll {
+    animation: prizeScroll 0.14s linear infinite;
+}
+
+/* Промежуточные состояния для более плавной анимации */
+.prize-strip.scrolling-step-1 {
+    animation: prizeScroll 0.09s linear infinite;
+}
+
+.prize-strip.scrolling-step-2 {
+    animation: prizeScroll 0.10s linear infinite;
+}
+
+.prize-strip.preparing-slow-step-1 {
+    animation: prizeScroll 0.13s linear infinite;
+}
+
+.prize-strip.preparing-slow-step-2 {
+    animation: prizeScroll 0.14s linear infinite;
+}
+
+.prize-strip.starting-slow-step-1 {
+    animation: prizeScroll 0.17s linear infinite;
+}
+
+.prize-strip.starting-slow-step-2 {
+    animation: prizeScroll 0.18s linear infinite;
+}
+
+/* Плавная анимация прокрутки с более частыми ключевыми кадрами */
 @keyframes prizeScroll {
     0% {
         transform: translateX(0);
@@ -938,26 +1123,70 @@ body.reduced-motion *::after {
     }
 }
 
+/* Новая плавная анимация замедления с промежуточными кадрами */
 @keyframes prizeSlowDown {
     0% {
         transform: translateX(0);
-        animation-timing-function: linear;
+    }
+    5% {
+        transform: translateX(-100px);
+    }
+    10% {
+        transform: translateX(-200px);
+    }
+    15% {
+        transform: translateX(-300px);
+    }
+    20% {
+        transform: translateX(-400px);
+    }
+    25% {
+        transform: translateX(-500px);
     }
     30% {
+        transform: translateX(-600px);
+    }
+    35% {
+        transform: translateX(-700px);
+    }
+    40% {
         transform: translateX(-800px);
-        animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    45% {
+        transform: translateX(-900px);
+    }
+    50% {
+        transform: translateX(-1000px);
+    }
+    55% {
+        transform: translateX(-1100px);
     }
     60% {
-        transform: translateX(-1800px);
-        animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        transform: translateX(-1200px);
+    }
+    65% {
+        transform: translateX(-1300px);
+    }
+    70% {
+        transform: translateX(-1400px);
+    }
+    75% {
+        transform: translateX(-1500px);
+    }
+    80% {
+        transform: translateX(-1600px);
     }
     85% {
-        transform: translateX(-2200px);
-        animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        transform: translateX(-1700px);
+    }
+    90% {
+        transform: translateX(-1800px);
+    }
+    95% {
+        transform: translateX(-1900px);
     }
     100% {
-        transform: translateX(-2400px);
-        animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        transform: translateX(-2000px);
     }
 }
 
@@ -1899,6 +2128,7 @@ body.case-opening {
     padding: 1rem;
     text-align: center;
     box-shadow: var(--shadow);
+    -webkit-transition: transform 0.3s ease;
     transition: transform 0.3s ease;
     aspect-ratio: 1;
     display: flex;
@@ -1910,6 +2140,10 @@ body.case-opening {
     width: 100%;
     box-sizing: border-box;
     border: 1px solid rgba(200, 220, 240, 0.3);
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
 }
 
 .inventory-item:hover {
@@ -1974,10 +2208,15 @@ body.case-opening {
     padding: 1.5rem;
     text-align: center;
     box-shadow: var(--shadow);
+    -webkit-transition: transform 0.3s ease;
     transition: transform 0.3s ease;
     width: 100%;
     box-sizing: border-box;
     border: 1px solid rgba(200, 220, 240, 0.3);
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
 }
 
 .shop-item:hover {
@@ -2010,6 +2249,7 @@ body.case-opening {
     font-size: 0.9rem;
     font-weight: bold;
     cursor: pointer;
+    -webkit-transition: all 0.3s ease;
     transition: all 0.3s ease;
     width: 100%;
     -webkit-tap-highlight-color: transparent;
@@ -2023,6 +2263,10 @@ body.case-opening {
     user-select: none;
     min-height: 44px;
     box-sizing: border-box;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
 }
 
 .buy-btn:hover {
@@ -2553,4 +2797,75 @@ body.case-opening {
 .tab-btn:active,
 .buy-btn:active {
     transform: scale(0.98);
+}
+
+/* Специальные стили для iOS Safari */
+@supports (-webkit-touch-callout: none) {
+    /* Исправление проблем с анимациями на iOS */
+    .prize-strip {
+        -webkit-transform: translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 0);
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+        -webkit-perspective: 1000px;
+        perspective: 1000px;
+    }
+    
+    .prize-item {
+        -webkit-transform: translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 0);
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+    }
+    
+    /* Исправление проблем с backdrop-filter на iOS */
+    .case-item,
+    .inventory-item,
+    .shop-item,
+    .header {
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+    }
+    
+    /* Исправление проблем с overflow на iOS */
+    .main-content,
+    .tab-content,
+    .cases-grid,
+    .inventory-grid,
+    .shop-content {
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Исправление проблем с кнопками на iOS */
+    .tab-btn,
+    .buy-btn,
+    .case-item,
+    .inventory-item,
+    .shop-item {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+}
+
+/* Дополнительные стили для WebKit браузеров */
+@supports (-webkit-appearance: none) {
+    /* Универсальные стили для всех WebKit браузеров */
+    * {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+    
+    /* Исправление проблем с анимациями */
+    .prize-strip,
+    .prize-item,
+    .case-item,
+    .inventory-item,
+    .shop-item {
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+    }
 }
