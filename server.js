@@ -76,31 +76,128 @@ function verifyAdmin(req, res, next) {
 let db;
 try {
     db = new Database();
+    console.log('✅ Объект базы данных создан');
 } catch (error) {
-    console.log('⚠️ База данных недоступна для локального тестирования:', error.message);
+    console.log('⚠️ Ошибка создания объекта базы данных:', error.message);
     db = { isConnected: false };
+}
+
+// Безопасные функции для работы с базой данных
+async function safeGetUser(userId) {
+    if (!db || !db.isConnected) {
+        console.log('⚠️ База данных недоступна, возвращаем null');
+        return null;
+    }
+    try {
+        return await db.getUser(userId);
+    } catch (error) {
+        console.error('Ошибка получения пользователя:', error);
+        return null;
+    }
+}
+
+async function safeUpsertUser(userId, name, balance, inventory) {
+    if (!db || !db.isConnected) {
+        console.log('⚠️ База данных недоступна, возвращаем fallback данные');
+        return { user_id: userId, telegram_name: name, balance, inventory };
+    }
+    try {
+        return await db.upsertUser(userId, name, balance, inventory);
+    } catch (error) {
+        console.error('Ошибка создания/обновления пользователя:', error);
+        return { user_id: userId, telegram_name: name, balance, inventory };
+    }
+}
+
+async function safeUpdateUser(userId, data) {
+    if (!db || !db.isConnected) {
+        console.log('⚠️ База данных недоступна, пропускаем обновление');
+        return { user_id: userId, ...data };
+    }
+    try {
+        return await db.updateUser(userId, data);
+    } catch (error) {
+        console.error('Ошибка обновления пользователя:', error);
+        return { user_id: userId, ...data };
+    }
+}
+
+async function safeGetAllUsers() {
+    if (!db || !db.isConnected) {
+        console.log('⚠️ База данных недоступна, возвращаем пустой массив');
+        return [];
+    }
+    try {
+        return await db.getAllUsers();
+    } catch (error) {
+        console.error('Ошибка получения всех пользователей:', error);
+        return [];
+    }
+}
+
+async function safeGetStats() {
+    if (!db || !db.isConnected) {
+        console.log('⚠️ База данных недоступна, возвращаем пустую статистику');
+        return {
+            total_users: 0,
+            users_with_balance: 0,
+            total_balance: 0,
+            avg_balance: 0
+        };
+    }
+    try {
+        return await db.getStats();
+    } catch (error) {
+        console.error('Ошибка получения статистики:', error);
+        return {
+            total_users: 0,
+            users_with_balance: 0,
+            total_balance: 0,
+            avg_balance: 0
+        };
+    }
 }
 
 // Инициализация базы данных при запуске сервера
 async function initializeDatabase() {
     try {
-        if (db.isConnected === false) {
-            console.log('⚠️ База данных недоступна, пропускаем инициализацию');
-            return;
+        console.log('🔍 Попытка инициализации базы данных...');
+        
+        if (!db || db.isConnected === false) {
+            console.log('⚠️ Объект базы данных недоступен, пытаемся создать новый...');
+            try {
+                db = new Database();
+                console.log('✅ Новый объект базы данных создан');
+            } catch (createError) {
+                console.error('❌ Не удалось создать объект базы данных:', createError.message);
+                console.log('⚠️ Продолжаем работу без базы данных');
+                return;
+            }
         }
+        
         await db.init();
         console.log('✅ База данных PostgreSQL инициализирована');
         
         // Создаем начальную резервную копию
-        await db.createBackup();
+        try {
+            await db.createBackup();
+            console.log('✅ Резервная копия создана');
+        } catch (backupError) {
+            console.log('⚠️ Ошибка создания резервной копии:', backupError.message);
+        }
         
         // Проверяем количество пользователей в базе
-        const userCount = await db.getUserCount();
-        console.log(`📊 Количество пользователей в базе: ${userCount}`);
+        try {
+            const userCount = await db.getUserCount();
+            console.log(`📊 Количество пользователей в базе: ${userCount}`);
+        } catch (countError) {
+            console.log('⚠️ Ошибка получения количества пользователей:', countError.message);
+        }
         
     } catch (error) {
         console.error('❌ Ошибка инициализации базы данных:', error);
-        process.exit(1);
+        console.log('⚠️ Продолжаем работу без базы данных');
+        // Не завершаем процесс, продолжаем работу
     }
 }
 
@@ -117,11 +214,11 @@ app.post('/api/user/data', verifyTelegramData, async (req, res) => {
         });
         
         // Получаем данные пользователя из базы данных
-        let user = await db.getUser(user_id);
+        let user = await safeGetUser(user_id);
         
         if (!user) {
             console.log(`👤 Пользователь ${user_id} не найден, создаем нового`);
-            user = await db.upsertUser(user_id, telegram_name || 'Unknown User', 100, []);
+            user = await safeUpsertUser(user_id, telegram_name || 'Unknown User', 100, []);
             console.log(`✅ Создан новый пользователь ${user_id}:`, user);
         } else {
             console.log(`👤 Пользователь ${user_id} найден:`, {
@@ -163,7 +260,7 @@ app.post('/api/user/save', verifyTelegramData, async (req, res) => {
         });
         
         // Сохраняем данные пользователя в базу данных
-        await db.updateUserWithBackup(user_id, {
+        await safeUpdateUser(user_id, {
             telegram_name: telegram_name || 'Unknown User',
             balance: stars_balance,
             inventory: inventory || []
@@ -189,7 +286,7 @@ app.post('/api/case/open', verifyTelegramData, async (req, res) => {
         console.log(`🎰 Пользователь ${user_id} открывает кейс ${case_type} за ${price} звезд`);
         
         // Получаем данные пользователя
-        let user = await db.getUser(user_id);
+        let user = await safeGetUser(user_id);
         if (!user) {
             return res.status(404).json({ 
                 error: 'User not found',
@@ -218,7 +315,7 @@ app.post('/api/case/open', verifyTelegramData, async (req, res) => {
         const newInventory = [...(user.inventory || []), prize];
         
         // Обновляем пользователя с новыми данными
-        await db.updateUser(user_id, {
+        await safeUpdateUser(user_id, {
             telegram_name: user.telegram_name,
             balance: newBalance,
             inventory: newInventory
@@ -253,9 +350,9 @@ app.post('/api/prize/claim', verifyTelegramData, async (req, res) => {
         let result = { success: true };
         
         // Получаем данные пользователя из базы данных
-        let user = await db.getUser(user_id);
+        let user = await safeGetUser(user_id);
         if (!user) {
-            user = await db.upsertUser(user_id, 'Unknown User', 100, []);
+            user = await safeUpsertUser(user_id, 'Unknown User', 100, []);
         }
         
         switch (prize.type) {
@@ -291,7 +388,7 @@ app.get('/api/admin/users', async (req, res) => {
     try {
         console.log('🔍 Запрос всех пользователей для админ панели');
         
-        const users = await db.getAllUsers();
+        const users = await safeGetAllUsers();
         console.log(`📊 Найдено пользователей: ${users.length}`);
         
         res.json({
@@ -310,8 +407,8 @@ app.get('/api/admin/users', async (req, res) => {
 
 app.get('/api/admin/stats', async (req, res) => {
     try {
-        const stats = await db.getStats();
-        const users = await db.getAllUsers();
+        const stats = await safeGetStats();
+        const users = await safeGetAllUsers();
         
         const detailedStats = {
             total_users: stats.total_users || 0,
@@ -446,7 +543,7 @@ app.get('/admin', (req, res) => {
 // Информация о сервере
 app.get('/api/info', async (req, res) => {
     try {
-        const stats = await db.getStats();
+        const stats = await safeGetStats();
         res.json({
             name: 'Кейс Мастер API',
             version: '2.0.0',
