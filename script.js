@@ -720,17 +720,23 @@ function generateCS2Items(caseType) {
             // Пробуем разные способы получить ширину
             containerWidth = containerEl.offsetWidth || containerEl.clientWidth || containerEl.getBoundingClientRect().width;
             
-            // Если все еще 0, пробуем получить через вычисленные стили
-            if (containerWidth === 0) {
+            // Если все еще 0, пробуем получить через вычисленные стили или viewport
+            if (containerWidth === 0 || isNaN(containerWidth)) {
                 const styles = window.getComputedStyle(containerEl);
-                containerWidth = parseFloat(styles.width) || parseFloat(styles.maxWidth) || 800;
+                containerWidth = parseFloat(styles.width) || parseFloat(styles.maxWidth);
+                if (!containerWidth || isNaN(containerWidth)) {
+                    containerWidth = window.innerWidth || document.documentElement.clientWidth || 800;
+                }
             }
+        } else {
+            // Fallback на viewport
+            containerWidth = window.innerWidth || document.documentElement.clientWidth || 800;
         }
         
-        // Fallback на window.innerWidth
-        if (containerWidth === 0 || isNaN(containerWidth)) {
-            containerWidth = window.innerWidth || 800;
-            console.log('⚠️ CS2 Генерация: containerWidth был 0, используем window.innerWidth:', containerWidth);
+        // Гарантируем минимальную ширину
+        if (!containerWidth || isNaN(containerWidth) || containerWidth === 0) {
+            containerWidth = window.innerWidth || document.documentElement.clientWidth || 800;
+            console.log('⚠️ CS2 Генерация: containerWidth был 0, используем viewport:', containerWidth);
         }
         
         const itemWidth = 160;
@@ -881,9 +887,12 @@ async function runCS2Animation() {
         let containerWidth = 800;
         
         if (containerEl) {
-            containerWidth = containerEl.offsetWidth || containerEl.clientWidth || containerEl.getBoundingClientRect().width || window.innerWidth || 800;
+            containerWidth = containerEl.offsetWidth || containerEl.clientWidth || containerEl.getBoundingClientRect().width;
+            if (!containerWidth || isNaN(containerWidth) || containerWidth === 0) {
+                containerWidth = window.innerWidth || document.documentElement.clientWidth || 800;
+            }
         } else {
-            containerWidth = window.innerWidth || 800;
+            containerWidth = window.innerWidth || document.documentElement.clientWidth || 800;
         }
         
         const itemWidth = 160;
@@ -902,9 +911,12 @@ async function runCS2Animation() {
     
     // Вычисляем начальную позицию так, чтобы несколько элементов были видны
     const containerEl = document.querySelector('.prize-strip-container');
-    let containerWidth = 800;
+    let containerWidth = window.innerWidth || document.documentElement.clientWidth || 800;
     if (containerEl) {
-        containerWidth = containerEl.offsetWidth || containerEl.clientWidth || containerEl.getBoundingClientRect().width || window.innerWidth || 800;
+        const width = containerEl.offsetWidth || containerEl.clientWidth || containerEl.getBoundingClientRect().width;
+        if (width && !isNaN(width) && width > 0) {
+            containerWidth = width;
+        }
     }
     
     const itemWidth = 160;
