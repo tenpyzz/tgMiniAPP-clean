@@ -776,11 +776,12 @@ function createCS2Items() {
     cs2Animation.container.style.position = 'absolute';
     cs2Animation.container.style.left = '0';
     cs2Animation.container.style.top = '0';
-    cs2Animation.container.style.webkitTransform = 'translateX(0px) translateZ(0)';
-    cs2Animation.container.style.transform = 'translateX(0px) translateZ(0)';
-    cs2Animation.container.style.transition = '';
-    cs2Animation.container.style.webkitTransition = '';
-    cs2Animation.container.style.willChange = 'transform';
+    // Используем setProperty для перекрытия CSS с !important
+    cs2Animation.container.style.setProperty('transform', 'translateX(0px) translateZ(0)', 'important');
+    cs2Animation.container.style.setProperty('-webkit-transform', 'translateX(0px) translateZ(0)', 'important');
+    cs2Animation.container.style.setProperty('transition', '', 'important');
+    cs2Animation.container.style.setProperty('-webkit-transition', '', 'important');
+    cs2Animation.container.style.setProperty('will-change', 'transform', 'important');
     cs2Animation.container.style.zIndex = '9998';
     cs2Animation.container.style.overflow = 'visible';
     cs2Animation.container.style.visibility = 'visible';
@@ -933,12 +934,13 @@ async function runCS2Animation() {
     const initialOffset = 0;
     
     cs2Animation.currentPosition = initialOffset;
-    // Применяем transform с префиксами и явно убираем transition
-    cs2Animation.container.style.webkitTransform = `translateX(${initialOffset}px) translateZ(0)`;
-    cs2Animation.container.style.transform = `translateX(${initialOffset}px) translateZ(0)`;
-    cs2Animation.container.style.transition = 'none';
-    cs2Animation.container.style.webkitTransition = 'none';
-    cs2Animation.container.style.willChange = 'transform';
+    // Применяем transform с префиксами и !important, чтобы перекрыть CSS
+    const initialTransform = `translateX(${initialOffset}px) translateZ(0)`;
+    cs2Animation.container.style.setProperty('transform', initialTransform, 'important');
+    cs2Animation.container.style.setProperty('-webkit-transform', initialTransform, 'important');
+    cs2Animation.container.style.setProperty('transition', 'none', 'important');
+    cs2Animation.container.style.setProperty('-webkit-transition', 'none', 'important');
+    cs2Animation.container.style.setProperty('will-change', 'transform', 'important');
     
     console.log('🎬 CS2 Анимация: Начальная позиция установлена:', initialOffset);
     console.log('🎬 CS2 Анимация: containerWidth:', containerWidth);
@@ -983,12 +985,13 @@ async function runCS2Animation() {
                 // Быстрое вращение 2 секунды
                 if (elapsed < 2000) {
                     cs2Animation.currentPosition -= cs2Animation.spinSpeed;
-                    // Применяем transform с префиксами для максимальной совместимости
-                    cs2Animation.container.style.webkitTransform = `translateX(${cs2Animation.currentPosition}px) translateZ(0)`;
-                    cs2Animation.container.style.transform = `translateX(${cs2Animation.currentPosition}px) translateZ(0)`;
-                    cs2Animation.container.style.transition = 'none';
-                    cs2Animation.container.style.webkitTransition = 'none';
-                    cs2Animation.container.style.willChange = 'transform';
+                    // Применяем transform с префиксами и !important, чтобы перекрыть CSS
+                    const transformValue = `translateX(${cs2Animation.currentPosition}px) translateZ(0)`;
+                    cs2Animation.container.style.setProperty('transform', transformValue, 'important');
+                    cs2Animation.container.style.setProperty('-webkit-transform', transformValue, 'important');
+                    cs2Animation.container.style.setProperty('transition', 'none', 'important');
+                    cs2Animation.container.style.setProperty('-webkit-transition', 'none', 'important');
+                    cs2Animation.container.style.setProperty('will-change', 'transform', 'important');
                     
                     animationId = requestAnimationFrame(animate);
                 } else {
@@ -1006,12 +1009,13 @@ async function runCS2Animation() {
                         cs2Animation.spinSpeed = 1;
                     }
                     cs2Animation.currentPosition -= cs2Animation.spinSpeed;
-                    // Применяем transform с префиксами для максимальной совместимости
-                    cs2Animation.container.style.webkitTransform = `translateX(${cs2Animation.currentPosition}px) translateZ(0)`;
-                    cs2Animation.container.style.transform = `translateX(${cs2Animation.currentPosition}px) translateZ(0)`;
-                    cs2Animation.container.style.transition = 'none';
-                    cs2Animation.container.style.webkitTransition = 'none';
-                    cs2Animation.container.style.willChange = 'transform';
+                    // Применяем transform с префиксами и !important, чтобы перекрыть CSS
+                    const transformValue = `translateX(${cs2Animation.currentPosition}px) translateZ(0)`;
+                    cs2Animation.container.style.setProperty('transform', transformValue, 'important');
+                    cs2Animation.container.style.setProperty('-webkit-transform', transformValue, 'important');
+                    cs2Animation.container.style.setProperty('transition', 'none', 'important');
+                    cs2Animation.container.style.setProperty('-webkit-transition', 'none', 'important');
+                    cs2Animation.container.style.setProperty('will-change', 'transform', 'important');
                     
                     animationId = requestAnimationFrame(animate);
                 } else {
@@ -1037,10 +1041,12 @@ function stopCS2Animation() {
     cs2Animation.animationPhase = 'stopped';
     
     // Плавно перемещаем к целевому предмету
-    cs2Animation.container.style.transition = 'transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-    cs2Animation.container.style.webkitTransition = 'transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-    cs2Animation.container.style.webkitTransform = `translateX(${cs2Animation.targetPosition}px) translateZ(0)`;
-    cs2Animation.container.style.transform = `translateX(${cs2Animation.targetPosition}px) translateZ(0)`;
+    const finalTransform = `translateX(${cs2Animation.targetPosition}px) translateZ(0)`;
+    const finalTransition = 'transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+    cs2Animation.container.style.setProperty('transition', finalTransition, 'important');
+    cs2Animation.container.style.setProperty('-webkit-transition', finalTransition, 'important');
+    cs2Animation.container.style.setProperty('transform', finalTransform, 'important');
+    cs2Animation.container.style.setProperty('-webkit-transform', finalTransform, 'important');
     cs2Animation.currentPosition = cs2Animation.targetPosition;
     
     console.log('📍 CS2 Остановка: Перемещаемся к позиции', cs2Animation.targetPosition);
