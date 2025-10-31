@@ -208,10 +208,11 @@ body {
 .cs2-item.flex-item {
     position: static !important;
     transform: none !important;
-    width: 180px !important;
-    height: 240px !important;
+    width: 160px !important; /* уменьшили, чтобы влезали в контейнер */
+    height: 160px !important;
     flex-shrink: 0 !important;
     margin-right: 20px !important;
+    z-index: 7;
 }
 
 .cs2-item.flex-item:hover {
@@ -932,7 +933,7 @@ body.reduced-motion *::after {
     position: relative;
     width: 100%;
     max-width: 800px;
-    height: 200px;
+    height: 260px; /* увеличили, чтобы элементы были видны полностью */
     margin: 2rem 0;
     overflow: hidden;
     border-radius: 15px;
@@ -941,6 +942,7 @@ body.reduced-motion *::after {
     box-shadow: 
         0 0 30px rgba(255, 215, 0, 0.2),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    z-index: 5;
 }
 
 /* Полоска с призами */
@@ -959,6 +961,7 @@ body.reduced-motion *::after {
     -webkit-backface-visibility: hidden;
     perspective: 1000px;
     -webkit-perspective: 1000px;
+    z-index: 6;
 }
 
 /* Отдельный приз в полоске */
