@@ -712,14 +712,18 @@ function generateCS2Items(caseType) {
     
     // Вычисляем целевую позицию с учетом реальной ширины элементов и контейнера
     const containerEl = document.querySelector('.prize-strip-container');
-    const containerWidth = containerEl?.clientWidth || 800;
-    const itemWidth = 160; // в inline стилях
+    const containerWidth = containerEl ? containerEl.clientWidth : (window.innerWidth || 800);
+    const itemWidth = 160;
     const itemGap = 20;
     const itemSpacing = itemWidth + itemGap; // 180px
+    
     // Центрируем выбранный предмет: его центр должен попасть в центр контейнера
+    // Формула: отрицательное смещение = (индекс * расстояние) - (центр контейнера - половина ширины предмета)
     const centerOffset = containerWidth / 2 - itemWidth / 2;
     cs2Animation.targetPosition = -(randomIndex * itemSpacing - centerOffset);
-    console.log('📍 CS2 Генерация: Целевая позиция:', cs2Animation.targetPosition, 'containerWidth:', containerWidth, 'itemSpacing:', itemSpacing);
+    
+    console.log('📍 CS2 Генерация: Целевая позиция:', cs2Animation.targetPosition);
+    console.log('📍 CS2 Генерация: containerWidth:', containerWidth, 'itemSpacing:', itemSpacing, 'randomIndex:', randomIndex);
 }
 
 /**
@@ -731,53 +735,71 @@ function createCS2Items() {
     
     // Добавляем класс для CS2 анимации
     cs2Animation.container.classList.add('cs2-animation');
-    // Явно задаем ширину и flex-раскладку для надежности на мобильных WebView
-    const totalWidth = cs2Animation.items.length * 200 + 800; // 200px на элемент + запас
+    
+    // Вычисляем размеры
+    const itemWidth = 160;
+    const itemGap = 20;
+    const itemSpacing = itemWidth + itemGap;
+    const totalWidth = cs2Animation.items.length * itemSpacing;
+    
+    // Настраиваем контейнер
     cs2Animation.container.style.display = 'flex';
     cs2Animation.container.style.alignItems = 'center';
     cs2Animation.container.style.width = `${totalWidth}px`;
+    cs2Animation.container.style.height = '100%';
+    cs2Animation.container.style.position = 'absolute';
+    cs2Animation.container.style.left = '0';
+    cs2Animation.container.style.top = '0';
     cs2Animation.container.style.transform = 'translateX(0px)';
     cs2Animation.container.style.transition = '';
     cs2Animation.container.style.zIndex = '9998';
-    // Временный яркий фон для диагностики видимости (можно убрать позже)
-    // cs2Animation.container.style.background = 'rgba(0, 255, 0, 0.1)';
+    cs2Animation.container.style.overflow = 'visible';
     
     console.log('🎨 CS2 DOM: Создаем', cs2Animation.items.length, 'элементов');
     
     cs2Animation.items.forEach((item, index) => {
         const itemElement = document.createElement('div');
         itemElement.className = `cs2-item flex-item ${item.rarity}`;
+        itemElement.setAttribute('data-index', index);
         itemElement.innerHTML = `
             <div class="cs2-item-icon" style="font-size: 2.2rem; margin-bottom: 8px;">${getCS2ItemIcon(item)}</div>
-            <div class="cs2-item-name" style="font-weight: 700;">${item.name}</div>
-            <div class="cs2-item-rarity" style="font-size: 0.85rem; opacity: 0.9;">${getRarityName(item.rarity)}</div>
+            <div class="cs2-item-name" style="font-weight: 700; text-align: center; font-size: 0.9rem;">${item.name}</div>
+            <div class="cs2-item-rarity" style="font-size: 0.75rem; opacity: 0.9; text-align: center;">${getRarityName(item.rarity)}</div>
         `;
-        // Форсируем видимость и размеры (перебиваем любые конфликтующие стили)
-        itemElement.style.width = '160px';
-        itemElement.style.height = '160px';
+        
+        // Устанавливаем стили для элемента
+        itemElement.style.width = `${itemWidth}px`;
+        itemElement.style.height = `${itemWidth}px`;
         itemElement.style.display = 'flex';
         itemElement.style.flexDirection = 'column';
         itemElement.style.alignItems = 'center';
         itemElement.style.justifyContent = 'center';
-        itemElement.style.marginRight = '20px';
+        itemElement.style.marginRight = `${itemGap}px`;
         itemElement.style.background = 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)';
         itemElement.style.border = '3px solid #444';
         itemElement.style.borderRadius = '8px';
         itemElement.style.color = '#fff';
         itemElement.style.opacity = '1';
         itemElement.style.position = 'relative';
-        itemElement.style.zIndex = '9999';
+        itemElement.style.flexShrink = '0';
+        itemElement.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.4)';
         
-        // Убираем отладочные стили
-        // itemElement.style.backgroundColor = 'red';
-        // itemElement.style.border = '2px solid yellow';
+        // Цвета по редкости
+        const rarityColors = {
+            common: '#b0b0b0',
+            rare: '#4b69ff',
+            epic: '#8847ff',
+            legendary: '#ffd700'
+        };
+        if (rarityColors[item.rarity]) {
+            itemElement.style.borderColor = rarityColors[item.rarity];
+        }
+        
         cs2Animation.container.appendChild(itemElement);
     });
     
     console.log('✅ CS2 DOM: Создано', cs2Animation.container.children.length, 'элементов');
-    if (cs2Animation.container.children.length === 0) {
-        console.warn('⚠️ CS2 DOM: Элементы не были добавлены в контейнер');
-    }
+    console.log('✅ CS2 DOM: Общая ширина контейнера:', totalWidth, 'px');
 }
 
 /**
@@ -802,6 +824,15 @@ async function runCS2Animation() {
     console.log('🎬 CS2 Анимация: Запускаем анимацию прокрутки');
     console.log('🎬 CS2 Анимация: Начальная ширина контейнера:', cs2Animation.container?.style?.width);
     console.log('🎬 CS2 Анимация: Кол-во элементов в контейнере:', cs2Animation.container?.children?.length);
+    console.log('🎬 CS2 Анимация: Целевая позиция:', cs2Animation.targetPosition);
+    
+    // Сбрасываем начальную позицию
+    cs2Animation.currentPosition = 0;
+    cs2Animation.container.style.transform = 'translateX(0px)';
+    cs2Animation.container.style.transition = '';
+    
+    // Небольшая задержка для визуализации начальной позиции
+    await new Promise(resolve => setTimeout(resolve, 100));
     
     return new Promise((resolve) => {
         let animationId;
@@ -821,36 +852,31 @@ async function runCS2Animation() {
                 if (elapsed < 2000) {
                     cs2Animation.currentPosition -= cs2Animation.spinSpeed;
                     cs2Animation.container.style.transform = `translateX(${cs2Animation.currentPosition}px)`;
-                    
-                    // Отладка каждые 500ms (отключена)
-                    // if (elapsed % 500 < 50) {
-                    //     console.log('⚡ Позиция:', cs2Animation.currentPosition, 'Скорость:', cs2Animation.spinSpeed);
-                    // }
+                    cs2Animation.container.style.transition = 'none';
                     
                     animationId = requestAnimationFrame(animate);
                 } else {
                     // Переходим к замедлению
                     console.log('🐌 CS2 Анимация: Фаза 2 - Замедление (1.5 сек)');
                     cs2Animation.animationPhase = 'slowing';
-                    startTime = Date.now(); // Сбрасываем время для фазы замедления
+                    startTime = Date.now();
                     animationId = requestAnimationFrame(animate);
                 }
             } else if (cs2Animation.animationPhase === 'slowing') {
                 // Замедление 1.5 секунды
                 if (elapsed < 1500) {
                     cs2Animation.spinSpeed *= cs2Animation.deceleration;
+                    if (cs2Animation.spinSpeed < 1) {
+                        cs2Animation.spinSpeed = 1;
+                    }
                     cs2Animation.currentPosition -= cs2Animation.spinSpeed;
                     cs2Animation.container.style.transform = `translateX(${cs2Animation.currentPosition}px)`;
-                    
-                    // Отладка каждые 500ms
-                    if (elapsed % 500 < 50) {
-                        console.log('🐌 Позиция:', cs2Animation.currentPosition, 'Скорость:', cs2Animation.spinSpeed);
-                    }
+                    cs2Animation.container.style.transition = 'none';
                     
                     animationId = requestAnimationFrame(animate);
                 } else {
                     // Останавливаемся
-                    console.log('🛑 CS2 Анимация: Останавливаемся');
+                    console.log('🛑 CS2 Анимация: Останавливаемся на позиции:', cs2Animation.currentPosition);
                     cancelAnimationFrame(animationId);
                     stopCS2Animation();
                     resolve();
@@ -873,10 +899,11 @@ function stopCS2Animation() {
     // Плавно перемещаем к целевому предмету
     cs2Animation.container.style.transition = 'transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
     cs2Animation.container.style.transform = `translateX(${cs2Animation.targetPosition}px)`;
+    cs2Animation.currentPosition = cs2Animation.targetPosition;
     
     console.log('📍 CS2 Остановка: Перемещаемся к позиции', cs2Animation.targetPosition);
     
-    // Подсвечиваем выбранный предмет
+    // Подсвечиваем выбранный предмет и показываем результат
     setTimeout(() => {
         console.log('✨ CS2 Остановка: Подсвечиваем выбранный предмет');
         highlightCS2SelectedItem();
@@ -891,11 +918,13 @@ function highlightCS2SelectedItem() {
     const items = cs2Animation.container.querySelectorAll('.cs2-item');
     items.forEach(item => item.classList.remove('selected'));
     
-    // Находим центральный предмет (примерно в центре экрана)
-    const centerIndex = Math.floor(items.length / 2);
-    if (items[centerIndex]) {
-        items[centerIndex].classList.add('selected');
-        console.log('✨ CS2 Подсветка: Выбран предмет с индексом', centerIndex);
+    // Находим выбранный предмет по его индексу в массиве
+    if (cs2Animation.selectedItem) {
+        const selectedIndex = cs2Animation.items.findIndex(item => item.id === cs2Animation.selectedItem.id);
+        if (selectedIndex !== -1 && items[selectedIndex]) {
+            items[selectedIndex].classList.add('selected');
+            console.log('✨ CS2 Подсветка: Выбран предмет с индексом', selectedIndex);
+        }
     }
 }
 

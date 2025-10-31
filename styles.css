@@ -195,23 +195,19 @@ body {
 
 /* Исправленные стили для CS2 анимации */
 .prize-strip.cs2-animation {
-    width: 20000px !important;
     display: flex !important;
     align-items: center !important;
     position: absolute !important;
     top: 0 !important;
     left: 0 !important;
     height: 100% !important;
-    overflow: hidden !important;
+    overflow: visible !important;
 }
 
 .cs2-item.flex-item {
-    position: static !important;
+    position: relative !important;
     transform: none !important;
-    width: 160px !important; /* уменьшили, чтобы влезали в контейнер */
-    height: 160px !important;
     flex-shrink: 0 !important;
-    margin-right: 20px !important;
     z-index: 7;
 }
 
@@ -221,29 +217,9 @@ body {
 
 .cs2-item.flex-item.selected {
     transform: scale(1.1) !important;
-}
-
-/* Дополнительные стили для отладки CS2 анимации */
-.prize-strip.cs2-animation {
-    overflow: visible !important;
-    background: rgba(0, 0, 0, 0.1) !important;
-}
-
-.cs2-item.flex-item {
-    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%) !important;
-    border: 3px solid #444 !important;
-    border-radius: 8px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
-    color: white !important;
-}
-
-.cs2-item.flex-item.selected {
     border-color: #ffd700 !important;
     box-shadow: 0 0 30px rgba(255, 215, 0, 0.6) !important;
+    animation: cs2WinnerGlow 1s ease-in-out infinite alternate;
 }
 
 /* Принудительное ускорение для анимаций */
@@ -929,7 +905,7 @@ body.reduced-motion *::after {
     position: relative;
     width: 100%;
     max-width: 800px;
-    height: 260px; /* увеличили, чтобы элементы были видны полностью */
+    height: 260px;
     margin: 2rem 0;
     overflow: hidden;
     border-radius: 15px;
