@@ -710,20 +710,40 @@ function generateCS2Items(caseType) {
     console.log('🎨 CS2 Генерация: Создаем DOM элементы...');
     createCS2Items();
     
-    // Вычисляем целевую позицию с учетом реальной ширины элементов и контейнера
-    const containerEl = document.querySelector('.prize-strip-container');
-    const containerWidth = containerEl ? containerEl.clientWidth : (window.innerWidth || 800);
-    const itemWidth = 160;
-    const itemGap = 20;
-    const itemSpacing = itemWidth + itemGap; // 180px
-    
-    // Центрируем выбранный предмет: его центр должен попасть в центр контейнера
-    // Формула: отрицательное смещение = (индекс * расстояние) - (центр контейнера - половина ширины предмета)
-    const centerOffset = containerWidth / 2 - itemWidth / 2;
-    cs2Animation.targetPosition = -(randomIndex * itemSpacing - centerOffset);
-    
-    console.log('📍 CS2 Генерация: Целевая позиция:', cs2Animation.targetPosition);
-    console.log('📍 CS2 Генерация: containerWidth:', containerWidth, 'itemSpacing:', itemSpacing, 'randomIndex:', randomIndex);
+    // Вычисляем целевую позицию ПОСЛЕ создания элементов и когда область видна
+    // Используем requestAnimationFrame для гарантии, что DOM обновлен
+    requestAnimationFrame(() => {
+        const containerEl = document.querySelector('.prize-strip-container');
+        let containerWidth = 0;
+        
+        if (containerEl) {
+            // Пробуем разные способы получить ширину
+            containerWidth = containerEl.offsetWidth || containerEl.clientWidth || containerEl.getBoundingClientRect().width;
+            
+            // Если все еще 0, пробуем получить через вычисленные стили
+            if (containerWidth === 0) {
+                const styles = window.getComputedStyle(containerEl);
+                containerWidth = parseFloat(styles.width) || parseFloat(styles.maxWidth) || 800;
+            }
+        }
+        
+        // Fallback на window.innerWidth
+        if (containerWidth === 0 || isNaN(containerWidth)) {
+            containerWidth = window.innerWidth || 800;
+            console.log('⚠️ CS2 Генерация: containerWidth был 0, используем window.innerWidth:', containerWidth);
+        }
+        
+        const itemWidth = 160;
+        const itemGap = 20;
+        const itemSpacing = itemWidth + itemGap; // 180px
+        
+        // Центрируем выбранный предмет: его центр должен попасть в центр контейнера
+        const centerOffset = containerWidth / 2 - itemWidth / 2;
+        cs2Animation.targetPosition = -(randomIndex * itemSpacing - centerOffset);
+        
+        console.log('📍 CS2 Генерация: Целевая позиция:', cs2Animation.targetPosition);
+        console.log('📍 CS2 Генерация: containerWidth:', containerWidth, 'itemSpacing:', itemSpacing, 'randomIndex:', randomIndex);
+    });
 }
 
 /**
@@ -852,29 +872,78 @@ async function runCS2Animation() {
     console.log('🎬 CS2 Анимация: Запускаем анимацию прокрутки');
     console.log('🎬 CS2 Анимация: Начальная ширина контейнера:', cs2Animation.container?.style?.width);
     console.log('🎬 CS2 Анимация: Кол-во элементов в контейнере:', cs2Animation.container?.children?.length);
+    
+    // Ждем, пока целевая позиция будет вычислена
+    // Если она еще не установлена, вычисляем ее сейчас
+    if (cs2Animation.targetPosition === 0 || cs2Animation.targetPosition === undefined) {
+        console.log('⚠️ CS2 Анимация: Целевая позиция еще не установлена, вычисляем...');
+        const containerEl = document.querySelector('.prize-strip-container');
+        let containerWidth = 800;
+        
+        if (containerEl) {
+            containerWidth = containerEl.offsetWidth || containerEl.clientWidth || containerEl.getBoundingClientRect().width || window.innerWidth || 800;
+        } else {
+            containerWidth = window.innerWidth || 800;
+        }
+        
+        const itemWidth = 160;
+        const itemGap = 20;
+        const itemSpacing = itemWidth + itemGap;
+        const selectedIndex = cs2Animation.items.findIndex(item => item.id === cs2Animation.selectedItem?.id);
+        
+        if (selectedIndex !== -1) {
+            const centerOffset = containerWidth / 2 - itemWidth / 2;
+            cs2Animation.targetPosition = -(selectedIndex * itemSpacing - centerOffset);
+            console.log('📍 CS2 Анимация: Пересчитали целевую позицию:', cs2Animation.targetPosition);
+        }
+    }
+    
     console.log('🎬 CS2 Анимация: Целевая позиция:', cs2Animation.targetPosition);
     
-    // Вычисляем начальную позицию так, чтобы несколько элементов были видны слева
-    // Это нужно для того, чтобы пользователь видел начало анимации
+    // Вычисляем начальную позицию так, чтобы несколько элементов были видны
     const containerEl = document.querySelector('.prize-strip-container');
-    const containerWidth = containerEl ? containerEl.clientWidth : (window.innerWidth || 800);
+    let containerWidth = 800;
+    if (containerEl) {
+        containerWidth = containerEl.offsetWidth || containerEl.clientWidth || containerEl.getBoundingClientRect().width || window.innerWidth || 800;
+    }
+    
     const itemWidth = 160;
     const itemGap = 20;
     const itemSpacing = itemWidth + itemGap;
     
-    // Начальная позиция: сдвигаем так, чтобы первые элементы были видны слева
-    // Центрируем первый элемент или несколько элементов слева
-    // Формула: отрицательное смещение, чтобы показать элементы слева
-    const initialOffset = 0; // Начинаем с позиции 0, чтобы показать первые элементы
+    // Начальная позиция: начинаем с позиции 0, чтобы первые элементы были видны
+    // Первый элемент (индекс 0) будет слева, следующие элементы будут видны справа
+    const initialOffset = 0;
     
     cs2Animation.currentPosition = initialOffset;
     cs2Animation.container.style.transform = `translateX(${initialOffset}px)`;
-    cs2Animation.container.style.transition = '';
+    cs2Animation.container.style.transition = 'none';
     
     console.log('🎬 CS2 Анимация: Начальная позиция установлена:', initialOffset);
+    console.log('🎬 CS2 Анимация: containerWidth:', containerWidth);
     
-    // Небольшая задержка для визуализации начальной позиции
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Проверяем видимость элементов после установки позиции
+    const firstElement = cs2Animation.container.children[0];
+    const secondElement = cs2Animation.container.children[1];
+    const thirdElement = cs2Animation.container.children[2];
+    
+    if (firstElement) {
+        const rect = firstElement.getBoundingClientRect();
+        const containerRect = containerEl?.getBoundingClientRect();
+        console.log('🔍 CS2 Анимация: Первый элемент:', {
+            visible: rect.width > 0 && rect.height > 0,
+            left: rect.left,
+            top: rect.top,
+            width: rect.width,
+            height: rect.height,
+            containerLeft: containerRect?.left,
+            containerWidth: containerRect?.width,
+            isInView: rect.left >= (containerRect?.left || 0) && rect.left < ((containerRect?.left || 0) + (containerRect?.width || 0))
+        });
+    }
+    
+    // Небольшая задержка для визуализации начальной позиции и проверки видимости
+    await new Promise(resolve => setTimeout(resolve, 200));
     
     return new Promise((resolve) => {
         let animationId;
