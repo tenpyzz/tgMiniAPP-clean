@@ -1078,16 +1078,14 @@ body.reduced-motion *::after {
 /* Центральный индикатор */
 .prize-indicator {
     position: absolute;
-    top: 50%;
+    top: 0;
     left: 50%;
-    transform: translate(-50%, -50%) translateZ(0);
-    -webkit-transform: translate(-50%, -50%) translateZ(0);
+    transform: translateX(-50%) translateZ(0);
+    -webkit-transform: translateX(-50%) translateZ(0);
     width: 4px;
-    height: 110px;
+    height: 100%;
     margin: 0;
     padding: 0;
-    margin-top: 0;
-    margin-bottom: 0;
     z-index: 10000;
     pointer-events: none;
     box-sizing: border-box;
@@ -1098,12 +1096,12 @@ body.reduced-motion *::after {
     height: 100%;
     background: linear-gradient(
         to bottom,
-        transparent 0%,
-        rgba(255, 215, 0, 0.8) 20%,
+        rgba(255, 215, 0, 0.9) 0%,
+        rgba(255, 215, 0, 1) 20%,
         rgba(255, 215, 0, 1) 40%,
         rgba(255, 215, 0, 1) 60%,
-        rgba(255, 215, 0, 0.8) 80%,
-        transparent 100%
+        rgba(255, 215, 0, 1) 80%,
+        rgba(255, 215, 0, 0.9) 100%
     );
     box-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
 }
@@ -1116,12 +1114,12 @@ body.reduced-motion *::after {
     bottom: 0;
     background: linear-gradient(
         to bottom,
-        transparent 0%,
+        rgba(255, 215, 0, 0.2) 0%,
         rgba(255, 215, 0, 0.3) 20%,
         rgba(255, 215, 0, 0.5) 40%,
         rgba(255, 215, 0, 0.5) 60%,
         rgba(255, 215, 0, 0.3) 80%,
-        transparent 100%
+        rgba(255, 215, 0, 0.2) 100%
     );
     border-radius: 10px;
     animation: indicatorGlow 1.5s ease-in-out infinite alternate;
