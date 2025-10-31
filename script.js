@@ -275,7 +275,7 @@ async function openCase(caseType, price) {
         showNotification(error.message || 'Ошибка открытия кейса', 'error');
     } finally {
         isOpening = false;
-        hideOpeningAnimation();
+        // Не закрываем анимацию автоматически — пользователь закроет через кнопку «Назад»
     }
 }
 

@@ -306,7 +306,7 @@ class Database {
                 users: users
             };
             
-            const backupPath = path.join(__dirname, 'backup_users.json');
+            const backupPath = join(__dirname, 'backup_users.json');
             fs.writeFileSync(backupPath, JSON.stringify(backupData, null, 2));
             console.log('✅ Резервная копия создана:', backupPath);
             return backupPath;
@@ -319,7 +319,7 @@ class Database {
     // Восстановление из резервной копии
     async restoreFromBackup(backupPath = null) {
         try {
-            const backupFile = backupPath || path.join(__dirname, 'backup_users.json');
+            const backupFile = backupPath || join(__dirname, 'backup_users.json');
             
             console.log(`🔍  - Проверяем файл резервной копии: ${backupFile}`);
             console.log(`🔍  - Файл существует: ${fs.existsSync(backupFile)}`);
@@ -388,7 +388,7 @@ class Database {
                 total: users.length
             };
             
-            const emergencyPath = path.join(__dirname, 'emergency_backup.json');
+            const emergencyPath = join(__dirname, 'emergency_backup.json');
             fs.writeFileSync(emergencyPath, JSON.stringify(emergencyData, null, 2));
             console.log(`🚨  - Экстренная резервная копия создана: ${emergencyPath}`);
             return emergencyPath;
@@ -401,7 +401,7 @@ class Database {
     // Восстановление из экстренной резервной копии
     async restoreFromEmergencyBackup() {
         try {
-            const emergencyPath = path.join(__dirname, 'emergency_backup.json');
+            const emergencyPath = join(__dirname, 'emergency_backup.json');
             
             if (!fs.existsSync(emergencyPath)) {
                 console.log('🚨  - Экстренная резервная копия не найдена');
