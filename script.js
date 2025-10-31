@@ -713,6 +713,13 @@ function createCS2Items() {
     
     // Добавляем класс для CS2 анимации
     cs2Animation.container.classList.add('cs2-animation');
+    // Явно задаем ширину и flex-раскладку для надежности на мобильных WebView
+    const totalWidth = cs2Animation.items.length * 200 + 800; // 200px на элемент + запас
+    cs2Animation.container.style.display = 'flex';
+    cs2Animation.container.style.alignItems = 'center';
+    cs2Animation.container.style.width = `${totalWidth}px`;
+    cs2Animation.container.style.transform = 'translateX(0px)';
+    cs2Animation.container.style.transition = '';
     
     console.log('🎨 CS2 DOM: Создаем', cs2Animation.items.length, 'элементов');
     
@@ -732,6 +739,9 @@ function createCS2Items() {
     });
     
     console.log('✅ CS2 DOM: Создано', cs2Animation.container.children.length, 'элементов');
+    if (cs2Animation.container.children.length === 0) {
+        console.warn('⚠️ CS2 DOM: Элементы не были добавлены в контейнер');
+    }
 }
 
 /**
@@ -754,6 +764,8 @@ function getCS2ItemIcon(item) {
  */
 async function runCS2Animation() {
     console.log('🎬 CS2 Анимация: Запускаем анимацию прокрутки');
+    console.log('🎬 CS2 Анимация: Начальная ширина контейнера:', cs2Animation.container?.style?.width);
+    console.log('🎬 CS2 Анимация: Кол-во элементов в контейнере:', cs2Animation.container?.children?.length);
     
     return new Promise((resolve) => {
         let animationId;
