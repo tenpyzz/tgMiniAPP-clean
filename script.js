@@ -699,9 +699,16 @@ function generateCS2Items(caseType) {
     console.log('🎨 CS2 Генерация: Создаем DOM элементы...');
     createCS2Items();
     
-    // Вычисляем целевую позицию
-    cs2Animation.targetPosition = -(randomIndex * 200 - 400); // Центрируем выбранный предмет
-    console.log('📍 CS2 Генерация: Целевая позиция:', cs2Animation.targetPosition);
+    // Вычисляем целевую позицию с учетом реальной ширины элементов и контейнера
+    const containerEl = document.querySelector('.prize-strip-container');
+    const containerWidth = containerEl?.clientWidth || 800;
+    const itemWidth = 160; // в inline стилях
+    const itemGap = 20;
+    const itemSpacing = itemWidth + itemGap; // 180px
+    // Центрируем выбранный предмет: его центр должен попасть в центр контейнера
+    const centerOffset = containerWidth / 2 - itemWidth / 2;
+    cs2Animation.targetPosition = -(randomIndex * itemSpacing - centerOffset);
+    console.log('📍 CS2 Генерация: Целевая позиция:', cs2Animation.targetPosition, 'containerWidth:', containerWidth, 'itemSpacing:', itemSpacing);
 }
 
 /**
@@ -720,6 +727,9 @@ function createCS2Items() {
     cs2Animation.container.style.width = `${totalWidth}px`;
     cs2Animation.container.style.transform = 'translateX(0px)';
     cs2Animation.container.style.transition = '';
+    cs2Animation.container.style.zIndex = '9998';
+    // Временный яркий фон для диагностики видимости (можно убрать позже)
+    // cs2Animation.container.style.background = 'rgba(0, 255, 0, 0.1)';
     
     console.log('🎨 CS2 DOM: Создаем', cs2Animation.items.length, 'элементов');
     
@@ -744,7 +754,7 @@ function createCS2Items() {
         itemElement.style.borderRadius = '8px';
         itemElement.style.color = '#fff';
         itemElement.style.opacity = '1';
-        itemElement.style.zIndex = '7';
+        itemElement.style.zIndex = '9999';
         
         // Убираем отладочные стили
         // itemElement.style.backgroundColor = 'red';
