@@ -731,6 +731,20 @@ function createCS2Items() {
             <div class="cs2-item-name">${item.name}</div>
             <div class="cs2-item-rarity">${getRarityName(item.rarity)}</div>
         `;
+        // Форсируем видимость и размеры (перебиваем любые конфликтующие стили)
+        itemElement.style.width = '160px';
+        itemElement.style.height = '160px';
+        itemElement.style.display = 'flex';
+        itemElement.style.flexDirection = 'column';
+        itemElement.style.alignItems = 'center';
+        itemElement.style.justifyContent = 'center';
+        itemElement.style.marginRight = '20px';
+        itemElement.style.background = 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)';
+        itemElement.style.border = '3px solid #444';
+        itemElement.style.borderRadius = '8px';
+        itemElement.style.color = '#fff';
+        itemElement.style.opacity = '1';
+        itemElement.style.zIndex = '7';
         
         // Убираем отладочные стили
         // itemElement.style.backgroundColor = 'red';
