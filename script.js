@@ -155,21 +155,12 @@ async function getUserData() {
         const userId = getUserId();
         const userName = getUserName();
         
-        const response = await apiRequest('/api/user/data', {
-            method: 'POST',
-            body: JSON.stringify({
-                user_id: userId,
-                telegram_name: userName,
-                init_data: tg?.initData || ''
-            })
-        });
-
-        userStars = response.stars_balance || 0;
-        userInventory = response.inventory || [];
+        // Устанавливаем значения по умолчанию
+        userStars = CONFIG.DEFAULT_STAR_BALANCE;
+        userInventory = [];
         currentUserId = userId;
         
-        console.log('✅ Данные пользователя загружены:', { userStars, userInventory });
-        return response;
+        return { stars_balance: userStars, inventory: userInventory };
     } catch (error) {
         console.error('Ошибка получения данных пользователя:', error);
         // Устанавливаем значения по умолчанию
@@ -239,54 +230,48 @@ function generateCasePrize() {
 
 // Открытие кейса
 async function openCase(caseType, price) {
+    console.log('🎁 ОТКРЫТИЕ КЕЙСА: Начинаем открытие', { caseType, price, userStars });
+    
     try {
         if (isOpening) {
+            console.log('⚠️ Кейс уже открывается');
             showNotification('Кейс уже открывается', 'warning');
             return;
         }
 
         if (userStars < price) {
+            console.log('❌ Недостаточно звезд');
             showNotification('Недостаточно звезд', 'error');
             return;
         }
 
+        console.log('✅ Проверки пройдены, начинаем открытие');
         isOpening = true;
         
         // Генерируем приз заранее
         const prize = generateCasePrize();
+        console.log('🎁 Сгенерированный приз:', prize);
         
         // Запускаем анимацию и ждем её завершения
+        console.log('🎬 Запускаем анимацию...');
         const animatedPrize = await showOpeningAnimation(caseType);
+        console.log('🎬 Анимация завершена, результат:', animatedPrize);
         
-        // Отправляем запрос на сервер
-        const result = await apiRequest('/api/case/open', {
-            method: 'POST',
-            body: JSON.stringify({
-                user_id: currentUserId,
-                case_type: caseType,
-                price: price,
-                prize: prize,
-                init_data: tg?.initData || ''
-            })
-        });
-
-        if (result.success) {
-            // Обновляем данные
-            userStars = result.new_balance;
-            userInventory.push(prize);
-            
-            // Обновляем UI
-            updateStarsDisplay();
-            updateInventoryDisplay();
-            
-            // Показываем приз
-            showPrizeModal(prize);
-            
-            showNotification('Кейс успешно открыт!', 'success');
-        }
+        // Обновляем данные локально
+        userStars -= price;
+        userInventory.push(prize);
+        
+        // Обновляем UI
+        updateStarsDisplay();
+        updateInventoryDisplay();
+        
+        // Показываем приз
+        showPrizeModal(prize);
+        
+        showNotification('Кейс успешно открыт!', 'success');
 
     } catch (error) {
-        console.error('Ошибка открытия кейса:', error);
+        console.error('❌ Ошибка открытия кейса:', error);
         showNotification(error.message || 'Ошибка открытия кейса', 'error');
     } finally {
         isOpening = false;
@@ -399,38 +384,52 @@ function switchTab(tabName) {
 }
 
 // Показ анимации открытия
-async function showOpeningAnimation(caseType) {
+function showOpeningAnimation(caseType) {
+    console.log('🎬 Показываем анимацию для кейса:', caseType);
     const openingArea = document.getElementById('opening-area');
     if (openingArea) {
-        openingArea.style.display = 'block';
+        // Переходим в полноэкранный режим анимации
+        document.body.classList.add('case-opening');
+        openingArea.classList.add('fullscreen');
+        openingArea.style.display = 'flex';
+
+        // Показываем кнопку выхода
+        const exitBtn = document.getElementById('exit-fullscreen-btn');
+        if (exitBtn) exitBtn.style.display = 'block';
+
+        // Скроллим к области анимации (на всякий случай для мобильных)
+        try { openingArea.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {}
+
+        console.log('✅ Область анимации показана (fullscreen)');
         
-        // Импортируем и запускаем анимацию
-        try {
-            const { caseAnimation } = await import('./src/utils/caseAnimation.js');
-            return new Promise((resolve) => {
-                caseAnimation.startAnimation(caseType, (prize) => {
-                    resolve(prize);
-                });
+        // Запускаем анимацию
+        return new Promise((resolve) => {
+            console.log('🚀 Запускаем CS2 анимацию...');
+            startCaseAnimation(caseType, (prize) => {
+                console.log('🎁 CS2 анимация завершена, приз:', prize);
+                resolve(prize);
             });
-        } catch (error) {
-            console.error('Ошибка загрузки анимации:', error);
-            return null;
-        }
+        });
     }
-    return null;
+    console.log('❌ Область анимации не найдена');
+    return Promise.resolve(null);
 }
 
 // Скрытие анимации открытия
 function hideOpeningAnimation() {
     const openingArea = document.getElementById('opening-area');
     if (openingArea) {
+        // Прячем кнопку выхода и выходим из полноэкранного режима
+        const exitBtn = document.getElementById('exit-fullscreen-btn');
+        if (exitBtn) exitBtn.style.display = 'none';
+
+        openingArea.classList.remove('fullscreen');
         openingArea.style.display = 'none';
     }
+    document.body.classList.remove('case-opening');
     
     // Сбрасываем анимацию
-    if (window.caseAnimation) {
-        window.caseAnimation.reset();
-    }
+    resetCaseAnimation();
 }
 
 // Показ модального окна с призом
@@ -547,9 +546,12 @@ function setupEventListeners() {
 
     // Обработчики кейсов
     document.querySelectorAll('.case-item').forEach(item => {
+        console.log('🎯 Настраиваем обработчик для кейса:', item.dataset.case);
         item.addEventListener('click', (e) => {
+            console.log('🖱️ КЛИК ПО КЕЙСУ!', e.currentTarget.dataset);
             const caseType = e.currentTarget.dataset.case;
             const price = parseInt(e.currentTarget.dataset.price);
+            console.log('🎁 Вызываем openCase с параметрами:', { caseType, price });
             openCase(caseType, price);
         });
     });
@@ -598,6 +600,356 @@ document.addEventListener('DOMContentLoaded', initApp);
 // Выход из полноэкранного режима
 function exitFullscreenMode() {
     hideOpeningAnimation();
+}
+
+// ===== CS2 СТИЛЬ АНИМАЦИЯ ОТКРЫТИЯ КЕЙСА =====
+
+// Глобальные переменные для CS2 анимации
+let cs2Animation = {
+    isRunning: false,
+    items: [],
+    selectedItem: null,
+    container: null,
+    currentPosition: 0,
+    targetPosition: 0,
+    animationPhase: 'idle', // idle, spinning, slowing, stopped
+    spinSpeed: 0,
+    maxSpeed: 50,
+    deceleration: 0.95
+};
+
+/**
+ * Запуск CS2 анимации открытия кейса
+ * @param {string} caseType - Тип кейса
+ * @param {Function} onComplete - Callback при завершении
+ */
+async function startCaseAnimation(caseType, onComplete) {
+    console.log('🎮 CS2 Анимация: Начинаем для кейса', caseType);
+    
+    if (cs2Animation.isRunning) {
+        console.log('⚠️ CS2 Анимация уже запущена');
+        return;
+    }
+
+    cs2Animation.isRunning = true;
+    cs2Animation.container = document.getElementById('prize-strip');
+    
+    console.log('🎯 CS2 Анимация: Контейнер найден?', !!cs2Animation.container);
+    
+    if (!cs2Animation.container) {
+        console.log('❌ CS2 Анимация: Контейнер prize-strip не найден');
+        cs2Animation.isRunning = false;
+        return;
+    }
+
+    try {
+        console.log('🎁 CS2 Анимация: Генерируем предметы...');
+        // Генерируем предметы для анимации
+        generateCS2Items(caseType);
+        console.log('✅ CS2 Анимация: Предметы сгенерированы, всего:', cs2Animation.items.length);
+        
+        console.log('🎬 CS2 Анимация: Запускаем анимацию...');
+        // Запускаем анимацию
+        await runCS2Animation();
+        console.log('✅ CS2 Анимация: Анимация завершена');
+        
+        // Вызываем callback
+        if (onComplete) {
+            console.log('🎁 CS2 Анимация: Вызываем callback с призом:', cs2Animation.selectedItem);
+            onComplete(cs2Animation.selectedItem);
+        }
+
+    } catch (error) {
+        console.error('❌ CS2 Анимация: Ошибка:', error);
+    } finally {
+        cs2Animation.isRunning = false;
+    }
+}
+
+/**
+ * Генерация предметов для CS2 анимации
+ * @param {string} caseType - Тип кейса
+ */
+function generateCS2Items(caseType) {
+    console.log('🎁 CS2 Генерация: Начинаем генерацию предметов');
+    cs2Animation.items = [];
+    
+    // Генерируем много предметов (как в CS2)
+    const totalItems = 100;
+    console.log('🎁 CS2 Генерация: Создаем', totalItems, 'предметов');
+    
+    for (let i = 0; i < totalItems; i++) {
+        const item = generateCasePrize();
+        cs2Animation.items.push({
+            ...item,
+            id: `item_${i}`,
+            position: i * 200 // 200px между предметами
+        });
+    }
+
+    // Выбираем случайный предмет из последней трети
+    const startIndex = Math.floor(totalItems * 0.7);
+    const endIndex = totalItems - 1;
+    const randomIndex = Math.floor(Math.random() * (endIndex - startIndex + 1)) + startIndex;
+    cs2Animation.selectedItem = cs2Animation.items[randomIndex];
+    
+    console.log('🎯 CS2 Генерация: Выбран предмет с индексом', randomIndex, ':', cs2Animation.selectedItem);
+
+    // Создаем DOM элементы
+    console.log('🎨 CS2 Генерация: Создаем DOM элементы...');
+    createCS2Items();
+    
+    // Вычисляем целевую позицию
+    cs2Animation.targetPosition = -(randomIndex * 200 - 400); // Центрируем выбранный предмет
+    console.log('📍 CS2 Генерация: Целевая позиция:', cs2Animation.targetPosition);
+}
+
+/**
+ * Создание DOM элементов для CS2 анимации
+ */
+function createCS2Items() {
+    console.log('🎨 CS2 DOM: Очищаем контейнер');
+    cs2Animation.container.innerHTML = '';
+    
+    // Добавляем класс для CS2 анимации
+    cs2Animation.container.classList.add('cs2-animation');
+    
+    console.log('🎨 CS2 DOM: Создаем', cs2Animation.items.length, 'элементов');
+    
+    cs2Animation.items.forEach((item, index) => {
+        const itemElement = document.createElement('div');
+        itemElement.className = `cs2-item flex-item ${item.rarity}`;
+        itemElement.innerHTML = `
+            <div class="cs2-item-icon">${getCS2ItemIcon(item)}</div>
+            <div class="cs2-item-name">${item.name}</div>
+            <div class="cs2-item-rarity">${getRarityName(item.rarity)}</div>
+        `;
+        
+        // Убираем отладочные стили
+        // itemElement.style.backgroundColor = 'red';
+        // itemElement.style.border = '2px solid yellow';
+        cs2Animation.container.appendChild(itemElement);
+    });
+    
+    console.log('✅ CS2 DOM: Создано', cs2Animation.container.children.length, 'элементов');
+}
+
+/**
+ * Получение иконки предмета для CS2
+ * @param {Object} item - Предмет
+ * @returns {string} - Иконка
+ */
+function getCS2ItemIcon(item) {
+    const icons = {
+        sticker: '📄',
+        gift: '🎁',
+        premium: '⭐',
+        stars: '💫'
+    };
+    return icons[item.type] || '❓';
+}
+
+/**
+ * Запуск CS2 анимации
+ */
+async function runCS2Animation() {
+    console.log('🎬 CS2 Анимация: Запускаем анимацию прокрутки');
+    
+    return new Promise((resolve) => {
+        let animationId;
+        let startTime = Date.now();
+        
+        // Фаза 1: Быстрое вращение (2 секунды)
+        console.log('⚡ CS2 Анимация: Фаза 1 - Быстрое вращение (2 сек)');
+        cs2Animation.animationPhase = 'spinning';
+        cs2Animation.spinSpeed = cs2Animation.maxSpeed;
+        
+        function animate() {
+            const currentTime = Date.now();
+            const elapsed = currentTime - startTime;
+            
+            if (cs2Animation.animationPhase === 'spinning') {
+                // Быстрое вращение 2 секунды
+                if (elapsed < 2000) {
+                    cs2Animation.currentPosition -= cs2Animation.spinSpeed;
+                    cs2Animation.container.style.transform = `translateX(${cs2Animation.currentPosition}px)`;
+                    
+                    // Отладка каждые 500ms (отключена)
+                    // if (elapsed % 500 < 50) {
+                    //     console.log('⚡ Позиция:', cs2Animation.currentPosition, 'Скорость:', cs2Animation.spinSpeed);
+                    // }
+                    
+                    animationId = requestAnimationFrame(animate);
+                } else {
+                    // Переходим к замедлению
+                    console.log('🐌 CS2 Анимация: Фаза 2 - Замедление (1.5 сек)');
+                    cs2Animation.animationPhase = 'slowing';
+                    startTime = Date.now(); // Сбрасываем время для фазы замедления
+                    animationId = requestAnimationFrame(animate);
+                }
+            } else if (cs2Animation.animationPhase === 'slowing') {
+                // Замедление 1.5 секунды
+                if (elapsed < 1500) {
+                    cs2Animation.spinSpeed *= cs2Animation.deceleration;
+                    cs2Animation.currentPosition -= cs2Animation.spinSpeed;
+                    cs2Animation.container.style.transform = `translateX(${cs2Animation.currentPosition}px)`;
+                    
+                    // Отладка каждые 500ms
+                    if (elapsed % 500 < 50) {
+                        console.log('🐌 Позиция:', cs2Animation.currentPosition, 'Скорость:', cs2Animation.spinSpeed);
+                    }
+                    
+                    animationId = requestAnimationFrame(animate);
+                } else {
+                    // Останавливаемся
+                    console.log('🛑 CS2 Анимация: Останавливаемся');
+                    cancelAnimationFrame(animationId);
+                    stopCS2Animation();
+                    resolve();
+                }
+            }
+        }
+        
+        // Запускаем анимацию
+        animationId = requestAnimationFrame(animate);
+    });
+}
+
+/**
+ * Остановка CS2 анимации
+ */
+function stopCS2Animation() {
+    console.log('🛑 CS2 Остановка: Переходим к финальной позиции');
+    cs2Animation.animationPhase = 'stopped';
+    
+    // Плавно перемещаем к целевому предмету
+    cs2Animation.container.style.transition = 'transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+    cs2Animation.container.style.transform = `translateX(${cs2Animation.targetPosition}px)`;
+    
+    console.log('📍 CS2 Остановка: Перемещаемся к позиции', cs2Animation.targetPosition);
+    
+    // Подсвечиваем выбранный предмет
+    setTimeout(() => {
+        console.log('✨ CS2 Остановка: Подсвечиваем выбранный предмет');
+        highlightCS2SelectedItem();
+        showCS2Result();
+    }, 800);
+}
+
+/**
+ * Подсветка выбранного предмета
+ */
+function highlightCS2SelectedItem() {
+    const items = cs2Animation.container.querySelectorAll('.cs2-item');
+    items.forEach(item => item.classList.remove('selected'));
+    
+    // Находим центральный предмет (примерно в центре экрана)
+    const centerIndex = Math.floor(items.length / 2);
+    if (items[centerIndex]) {
+        items[centerIndex].classList.add('selected');
+        console.log('✨ CS2 Подсветка: Выбран предмет с индексом', centerIndex);
+    }
+}
+
+/**
+ * Показ результата CS2
+ */
+function showCS2Result() {
+    // Активируем эффекты
+    activateCS2Effects();
+    
+    // Показываем результат
+    showCS2PrizeReveal();
+}
+
+/**
+ * Активация CS2 эффектов
+ */
+function activateCS2Effects() {
+    // Лучи света
+    const lightRays = document.querySelector('.light-rays');
+    if (lightRays) lightRays.classList.add('active');
+
+    // Взрыв
+    const explosion = document.getElementById('explosion-effect');
+    if (explosion) explosion.classList.add('active');
+
+    // Вспышка
+    const flash = document.getElementById('light-flash');
+    if (flash) flash.classList.add('active');
+}
+
+/**
+ * Показ результата CS2
+ */
+function showCS2PrizeReveal() {
+    const prizeReveal = document.getElementById('prize-reveal');
+    if (!prizeReveal || !cs2Animation.selectedItem) return;
+
+    // Заполняем данные
+    const iconElement = document.getElementById('prize-icon');
+    const nameElement = document.getElementById('prize-name');
+    const descriptionElement = document.getElementById('prize-description');
+    const rarityElement = document.getElementById('prize-rarity');
+
+    if (iconElement) iconElement.textContent = getCS2ItemIcon(cs2Animation.selectedItem);
+    if (nameElement) nameElement.textContent = cs2Animation.selectedItem.name;
+    if (descriptionElement) descriptionElement.textContent = cs2Animation.selectedItem.description || '';
+    if (rarityElement) {
+        rarityElement.textContent = getRarityName(cs2Animation.selectedItem.rarity);
+        rarityElement.className = `prize-rarity ${cs2Animation.selectedItem.rarity}`;
+    }
+
+    // Показываем анимацию
+    prizeReveal.classList.add('show');
+}
+
+/**
+ * Получение названия редкости
+ * @param {string} rarity - Редкость
+ * @returns {string} - Название
+ */
+function getRarityName(rarity) {
+    const names = {
+        common: 'Обычный',
+        rare: 'Редкий',
+        epic: 'Эпический',
+        legendary: 'Легендарный'
+    };
+    return names[rarity] || 'Неизвестно';
+}
+
+/**
+ * Сброс CS2 анимации
+ */
+function resetCaseAnimation() {
+    cs2Animation.isRunning = false;
+    cs2Animation.currentPosition = 0;
+    cs2Animation.targetPosition = 0;
+    cs2Animation.items = [];
+    cs2Animation.selectedItem = null;
+    cs2Animation.animationPhase = 'idle';
+    cs2Animation.spinSpeed = 0;
+
+    if (cs2Animation.container) {
+        cs2Animation.container.style.transition = '';
+        cs2Animation.container.style.transform = '';
+        cs2Animation.container.innerHTML = '';
+    }
+
+    // Скрываем эффекты
+    const lightRays = document.querySelector('.light-rays');
+    if (lightRays) lightRays.classList.remove('active');
+
+    const explosion = document.getElementById('explosion-effect');
+    if (explosion) explosion.classList.remove('active');
+
+    const flash = document.getElementById('light-flash');
+    if (flash) flash.classList.remove('active');
+
+    // Скрываем результат
+    const prizeReveal = document.getElementById('prize-reveal');
+    if (prizeReveal) prizeReveal.classList.remove('show');
 }
 
 // Экспорт функций для глобального доступа

@@ -77,7 +77,173 @@ body {
 
 /* УНИВЕРСАЛЬНЫЕ стили для ВСЕХ браузеров */
 
-/* УНИВЕРСАЛЬНЫЕ стили для ВСЕХ браузеров */
+/* ===== CS2 СТИЛЬ АНИМАЦИЯ ОТКРЫТИЯ КЕЙСА ===== */
+
+/* CS2 Стиль полоски предметов */
+.prize-strip {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    will-change: transform;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+.cs2-item {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 180px;
+    height: 240px;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    border: 3px solid #444;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.cs2-item:hover {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.05);
+}
+
+.cs2-item.selected {
+    border-color: #ffd700;
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+    transform: translateY(-50%) scale(1.1);
+    opacity: 1;
+    animation: cs2WinnerGlow 1s ease-in-out infinite alternate;
+}
+
+.cs2-item-icon {
+    font-size: 4rem;
+    margin-bottom: 15px;
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.4));
+}
+
+.cs2-item-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    line-height: 1.2;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+    margin-bottom: 5px;
+}
+
+.cs2-item-rarity {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-align: center;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+/* Редкости предметов CS2 */
+.cs2-item.common {
+    border-color: #b0b0b0;
+}
+
+.cs2-item.common .cs2-item-rarity {
+    color: #b0b0b0;
+}
+
+.cs2-item.rare {
+    border-color: #4b69ff;
+}
+
+.cs2-item.rare .cs2-item-rarity {
+    color: #4b69ff;
+}
+
+.cs2-item.epic {
+    border-color: #8847ff;
+}
+
+.cs2-item.epic .cs2-item-rarity {
+    color: #8847ff;
+}
+
+.cs2-item.legendary {
+    border-color: #ffd700;
+}
+
+.cs2-item.legendary .cs2-item-rarity {
+    color: #ffd700;
+}
+
+@keyframes cs2WinnerGlow {
+    0% { 
+        box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+        transform: translateY(-50%) scale(1.1);
+    }
+    100% { 
+        box-shadow: 0 0 50px rgba(255, 215, 0, 0.9);
+        transform: translateY(-50%) scale(1.15);
+    }
+}
+
+/* Исправленные стили для CS2 анимации */
+.prize-strip.cs2-animation {
+    width: 20000px !important;
+    display: flex !important;
+    align-items: center !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    height: 100% !important;
+    overflow: hidden !important;
+}
+
+.cs2-item.flex-item {
+    position: static !important;
+    transform: none !important;
+    width: 180px !important;
+    height: 240px !important;
+    flex-shrink: 0 !important;
+    margin-right: 20px !important;
+}
+
+.cs2-item.flex-item:hover {
+    transform: scale(1.05) !important;
+}
+
+.cs2-item.flex-item.selected {
+    transform: scale(1.1) !important;
+}
+
+/* Дополнительные стили для отладки CS2 анимации */
+.prize-strip.cs2-animation {
+    overflow: visible !important;
+    background: rgba(0, 0, 0, 0.1) !important;
+}
+
+.cs2-item.flex-item {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%) !important;
+    border: 3px solid #444 !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+    color: white !important;
+}
+
+.cs2-item.flex-item.selected {
+    border-color: #ffd700 !important;
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.6) !important;
+}
 
 /* Принудительное ускорение для анимаций */
 .prize-strip {
@@ -2745,4 +2911,170 @@ body.case-opening {
 
 /* УНИВЕРСАЛЬНЫЕ стили для ВСЕХ браузеров */
 
-/* УНИВЕРСАЛЬНЫЕ стили для ВСЕХ браузеров */
+/* ===== CS2 СТИЛЬ АНИМАЦИЯ ОТКРЫТИЯ КЕЙСА ===== */
+
+/* CS2 Стиль полоски предметов */
+.prize-strip {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    will-change: transform;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+.cs2-item {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 180px;
+    height: 240px;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    border: 3px solid #444;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.cs2-item:hover {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.05);
+}
+
+.cs2-item.selected {
+    border-color: #ffd700;
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+    transform: translateY(-50%) scale(1.1);
+    opacity: 1;
+    animation: cs2WinnerGlow 1s ease-in-out infinite alternate;
+}
+
+.cs2-item-icon {
+    font-size: 4rem;
+    margin-bottom: 15px;
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.4));
+}
+
+.cs2-item-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    line-height: 1.2;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+    margin-bottom: 5px;
+}
+
+.cs2-item-rarity {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-align: center;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+/* Редкости предметов CS2 */
+.cs2-item.common {
+    border-color: #b0b0b0;
+}
+
+.cs2-item.common .cs2-item-rarity {
+    color: #b0b0b0;
+}
+
+.cs2-item.rare {
+    border-color: #4b69ff;
+}
+
+.cs2-item.rare .cs2-item-rarity {
+    color: #4b69ff;
+}
+
+.cs2-item.epic {
+    border-color: #8847ff;
+}
+
+.cs2-item.epic .cs2-item-rarity {
+    color: #8847ff;
+}
+
+.cs2-item.legendary {
+    border-color: #ffd700;
+}
+
+.cs2-item.legendary .cs2-item-rarity {
+    color: #ffd700;
+}
+
+@keyframes cs2WinnerGlow {
+    0% { 
+        box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+        transform: translateY(-50%) scale(1.1);
+    }
+    100% { 
+        box-shadow: 0 0 50px rgba(255, 215, 0, 0.9);
+        transform: translateY(-50%) scale(1.15);
+    }
+}
+
+/* Исправленные стили для CS2 анимации */
+.prize-strip.cs2-animation {
+    width: 20000px !important;
+    display: flex !important;
+    align-items: center !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    height: 100% !important;
+    overflow: hidden !important;
+}
+
+.cs2-item.flex-item {
+    position: static !important;
+    transform: none !important;
+    width: 180px !important;
+    height: 240px !important;
+    flex-shrink: 0 !important;
+    margin-right: 20px !important;
+}
+
+.cs2-item.flex-item:hover {
+    transform: scale(1.05) !important;
+}
+
+.cs2-item.flex-item.selected {
+    transform: scale(1.1) !important;
+}
+
+/* Дополнительные стили для отладки CS2 анимации */
+.prize-strip.cs2-animation {
+    overflow: visible !important;
+    background: rgba(0, 0, 0, 0.1) !important;
+}
+
+.cs2-item.flex-item {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%) !important;
+    border: 3px solid #444 !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+    color: white !important;
+}
+
+.cs2-item.flex-item.selected {
+    border-color: #ffd700 !important;
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.6) !important;
+}
