@@ -754,6 +754,8 @@ function createCS2Items() {
     cs2Animation.container.style.transition = '';
     cs2Animation.container.style.zIndex = '9998';
     cs2Animation.container.style.overflow = 'visible';
+    cs2Animation.container.style.visibility = 'visible';
+    cs2Animation.container.style.opacity = '1';
     
     console.log('🎨 CS2 DOM: Создаем', cs2Animation.items.length, 'элементов');
     
@@ -770,19 +772,24 @@ function createCS2Items() {
         // Устанавливаем стили для элемента
         itemElement.style.width = `${itemWidth}px`;
         itemElement.style.height = `${itemWidth}px`;
+        itemElement.style.minWidth = `${itemWidth}px`;
+        itemElement.style.minHeight = `${itemWidth}px`;
         itemElement.style.display = 'flex';
         itemElement.style.flexDirection = 'column';
         itemElement.style.alignItems = 'center';
         itemElement.style.justifyContent = 'center';
         itemElement.style.marginRight = `${itemGap}px`;
+        itemElement.style.marginLeft = '0';
         itemElement.style.background = 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)';
         itemElement.style.border = '3px solid #444';
         itemElement.style.borderRadius = '8px';
         itemElement.style.color = '#fff';
         itemElement.style.opacity = '1';
+        itemElement.style.visibility = 'visible';
         itemElement.style.position = 'relative';
         itemElement.style.flexShrink = '0';
         itemElement.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.4)';
+        itemElement.style.pointerEvents = 'none'; // Чтобы не мешали кликам
         
         // Цвета по редкости
         const rarityColors = {
@@ -800,6 +807,27 @@ function createCS2Items() {
     
     console.log('✅ CS2 DOM: Создано', cs2Animation.container.children.length, 'элементов');
     console.log('✅ CS2 DOM: Общая ширина контейнера:', totalWidth, 'px');
+    
+    // Проверяем видимость элементов
+    const firstElement = cs2Animation.container.children[0];
+    const lastElement = cs2Animation.container.children[cs2Animation.container.children.length - 1];
+    if (firstElement) {
+        console.log('✅ CS2 DOM: Первый элемент найден, стили:', {
+            display: firstElement.style.display,
+            opacity: firstElement.style.opacity,
+            visibility: firstElement.style.visibility,
+            width: firstElement.style.width,
+            height: firstElement.style.height
+        });
+        const rect = firstElement.getBoundingClientRect();
+        console.log('✅ CS2 DOM: Позиция первого элемента:', {
+            left: rect.left,
+            top: rect.top,
+            width: rect.width,
+            height: rect.height,
+            visible: rect.width > 0 && rect.height > 0
+        });
+    }
 }
 
 /**
@@ -826,10 +854,24 @@ async function runCS2Animation() {
     console.log('🎬 CS2 Анимация: Кол-во элементов в контейнере:', cs2Animation.container?.children?.length);
     console.log('🎬 CS2 Анимация: Целевая позиция:', cs2Animation.targetPosition);
     
-    // Сбрасываем начальную позицию
-    cs2Animation.currentPosition = 0;
-    cs2Animation.container.style.transform = 'translateX(0px)';
+    // Вычисляем начальную позицию так, чтобы несколько элементов были видны слева
+    // Это нужно для того, чтобы пользователь видел начало анимации
+    const containerEl = document.querySelector('.prize-strip-container');
+    const containerWidth = containerEl ? containerEl.clientWidth : (window.innerWidth || 800);
+    const itemWidth = 160;
+    const itemGap = 20;
+    const itemSpacing = itemWidth + itemGap;
+    
+    // Начальная позиция: сдвигаем так, чтобы первые элементы были видны слева
+    // Центрируем первый элемент или несколько элементов слева
+    // Формула: отрицательное смещение, чтобы показать элементы слева
+    const initialOffset = 0; // Начинаем с позиции 0, чтобы показать первые элементы
+    
+    cs2Animation.currentPosition = initialOffset;
+    cs2Animation.container.style.transform = `translateX(${initialOffset}px)`;
     cs2Animation.container.style.transition = '';
+    
+    console.log('🎬 CS2 Анимация: Начальная позиция установлена:', initialOffset);
     
     // Небольшая задержка для визуализации начальной позиции
     await new Promise(resolve => setTimeout(resolve, 100));

@@ -201,7 +201,10 @@ body {
     top: 0 !important;
     left: 0 !important;
     height: 100% !important;
+    width: auto !important; /* Позволяем JavaScript устанавливать ширину */
     overflow: visible !important;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 .cs2-item.flex-item {
@@ -934,6 +937,9 @@ body.reduced-motion *::after {
     perspective: 1000px;
     -webkit-perspective: 1000px;
     z-index: 6;
+    overflow: visible; /* Позволяем элементам быть видны за пределами */
+    width: auto; /* Позволяем JavaScript устанавливать ширину */
+    min-width: 100%; /* Минимальная ширина - ширина контейнера */
 }
 
 /* Отдельный приз в полоске */
