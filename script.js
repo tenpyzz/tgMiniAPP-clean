@@ -6,7 +6,6 @@ let userStars = 0;
 let userInventory = [];
 let isOpening = false;
 let currentUserId = null;
-let pendingPrize = null;
 let currentTab = 'cases';
 
 // Telegram WebApp API
@@ -124,23 +123,55 @@ function getUserName() {
     return 'Unknown User';
 }
 
-// API функции удалены (не используются)
+// API функции
+async function apiRequest(endpoint, options = {}) {
+    const url = `${CONFIG.API_BASE_URL}${endpoint}`;
+    const defaultOptions = {
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    };
+
+    const mergedOptions = { ...defaultOptions, ...options };
+    
+    try {
+        const response = await fetch(url, mergedOptions);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('API request failed:', error);
+        throw error;
+    }
+}
 
 // Получение данных пользователя
 async function getUserData() {
     try {
         const userId = getUserId();
         const userName = getUserName();
-        
-        // Устанавливаем значения по умолчанию
-        userStars = CONFIG.DEFAULT_STAR_BALANCE;
-        userInventory = [];
         currentUserId = userId;
+        
+        // Загружаем данные с сервера
+        const data = await apiRequest('/api/user/data', {
+            method: 'POST',
+            body: JSON.stringify({
+                user_id: userId,
+                telegram_name: userName,
+                init_data: tg?.initData || ''
+            })
+        });
+        
+        userStars = data.stars_balance || CONFIG.DEFAULT_STAR_BALANCE;
+        userInventory = data.inventory || [];
         
         return { stars_balance: userStars, inventory: userInventory };
     } catch (error) {
         console.error('Ошибка получения данных пользователя:', error);
-        // Устанавливаем значения по умолчанию
+        // Устанавливаем значения по умолчанию при ошибке
         userStars = CONFIG.DEFAULT_STAR_BALANCE;
         userInventory = [];
         currentUserId = getUserId();
@@ -148,7 +179,27 @@ async function getUserData() {
     }
 }
 
-// saveUserData удалена (не используется)
+// Сохранение данных пользователя
+async function saveUserData() {
+    try {
+        if (!currentUserId) return;
+        
+        await apiRequest('/api/user/save', {
+            method: 'POST',
+            body: JSON.stringify({
+                user_id: currentUserId,
+                telegram_name: getUserName(),
+                stars_balance: userStars,
+                inventory: userInventory,
+                init_data: tg?.initData || ''
+            })
+        });
+        
+        console.log('✅ Данные пользователя сохранены');
+    } catch (error) {
+        console.error('Ошибка сохранения данных пользователя:', error);
+    }
+}
 
 // Генерация приза
 function generatePrize(rarity = 'common') {
@@ -217,6 +268,9 @@ async function openCase(caseType, price) {
         // Обновляем данные локально
         userStars -= price;
         userInventory.push(prize);
+        
+        // Сохраняем в базу данных
+        await saveUserData();
         
         // Обновляем UI
         updateStarsDisplay();

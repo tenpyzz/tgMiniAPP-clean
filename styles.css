@@ -374,10 +374,6 @@ body.reduced-motion *::after {
 
 
 
-@keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
 
 /* Main Content */
 .main-content {
@@ -2415,48 +2411,6 @@ body.case-opening {
     transform: translateY(0);
 }
 
-/* Loading Overlay */
-.loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s ease;
-}
-
-.loading-overlay.show {
-    opacity: 1;
-    visibility: visible;
-}
-
-.loading-spinner {
-    width: 50px;
-    height: 50px;
-    border: 5px solid rgba(255, 255, 255, 0.3);
-    border-top: 5px solid white;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 1rem;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-.loading-overlay p {
-    color: white;
-    font-size: 1.2rem;
-}
 
 /* Prize Modal */
 .prize-modal {
@@ -2609,112 +2563,6 @@ body.case-opening {
     margin-bottom: 1rem;
 }
 
-.modal-buttons {
-    display: flex;
-    gap: 1rem;
-    margin-top: 1.5rem;
-    justify-content: center;
-}
-
-.add-to-inventory-btn {
-    background: linear-gradient(45deg, var(--info-color), #1976d2);
-    color: white;
-    border: none;
-    padding: 1rem 1.5rem;
-    border-radius: 25px;
-    font-size: 1rem;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow: var(--shadow);
-    transition: all 0.3s ease;
-    flex: 1;
-    min-width: 150px;
-    position: relative;
-    overflow: hidden;
-    -webkit-tap-highlight-color: transparent;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    user-select: none;
-    -webkit-user-drag: none;
-    -webkit-appearance: none;
-    appearance: none;
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
-    touch-action: manipulation;
-    user-select: none;
-    min-height: 48px;
-}
-
-.add-to-inventory-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
-}
-
-.claim-prize-btn {
-    background: linear-gradient(45deg, var(--success-color), #45a049);
-    color: white;
-    border: none;
-    padding: 1rem 1.5rem;
-    border-radius: 25px;
-    font-size: 1rem;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow: var(--shadow);
-    transition: all 0.3s ease;
-    flex: 1;
-    min-width: 150px;
-    position: relative;
-    overflow: hidden;
-    -webkit-tap-highlight-color: transparent;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    user-select: none;
-    -webkit-user-drag: none;
-    -webkit-appearance: none;
-    appearance: none;
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
-    touch-action: manipulation;
-    user-select: none;
-    min-height: 48px;
-}
-
-.claim-prize-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
-}
-
-/* Анимация пульсации для кнопок приза */
-.add-to-inventory-btn,
-.claim-prize-btn {
-    animation: buttonPulse 2s ease-in-out infinite;
-}
-
-@keyframes buttonPulse {
-    0%, 100% {
-        box-shadow: var(--shadow);
-    }
-    50% {
-        box-shadow: 
-            var(--shadow),
-            0 0 20px rgba(33, 150, 243, 0.4);
-    }
-}
-
-.claim-prize-btn {
-    animation: buttonPulseGreen 2s ease-in-out infinite;
-}
-
-@keyframes buttonPulseGreen {
-    0%, 100% {
-        box-shadow: var(--shadow);
-    }
-    50% {
-        box-shadow: 
-            var(--shadow),
-            0 0 20px rgba(76, 175, 80, 0.4);
-    }
-}
 
 /* Notifications */
 .notification {

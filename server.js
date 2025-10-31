@@ -4,7 +4,7 @@ import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import Database from './database.js';
-import { validateInitData, extractUserData } from './validation.js';
+// validation.js больше не используется
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -13,47 +13,9 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Получаем токен бота из переменных окружения
-const BOT_TOKEN = process.env.BOT_TOKEN;
+// BOT_TOKEN не требуется (не используется)
 
-if (!BOT_TOKEN) {
-    console.error('❌ BOT_TOKEN не найден в переменных окружения!');
-    process.exit(1);
-}
-
-// Middleware для проверки данных Telegram
-function verifyTelegramData(req, res, next) {
-    const { init_data } = req.body;
-    
-    if (!init_data) {
-        return res.status(400).json({ 
-            error: 'Missing init_data',
-            message: 'Отсутствуют данные инициализации Telegram'
-        });
-    }
-    
-    // Валидируем init_data
-    if (!validateInitData(init_data, BOT_TOKEN)) {
-        console.log('❌ Неверная подпись init_data');
-        return res.status(401).json({ 
-            error: 'Invalid init_data',
-            message: 'Неверные данные инициализации'
-        });
-    }
-    
-    // Извлекаем данные пользователя
-    const userData = extractUserData(init_data);
-    if (!userData) {
-        return res.status(400).json({ 
-            error: 'Invalid user data',
-            message: 'Неверные данные пользователя'
-        });
-    }
-    
-    // Добавляем данные пользователя в запрос
-    req.telegramUser = userData;
-    next();
-}
+// verifyTelegramData удален (не используется)
 
 // Middleware для проверки админских прав
 // verifyAdmin удален как неиспользуемый
@@ -107,8 +69,6 @@ async function safeUpdateUser(userId, data) {
         return { user_id: userId, ...data };
     }
 }
-
-// safeGetAllUsers удален как неиспользуемый
 
 async function safeGetStats() {
     if (!db || !db.isConnected) {
@@ -171,16 +131,11 @@ async function initializeDatabase() {
 }
 
 // Получение данных пользователя
-app.post('/api/user/data', verifyTelegramData, async (req, res) => {
+app.post('/api/user/data', async (req, res) => {
     try {
         const { user_id, telegram_name } = req.body;
-        const telegramUser = req.telegramUser;
         
-        console.log('📥 Получен запрос данных пользователя:', {
-            user_id,
-            telegram_name,
-            telegram_user: telegramUser
-        });
+        console.log('📥 Получен запрос данных пользователя:', { user_id, telegram_name });
         
         // Получаем данные пользователя из базы данных
         let user = await safeGetUser(user_id);
@@ -188,22 +143,16 @@ app.post('/api/user/data', verifyTelegramData, async (req, res) => {
         if (!user) {
             console.log(`👤 Пользователь ${user_id} не найден, создаем нового`);
             user = await safeUpsertUser(user_id, telegram_name || 'Unknown User', 100, []);
-            console.log(`✅ Создан новый пользователь ${user_id}:`, user);
+            console.log(`✅ Создан новый пользователь ${user_id}`);
         } else {
-            console.log(`👤 Пользователь ${user_id} найден:`, {
-                user_id: user.user_id,
-                telegram_name: user.telegram_name,
-                balance: user.balance,
-                inventory_count: user.inventory?.length || 0
-            });
+            console.log(`👤 Пользователь ${user_id} найден`);
         }
         
         const response = {
-            stars_balance: user.balance,
+            stars_balance: user.balance || 100,
             inventory: user.inventory || []
         };
         
-        console.log('📤 Отправляем ответ:', response);
         res.json(response);
     } catch (error) {
         console.error('❌ Ошибка получения данных пользователя:', error);
@@ -215,139 +164,26 @@ app.post('/api/user/data', verifyTelegramData, async (req, res) => {
 });
 
 // Сохранение данных пользователя
-app.post('/api/user/save', verifyTelegramData, async (req, res) => {
+app.post('/api/user/save', async (req, res) => {
     try {
         const { user_id, telegram_name, stars_balance, inventory } = req.body;
-        const telegramUser = req.telegramUser;
         
-        console.log('💾 Получен запрос сохранения данных пользователя:', {
-            user_id,
-            telegram_name,
-            stars_balance,
-            inventory,
-            telegram_user: telegramUser
-        });
+        console.log('💾 Сохранение данных пользователя:', { user_id, stars_balance, inventory_count: inventory?.length || 0 });
         
         // Сохраняем данные пользователя в базу данных
         await safeUpdateUser(user_id, {
             telegram_name: telegram_name || 'Unknown User',
-            balance: stars_balance,
+            balance: stars_balance || 100,
             inventory: inventory || []
         });
         
-        console.log(`✅ Данные пользователя ${user_id} сохранены успешно`);
+        console.log(`✅ Данные пользователя ${user_id} сохранены`);
         res.json({ success: true });
     } catch (error) {
         console.error('❌ Ошибка сохранения данных пользователя:', error);
         res.status(500).json({ 
             error: 'Failed to save user data',
             message: 'Ошибка сохранения данных пользователя'
-        });
-    }
-});
-
-// Безопасное открытие кейса
-app.post('/api/case/open', verifyTelegramData, async (req, res) => {
-    try {
-        const { user_id, case_type, price, prize } = req.body;
-        const telegramUser = req.telegramUser;
-        
-        console.log(`🎰 Пользователь ${user_id} открывает кейс ${case_type} за ${price} звезд`);
-        
-        // Получаем данные пользователя
-        let user = await safeGetUser(user_id);
-        if (!user) {
-            return res.status(404).json({ 
-                error: 'User not found',
-                message: 'Пользователь не найден'
-            });
-        }
-        
-        // Проверяем баланс
-        if (user.balance < price) {
-            return res.status(400).json({ 
-                error: 'Insufficient balance',
-                message: 'Недостаточно звезд для открытия кейса'
-            });
-        }
-        
-        // Проверяем, что приз валидный
-        if (!prize || !prize.name || !prize.type) {
-            return res.status(400).json({ 
-                error: 'Invalid prize',
-                message: 'Некорректные данные приза'
-            });
-        }
-        
-        // Атомарная транзакция: списываем деньги И добавляем приз
-        const newBalance = user.balance - price;
-        const newInventory = [...(user.inventory || []), prize];
-        
-        // Обновляем пользователя с новыми данными
-        await safeUpdateUser(user_id, {
-            telegram_name: user.telegram_name,
-            balance: newBalance,
-            inventory: newInventory
-        });
-        
-        console.log(`✅ Кейс успешно открыт. Новый баланс: ${newBalance}, приз добавлен: ${prize.name}`);
-        
-        res.json({
-            success: true,
-            new_balance: newBalance,
-            prize: prize,
-            message: 'Кейс успешно открыт'
-        });
-        
-    } catch (error) {
-        console.error('❌ Ошибка открытия кейса:', error);
-        res.status(500).json({ 
-            error: 'Failed to open case',
-            message: 'Ошибка открытия кейса'
-        });
-    }
-});
-
-// Обработка получения приза
-app.post('/api/prize/claim', verifyTelegramData, async (req, res) => {
-    try {
-        const { user_id, prize } = req.body;
-        const telegramUser = req.telegramUser;
-        
-        console.log(`User ${user_id} claimed prize:`, prize);
-        
-        let result = { success: true };
-        
-        // Получаем данные пользователя из базы данных
-        let user = await safeGetUser(user_id);
-        if (!user) {
-            user = await safeUpsertUser(user_id, 'Unknown User', 100, []);
-        }
-        
-        switch (prize.type) {
-            case 'gift':
-                result.gift_message_id = `gift_${Date.now()}`;
-                console.log(`Gift ${prize.telegram_gift_id} sent to user ${user_id}`);
-                break;
-                
-            case 'premium':
-                result.subscription_id = `premium_${Date.now()}`;
-                console.log(`Premium subscription activated for user ${user_id} for ${prize.premium_duration} days`);
-                break;
-                
-            case 'stars':
-                const newBalance = user.balance + (prize.stars_value || 0);
-                await db.updateBalance(user_id, newBalance);
-                console.log(`Added ${prize.stars_value} stars to user ${user_id}. New balance: ${newBalance}`);
-                break;
-        }
-        
-        res.json(result);
-    } catch (error) {
-        console.error('Error claiming prize:', error);
-        res.status(500).json({ 
-            error: 'Failed to claim prize',
-            message: 'Ошибка получения приза'
         });
     }
 });
@@ -378,7 +214,6 @@ app.get('/api/info', async (req, res) => {
             timestamp: new Date().toISOString(),
             webhook_url: null,
             webapp_url: process.env.WEBAPP_URL || null,
-            bot_token: BOT_TOKEN ? 'configured' : 'missing',
             database: 'PostgreSQL',
             total_users: stats.total_users || 0,
             total_balance: stats.total_balance || 0,

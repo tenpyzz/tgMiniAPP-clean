@@ -1,11 +1,5 @@
 import pkg from 'pg';
 const { Pool } = pkg;
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import fs from 'fs';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 class Database {
     constructor() {
@@ -141,20 +135,38 @@ class Database {
         }
     }
 
-    // Создание нового пользователя
-    async createUser(userId, telegramName, balance = 100) {
+    // Создание или обновление пользователя (upsert)
+    async upsertUser(userId, telegramName, balance = 100, inventory = []) {
         try {
-            const query = `
-                INSERT INTO users (user_id, telegram_name, balance, inventory)
-                VALUES ($1, $2, $3, $4)
-                RETURNING *
-            `;
-            const result = await this.pool.query(query, [userId, telegramName, balance, '[]']);
+            const existingUser = await this.getUser(userId);
             
-            console.log(`✅ Пользователь ${telegramName} (ID: ${userId}) создан`);
-            return result.rows[0];
+            if (existingUser) {
+                // Обновляем существующего пользователя
+                return await this.updateUser(userId, {
+                    telegram_name: telegramName,
+                    balance: balance,
+                    inventory: inventory
+                });
+            } else {
+                // Создаем нового пользователя
+                const inventoryJson = JSON.stringify(inventory || []);
+                const query = `
+                    INSERT INTO users (user_id, telegram_name, balance, inventory)
+                    VALUES ($1, $2, $3, $4)
+                    RETURNING *
+                `;
+                const result = await this.pool.query(query, [userId, telegramName, balance, inventoryJson]);
+                
+                const newUser = result.rows[0];
+                try {
+                    newUser.inventory = JSON.parse(newUser.inventory);
+                } catch (e) {
+                    newUser.inventory = [];
+                }
+                return newUser;
+            }
         } catch (error) {
-            console.error('Ошибка создания пользователя:', error);
+            console.error('Ошибка upsert пользователя:', error);
             throw error;
         }
     }
@@ -176,43 +188,21 @@ class Database {
             `;
             
             const result = await this.pool.query(query, [telegram_name, balance, inventoryJson, userId]);
-            console.log(`✅ Пользователь ${userId} обновлен`);
-            return result.rows[0];
+            const updatedUser = result.rows[0];
+            
+            // Парсим JSON инвентарь
+            try {
+                updatedUser.inventory = JSON.parse(updatedUser.inventory);
+            } catch (e) {
+                updatedUser.inventory = [];
+            }
+            
+            return updatedUser;
         } catch (error) {
             console.error('Ошибка обновления пользователя:', error);
             throw error;
         }
     }
-
-    // Создание или обновление пользователя (upsert)
-    async upsertUser(userId, telegramName, balance = 100, inventory = []) {
-        try {
-            const existingUser = await this.getUser(userId);
-            
-            if (existingUser) {
-                // Обновляем существующего пользователя
-                const updatedUser = await this.updateUser(userId, {
-                    telegram_name: telegramName,
-                    balance: balance,
-                    inventory: inventory
-                });
-                return updatedUser;
-            } else {
-                // Создаем нового пользователя
-                const newUser = await this.createUser(userId, telegramName, balance);
-                // Обновляем инвентарь если нужно
-                if (inventory && inventory.length > 0) {
-                    await this.updateUser(userId, { inventory });
-                }
-                return { user_id: userId, telegram_name: telegramName, balance, inventory };
-            }
-        } catch (error) {
-            console.error('Ошибка upsert пользователя:', error);
-            throw error;
-        }
-    }
-
-    // getAllUsers удален как неиспользуемый
 
     // Получение количества пользователей
     async getUserCount() {
@@ -246,41 +236,11 @@ class Database {
         }
     }
 
-    // Обновление баланса пользователя
-    async updateBalance(userId, newBalance) {
-        try {
-            const query = 'UPDATE users SET balance = $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2 RETURNING *';
-            const result = await this.pool.query(query, [newBalance, userId]);
-            
-            console.log(`✅ Баланс пользователя ${userId} обновлен на ${newBalance}`);
-            return result.rows[0];
-        } catch (error) {
-            console.error('Ошибка обновления баланса:', error);
-            throw error;
-        }
-    }
-
-    // addToBalance удален как неиспользуемый
+    // updateBalance удален (не используется)
 
     // Резервное копирование и связанные методы удалены как неиспользуемые
 
-    // Удаление пользователя
-    async deleteUser(userId) {
-        try {
-            const query = 'DELETE FROM users WHERE user_id = $1 RETURNING *';
-            const result = await this.pool.query(query, [userId]);
-            
-            if (result.rows.length === 0) {
-                throw new Error('Пользователь не найден');
-            }
-            
-            console.log(`✅ Пользователь ${userId} удален из базы данных`);
-            return result.rows[0];
-        } catch (error) {
-            console.error('Ошибка удаления пользователя:', error);
-            throw error;
-        }
-    }
+    // deleteUser удалена (не используется)
 
     // Закрытие соединения с базой данных
     async close() {

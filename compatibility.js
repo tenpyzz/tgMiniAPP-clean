@@ -104,47 +104,8 @@ class CompatibilityManager {
         });
     }
 
-    // УНИВЕРСАЛЬНЫЙ метод для проверки поддержки функций
-    supportsFeature(feature) {
-        switch (feature) {
-            case 'backdrop-filter':
-                return CSS.supports('backdrop-filter', 'blur(10px)');
-            case 'css-grid':
-                return CSS.supports('display', 'grid');
-            case 'flexbox':
-                return CSS.supports('display', 'flex');
-            case 'touch':
-                return 'ontouchstart' in window;
-            case 'webgl':
-                return !!document.createElement('canvas').getContext('webgl');
-            default:
-                return false;
-        }
-    }
-
-    // УНИВЕРСАЛЬНАЯ оптимизация производительности для всех устройств
-    optimizePerformance() {
-        // Применяем классы для поддержки функций
-        if (!this.supportsFeature('backdrop-filter')) {
-            document.body.classList.add('no-backdrop-filter');
-        }
-        if (!this.supportsFeature('css-grid')) {
-            document.body.classList.add('no-css-grid');
-        }
-        if (!this.supportsFeature('flexbox')) {
-            document.body.classList.add('no-flexbox');
-        }
-
-        // УНИВЕРСАЛЬНАЯ проверка на сокращение анимаций
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-            document.body.classList.add('reduced-motion');
-        }
-    }
+    // Неиспользуемые методы supportsFeature и optimizePerformance удалены
 }
 
-// Инициализация УНИВЕРСАЛЬНОГО менеджера совместимости
+// Инициализация менеджера совместимости (автоматически выполняется при загрузке)
 const compatibilityManager = new CompatibilityManager();
-
-// Экспорт для использования в других файлах
-window.CompatibilityManager = CompatibilityManager;
-window.compatibilityManager = compatibilityManager;
