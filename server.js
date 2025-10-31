@@ -4,7 +4,7 @@ import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import Database from './database.js';
-import { validateInitData, extractUserData } from './src/utils/validation.js';
+import { validateInitData, extractUserData } from './validation.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -56,21 +56,7 @@ function verifyTelegramData(req, res, next) {
 }
 
 // Middleware для проверки админских прав
-function verifyAdmin(req, res, next) {
-    const { user_id } = req.body;
-    const ADMIN_USER_ID = '1165123437';
-    
-    if (user_id !== ADMIN_USER_ID) {
-        console.log(`❌ АДМИН: Попытка доступа от пользователя ${user_id} (не админ)`);
-        return res.status(403).json({ 
-            error: 'Access denied', 
-            message: 'Доступ запрещен. Требуются права администратора.'
-        });
-    }
-    
-    console.log(`✅ АДМИН: Доступ разрешен для пользователя ${user_id}`);
-    next();
-}
+// verifyAdmin удален как неиспользуемый
 
 // Инициализация базы данных
 let db;
@@ -122,18 +108,7 @@ async function safeUpdateUser(userId, data) {
     }
 }
 
-async function safeGetAllUsers() {
-    if (!db || !db.isConnected) {
-        console.log('⚠️ База данных недоступна, возвращаем пустой массив');
-        return [];
-    }
-    try {
-        return await db.getAllUsers();
-    } catch (error) {
-        console.error('Ошибка получения всех пользователей:', error);
-        return [];
-    }
-}
+// safeGetAllUsers удален как неиспользуемый
 
 async function safeGetStats() {
     if (!db || !db.isConnected) {
@@ -178,13 +153,7 @@ async function initializeDatabase() {
         await db.init();
         console.log('✅ База данных PostgreSQL инициализирована');
         
-        // Создаем начальную резервную копию
-        try {
-            await db.createBackup();
-            console.log('✅ Резервная копия создана');
-        } catch (backupError) {
-            console.log('⚠️ Ошибка создания резервной копии:', backupError.message);
-        }
+        // Резервные копии отключены (не требуются для работы мини‑приложения)
         
         // Проверяем количество пользователей в базе
         try {
@@ -384,148 +353,9 @@ app.post('/api/prize/claim', verifyTelegramData, async (req, res) => {
 });
 
 // Админские эндпоинты
-app.get('/api/admin/users', async (req, res) => {
-    try {
-        console.log('🔍 Запрос всех пользователей для админ панели');
-        
-        const users = await safeGetAllUsers();
-        console.log(`📊 Найдено пользователей: ${users.length}`);
-        
-        res.json({
-            success: true,
-            users: users,
-            total: users.length
-        });
-    } catch (error) {
-        console.error('❌ Ошибка получения пользователей:', error);
-        res.status(500).json({ 
-            error: 'Failed to get users',
-            message: 'Ошибка получения пользователей'
-        });
-    }
-});
+// Админские эндпоинты удалены как неиспользуемые
 
-app.get('/api/admin/stats', async (req, res) => {
-    try {
-        const stats = await safeGetStats();
-        const users = await safeGetAllUsers();
-        
-        const detailedStats = {
-            total_users: stats.total_users || 0,
-            users_with_balance: stats.users_with_balance || 0,
-            total_stars: stats.total_balance || 0,
-            avg_balance: stats.avg_balance || 0,
-            total_inventory_items: 0,
-            users: []
-        };
-
-        users.forEach(user => {
-            detailedStats.total_inventory_items += user.inventory?.length || 0;
-            detailedStats.users.push({
-                user_id: user.user_id,
-                telegram_name: user.telegram_name,
-                balance: user.balance,
-                inventory_count: user.inventory?.length || 0,
-                created_at: user.created_at,
-                updated_at: user.updated_at
-            });
-        });
-
-        res.json(detailedStats);
-    } catch (error) {
-        console.error('Error getting stats:', error);
-        res.status(500).json({ 
-            error: 'Failed to get stats',
-            message: 'Ошибка получения статистики'
-        });
-    }
-});
-
-// Обновление баланса пользователя (только для админа)
-app.post('/api/admin/users/:userId/balance', verifyAdmin, async (req, res) => {
-    try {
-        const userId = req.params.userId;
-        const { balance } = req.body;
-        
-        if (typeof balance !== 'number' || balance < 0) {
-            return res.status(400).json({ 
-                error: 'Invalid balance value',
-                message: 'Неверное значение баланса'
-            });
-        }
-        
-        await db.updateBalance(userId, balance);
-        
-        console.log(`🔧 АДМИН: Баланс пользователя ${userId} установлен на ${balance}`);
-        
-        res.json({
-            success: true,
-            message: `Balance updated to ${balance} for user ${userId}`
-        });
-    } catch (error) {
-        console.error('Error updating balance:', error);
-        res.status(500).json({ 
-            error: 'Failed to update balance',
-            message: 'Ошибка обновления баланса'
-        });
-    }
-});
-
-// Webhook для Telegram бота
-app.post('/bot/webhook', async (req, res) => {
-    try {
-        const update = req.body;
-        console.log('Bot webhook received:', update);
-        
-        if (update.message) {
-            const message = update.message;
-            const chatId = message.chat.id;
-            const text = message.text;
-            
-            console.log(`Message from ${chatId}: ${text}`);
-            
-            if (text === '/start') {
-                const welcomeMessage = `🎮 Добро пожаловать в Кейс Мастер!
-
-🎁 Открывайте кейсы и получайте призы:
-• Подарки для друзей
-• Стикеры
-• Telegram Premium
-• И многое другое!
-
-🚀 Нажмите кнопку ниже, чтобы начать играть!`;
-
-                const keyboard = {
-                    inline_keyboard: [[
-                        {
-                            text: "🎮 Открыть игру",
-                            web_app: {
-                                url: process.env.WEBAPP_URL || 'https://your-domain.com/'
-                            }
-                        }
-                    ]]
-                };
-
-                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        chat_id: chatId,
-                        text: welcomeMessage,
-                        reply_markup: keyboard
-                    })
-                });
-            }
-        }
-        
-        res.json({ ok: true });
-    } catch (error) {
-        console.error('Bot webhook error:', error);
-        res.status(500).json({ error: 'Webhook error' });
-    }
-});
+// Webhook бота удалён как неиспользуемый
 
 // Статическая раздача файлов
 app.use(express.static('.'));
@@ -535,10 +365,7 @@ app.get('/', (req, res) => {
     res.sendFile(join(__dirname, 'index.html'));
 });
 
-// Админ панель
-app.get('/admin', (req, res) => {
-    res.sendFile(join(__dirname, 'admin.html'));
-});
+// Админ панель удалена
 
 // Информация о сервере
 app.get('/api/info', async (req, res) => {
@@ -549,8 +376,8 @@ app.get('/api/info', async (req, res) => {
             version: '2.0.0',
             status: 'running',
             timestamp: new Date().toISOString(),
-            webhook_url: process.env.WEBHOOK_URL || `${process.env.WEBAPP_URL || 'https://your-domain.com/'}bot/webhook`,
-            webapp_url: process.env.WEBAPP_URL || 'https://your-domain.com/',
+            webhook_url: null,
+            webapp_url: process.env.WEBAPP_URL || null,
             bot_token: BOT_TOKEN ? 'configured' : 'missing',
             database: 'PostgreSQL',
             total_users: stats.total_users || 0,

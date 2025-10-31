@@ -124,30 +124,7 @@ function getUserName() {
     return 'Unknown User';
 }
 
-// API функции
-async function apiRequest(endpoint, options = {}) {
-    const url = `${CONFIG.API_BASE_URL}${endpoint}`;
-    const defaultOptions = {
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    };
-
-    const mergedOptions = { ...defaultOptions, ...options };
-    
-    try {
-        const response = await fetch(url, mergedOptions);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        return await response.json();
-    } catch (error) {
-        console.error('API request failed:', error);
-        throw error;
-    }
-}
+// API функции удалены (не используются)
 
 // Получение данных пользователя
 async function getUserData() {
@@ -171,27 +148,7 @@ async function getUserData() {
     }
 }
 
-// Сохранение данных пользователя
-async function saveUserData() {
-    try {
-        if (!currentUserId) return;
-        
-        await apiRequest('/api/user/save', {
-            method: 'POST',
-            body: JSON.stringify({
-                user_id: currentUserId,
-                telegram_name: getUserName(),
-                stars_balance: userStars,
-                inventory: userInventory,
-                init_data: tg?.initData || ''
-            })
-        });
-        
-        console.log('✅ Данные пользователя сохранены');
-    } catch (error) {
-        console.error('Ошибка сохранения данных пользователя:', error);
-    }
-}
+// saveUserData удалена (не используется)
 
 // Генерация приза
 function generatePrize(rarity = 'common') {
@@ -737,9 +694,9 @@ function createCS2Items() {
         const itemElement = document.createElement('div');
         itemElement.className = `cs2-item flex-item ${item.rarity}`;
         itemElement.innerHTML = `
-            <div class="cs2-item-icon">${getCS2ItemIcon(item)}</div>
-            <div class="cs2-item-name">${item.name}</div>
-            <div class="cs2-item-rarity">${getRarityName(item.rarity)}</div>
+            <div class="cs2-item-icon" style="font-size: 2.2rem; margin-bottom: 8px;">${getCS2ItemIcon(item)}</div>
+            <div class="cs2-item-name" style="font-weight: 700;">${item.name}</div>
+            <div class="cs2-item-rarity" style="font-size: 0.85rem; opacity: 0.9;">${getRarityName(item.rarity)}</div>
         `;
         // Форсируем видимость и размеры (перебиваем любые конфликтующие стили)
         itemElement.style.width = '160px';
@@ -754,6 +711,7 @@ function createCS2Items() {
         itemElement.style.borderRadius = '8px';
         itemElement.style.color = '#fff';
         itemElement.style.opacity = '1';
+        itemElement.style.position = 'relative';
         itemElement.style.zIndex = '9999';
         
         // Убираем отладочные стили
@@ -940,20 +898,7 @@ function showCS2PrizeReveal() {
     prizeReveal.classList.add('show');
 }
 
-/**
- * Получение названия редкости
- * @param {string} rarity - Редкость
- * @returns {string} - Название
- */
-function getRarityName(rarity) {
-    const names = {
-        common: 'Обычный',
-        rare: 'Редкий',
-        epic: 'Эпический',
-        legendary: 'Легендарный'
-    };
-    return names[rarity] || 'Неизвестно';
-}
+// дубликат getRarityName удален
 
 /**
  * Сброс CS2 анимации
