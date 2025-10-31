@@ -772,13 +772,14 @@ function createCS2Items() {
     cs2Animation.container.style.display = 'flex';
     cs2Animation.container.style.alignItems = 'center';
     cs2Animation.container.style.width = `${totalWidth}px`;
-    cs2Animation.container.style.height = '100%';
+    cs2Animation.container.style.height = 'auto';
     cs2Animation.container.style.position = 'absolute';
     cs2Animation.container.style.left = '0';
-    cs2Animation.container.style.top = '0';
+    cs2Animation.container.style.top = '50%';
     // Используем setProperty для перекрытия CSS с !important
-    cs2Animation.container.style.setProperty('transform', 'translateX(0px) translateZ(0)', 'important');
-    cs2Animation.container.style.setProperty('-webkit-transform', 'translateX(0px) translateZ(0)', 'important');
+    // Важно: комбинируем translateY(-50%) для вертикального центрирования с translateX для горизонтальной анимации
+    cs2Animation.container.style.setProperty('transform', 'translateY(-50%) translateX(0px) translateZ(0)', 'important');
+    cs2Animation.container.style.setProperty('-webkit-transform', 'translateY(-50%) translateX(0px) translateZ(0)', 'important');
     cs2Animation.container.style.setProperty('transition', '', 'important');
     cs2Animation.container.style.setProperty('-webkit-transition', '', 'important');
     cs2Animation.container.style.setProperty('will-change', 'transform', 'important');
@@ -812,6 +813,8 @@ function createCS2Items() {
         itemElement.style.justifyContent = 'center';
         itemElement.style.marginRight = `${itemGap}px`;
         itemElement.style.marginLeft = '0';
+        itemElement.style.marginTop = '0';
+        itemElement.style.marginBottom = '0';
         itemElement.style.background = 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)';
         itemElement.style.border = '3px solid #444';
         itemElement.style.borderRadius = '8px';
@@ -822,6 +825,7 @@ function createCS2Items() {
         itemElement.style.flexShrink = '0';
         itemElement.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.4)';
         itemElement.style.pointerEvents = 'none'; // Чтобы не мешали кликам
+        itemElement.style.alignSelf = 'center'; // Явное центрирование по вертикали
         
         // Цвета по редкости
         const rarityColors = {
@@ -935,7 +939,8 @@ async function runCS2Animation() {
     
     cs2Animation.currentPosition = initialOffset;
     // Применяем transform с префиксами и !important, чтобы перекрыть CSS
-    const initialTransform = `translateX(${initialOffset}px) translateZ(0)`;
+    // Важно: сохраняем translateY(-50%) для вертикального центрирования
+    const initialTransform = `translateY(-50%) translateX(${initialOffset}px) translateZ(0)`;
     cs2Animation.container.style.setProperty('transform', initialTransform, 'important');
     cs2Animation.container.style.setProperty('-webkit-transform', initialTransform, 'important');
     cs2Animation.container.style.setProperty('transition', 'none', 'important');
@@ -986,7 +991,8 @@ async function runCS2Animation() {
                 if (elapsed < 2000) {
                     cs2Animation.currentPosition -= cs2Animation.spinSpeed;
                     // Применяем transform с префиксами и !important, чтобы перекрыть CSS
-                    const transformValue = `translateX(${cs2Animation.currentPosition}px) translateZ(0)`;
+                    // Важно: сохраняем translateY(-50%) для вертикального центрирования
+                    const transformValue = `translateY(-50%) translateX(${cs2Animation.currentPosition}px) translateZ(0)`;
                     cs2Animation.container.style.setProperty('transform', transformValue, 'important');
                     cs2Animation.container.style.setProperty('-webkit-transform', transformValue, 'important');
                     cs2Animation.container.style.setProperty('transition', 'none', 'important');
@@ -1010,7 +1016,8 @@ async function runCS2Animation() {
                     }
                     cs2Animation.currentPosition -= cs2Animation.spinSpeed;
                     // Применяем transform с префиксами и !important, чтобы перекрыть CSS
-                    const transformValue = `translateX(${cs2Animation.currentPosition}px) translateZ(0)`;
+                    // Важно: сохраняем translateY(-50%) для вертикального центрирования
+                    const transformValue = `translateY(-50%) translateX(${cs2Animation.currentPosition}px) translateZ(0)`;
                     cs2Animation.container.style.setProperty('transform', transformValue, 'important');
                     cs2Animation.container.style.setProperty('-webkit-transform', transformValue, 'important');
                     cs2Animation.container.style.setProperty('transition', 'none', 'important');
@@ -1041,7 +1048,8 @@ function stopCS2Animation() {
     cs2Animation.animationPhase = 'stopped';
     
     // Плавно перемещаем к целевому предмету
-    const finalTransform = `translateX(${cs2Animation.targetPosition}px) translateZ(0)`;
+    // Важно: сохраняем translateY(-50%) для вертикального центрирования
+    const finalTransform = `translateY(-50%) translateX(${cs2Animation.targetPosition}px) translateZ(0)`;
     const finalTransition = 'transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
     cs2Animation.container.style.setProperty('transition', finalTransition, 'important');
     cs2Animation.container.style.setProperty('-webkit-transition', finalTransition, 'important');
