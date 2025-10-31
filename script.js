@@ -739,8 +739,8 @@ function generateCS2Items(caseType) {
             console.log('⚠️ CS2 Генерация: containerWidth был 0, используем viewport:', containerWidth);
         }
         
-        const itemWidth = 160;
-        const itemGap = 20;
+        const itemWidth = 100;
+        const itemGap = 15;
         const itemSpacing = itemWidth + itemGap; // 180px
         
         // Центрируем выбранный предмет: его центр должен попасть в центр контейнера
@@ -762,9 +762,9 @@ function createCS2Items() {
     // Добавляем класс для CS2 анимации
     cs2Animation.container.classList.add('cs2-animation');
     
-    // Вычисляем размеры
-    const itemWidth = 160;
-    const itemGap = 20;
+    // Вычисляем размеры (уменьшены для компактности)
+    const itemWidth = 100;
+    const itemGap = 15;
     const itemSpacing = itemWidth + itemGap;
     const totalWidth = cs2Animation.items.length * itemSpacing;
     
@@ -796,9 +796,9 @@ function createCS2Items() {
         itemElement.className = `cs2-item flex-item ${item.rarity}`;
         itemElement.setAttribute('data-index', index);
         itemElement.innerHTML = `
-            <div class="cs2-item-icon" style="font-size: 2.2rem; margin-bottom: 8px;">${getCS2ItemIcon(item)}</div>
-            <div class="cs2-item-name" style="font-weight: 700; text-align: center; font-size: 0.9rem;">${item.name}</div>
-            <div class="cs2-item-rarity" style="font-size: 0.75rem; opacity: 0.9; text-align: center;">${getRarityName(item.rarity)}</div>
+            <div class="cs2-item-icon" style="font-size: 1.5rem; margin-bottom: 4px;">${getCS2ItemIcon(item)}</div>
+            <div class="cs2-item-name" style="font-weight: 700; text-align: center; font-size: 0.7rem;">${item.name}</div>
+            <div class="cs2-item-rarity" style="font-size: 0.6rem; opacity: 0.9; text-align: center;">${getRarityName(item.rarity)}</div>
         `;
         
         // Устанавливаем стили для элемента
@@ -901,8 +901,8 @@ async function runCS2Animation() {
             containerWidth = window.innerWidth || document.documentElement.clientWidth || 800;
         }
         
-        const itemWidth = 160;
-        const itemGap = 20;
+        const itemWidth = 100;
+        const itemGap = 15;
         const itemSpacing = itemWidth + itemGap;
         const selectedIndex = cs2Animation.items.findIndex(item => item.id === cs2Animation.selectedItem?.id);
         
